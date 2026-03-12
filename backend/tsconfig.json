@@ -1,31 +1,41 @@
 {
-	// Visit https://aka.ms/tsconfig to read more about this file
-	"compilerOptions": {
-		// File Layout
-		"baseUrl": "./src",
-		"rootDir": "./src",
-		"outDir": "./dist",
+  // Visit https://aka.ms/tsconfig to read more about this file
+  "compilerOptions": {
+    // File Layout
+    "baseUrl": "./src",
+    "rootDir": "./src",
+    "outDir": "./dist",
 
-		// Environment Settings
-		"module": "nodenext",
-		"target": "esnext",
-		"lib": ["esnext"],
-		"types": ["node"],
+    // Environment Settings
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "es2022",
+    "lib": ["ES2022"],
+    "types": ["node"],
 
-		// Stricter Typechecking Options
-		"noUncheckedIndexedAccess": true,
-		"exactOptionalPropertyTypes": true,
+    // Stricter Typechecking Options
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
 
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
-		"noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
 
-		// Recommended Options
-		"strict": true,
-		"verbatimModuleSyntax": true,
-		"isolatedModules": true,
-		"noUncheckedSideEffectImports": true,
-		"moduleDetection": "force",
-		"skipLibCheck": true
-	}
+    // Recommended Options
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+
+    "paths": {
+      "@controllers/*": ["controllers/*"],
+      "@services/*": ["services/*"],
+      "@routes/*": ["routes/*"],
+      "@middlewares/*": ["middlewares/*"],
+      "@db/*": ["database/*"],
+      "@config/*": ["config/*"]
+    }
+  }
 }
