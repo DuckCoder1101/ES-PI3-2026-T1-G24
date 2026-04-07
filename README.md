@@ -54,6 +54,9 @@ As tecnologias podem variar conforme a implementação do grupo, podendo incluir
 - HTML / CSS
 - Framework de UI
 
+### Protótipos:
+- [Wireframe](https://miro.com/app/board/uXjVGljbcNU=/?focusWidget=3458764666833650279)
+
 ### Backend
 - Node.js / API REST
 - Banco de dados relacional ou NoSQL
