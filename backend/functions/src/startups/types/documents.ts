@@ -44,7 +44,7 @@ export interface QuestionDocument {
 }
 
 export interface QuestionAnwserDocument {
-	authorId: string;
+	authorUId: string;
 	text: string;
 	createdAt: Timestamp;
 }
