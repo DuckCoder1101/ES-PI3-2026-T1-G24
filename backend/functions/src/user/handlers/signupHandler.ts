@@ -6,6 +6,7 @@ import { checkCPF, checkPhone } from "../shared/validations";
 import { AppResponseDTO, UserSignupDTO } from "../types/dtos";
 import { createUserAccount } from "../repositories/userRepository";
 import { getUserProfile } from "../shared/auth";
+import { logger } from "firebase-functions";
 
 /**
  * @name signup
@@ -42,6 +43,8 @@ export const signup = onCall(async (request): Promise<AppResponseDTO> => {
     phone,
     email,
   });
+
+  logger.log("Usuário cadastrado: " + uid);
 
   return {
     success: true,
