@@ -2,6 +2,7 @@
 // RA: 25000294
 
 import 'package:flutter/material.dart';
+import 'cadastro_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -109,8 +110,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
               _FooterLinks(
                 onCadastrarTap: () {
-                  // TODO: navegar para cadastro
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CadastroScreen(),
+                    ),
+                  );
                 },
+                
                 onEsqueciSenhaTap: () {
                   // TODO: navegar para recuperação de senha
                 },
@@ -133,10 +140,7 @@ class _LogoMesclaInvest extends StatelessWidget {
     return RichText(
       textAlign: TextAlign.center,
       text: const TextSpan(
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
+        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         children: [
           TextSpan(
             text: 'Mescla',
@@ -173,10 +177,7 @@ class _EmailField extends StatelessWidget {
   final TextEditingController controller;
   final InputDecoration decoration;
 
-  const _EmailField({
-    required this.controller,
-    required this.decoration,
-  });
+  const _EmailField({required this.controller, required this.decoration});
 
   @override
   Widget build(BuildContext context) {
@@ -234,9 +235,7 @@ class _SenhaField extends StatelessWidget {
 class _EntrarButton extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const _EntrarButton({
-    required this.onPressed,
-  });
+  const _EntrarButton({required this.onPressed});
 
   static const Color verdeMescla = Color(0xFF7FDD3A);
 
@@ -248,16 +247,11 @@ class _EntrarButton extends StatelessWidget {
         backgroundColor: verdeMescla,
         foregroundColor: Colors.black,
         padding: const EdgeInsets.symmetric(vertical: 23),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       child: const Text(
         'Entrar',
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -283,10 +277,7 @@ class _FooterLinks extends StatelessWidget {
           children: [
             const Text(
               'Não tem uma conta? ',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: Colors.white70, fontSize: 13),
             ),
             GestureDetector(
               onTap: onCadastrarTap,
@@ -307,10 +298,7 @@ class _FooterLinks extends StatelessWidget {
           child: const Text(
             'Esqueci minha senha',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: verdeMescla,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: verdeMescla, fontSize: 13),
           ),
         ),
       ],
