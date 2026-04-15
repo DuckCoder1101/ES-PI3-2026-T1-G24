@@ -1,3 +1,8 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { Timestamp } from "firebase-admin/firestore";
 
 export interface UserDocument {

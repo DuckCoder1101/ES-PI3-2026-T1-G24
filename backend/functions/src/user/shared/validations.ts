@@ -1,3 +1,8 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 export const checkCPF = (value: string): boolean => {
   const cpf = value.replace(/\D/g, "");
 

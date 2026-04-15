@@ -1,3 +1,8 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { database } from "../shared/firebase";
 import { UserDocument } from "../types/documents";
 import { UserSignupDTO } from "../types/dtos";

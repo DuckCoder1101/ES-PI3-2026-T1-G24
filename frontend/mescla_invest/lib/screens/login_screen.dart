@@ -1,7 +1,9 @@
 // Autor: Vinicius Santuci Virgolino
 // RA: 25000294
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'cadastro_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -99,18 +101,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 40),
 
-              _EntrarButton(
-                onPressed: () {
-                  // TODO: implementar autenticação
-                },
-              ),
+              _EntrarButton(onPressed: _loginUsuario),
 
               const SizedBox(height: 18),
 
               _FooterLinks(
                 onCadastrarTap: () {
-                  // TODO: navegar para cadastro
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CadastroScreen(),
+                    ),
+                  );
                 },
+
                 onEsqueciSenhaTap: () {
                   // TODO: navegar para recuperação de senha
                 },
@@ -120,6 +124,67 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _loginUsuario() async {
+    final email = _emailController.text.trim();
+    final senha = _senhaController.text.trim();
+
+    if (email.isEmpty || senha.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Preencha email e senha.')));
+      return;
+    }
+
+    try {
+      // 1. Login no Firebase Auth
+      final credencial = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: senha,
+      );
+
+      // 2. Garante que o token está atualizado (importante para onCall depois)
+      await credencial.user?.getIdToken(true);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login realizado com sucesso!')),
+      );
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Login efetuado com sucesso!")));
+
+      // Navigator.pushReplacementNamed(context, '/home');
+    } on FirebaseAuthException catch (e) {
+      debugPrint('FirebaseAuthException: ${e.code} - ${e.message}');
+
+      String mensagemErro = 'Erro ao fazer login.';
+
+      if (e.code == 'user-not-found') {
+        mensagemErro = 'Usuário não encontrado.';
+      } else if (e.code == 'wrong-password') {
+        mensagemErro = 'Senha incorreta.';
+      } else if (e.code == 'invalid-email') {
+        mensagemErro = 'E-mail inválido.';
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(mensagemErro)));
+    } catch (e) {
+      debugPrint('Erro inesperado: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro inesperado: $e')));
+    }
   }
 }
 
@@ -133,10 +198,7 @@ class _LogoMesclaInvest extends StatelessWidget {
     return RichText(
       textAlign: TextAlign.center,
       text: const TextSpan(
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
+        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         children: [
           TextSpan(
             text: 'Mescla',
@@ -173,10 +235,7 @@ class _EmailField extends StatelessWidget {
   final TextEditingController controller;
   final InputDecoration decoration;
 
-  const _EmailField({
-    required this.controller,
-    required this.decoration,
-  });
+  const _EmailField({required this.controller, required this.decoration});
 
   @override
   Widget build(BuildContext context) {
@@ -234,9 +293,7 @@ class _SenhaField extends StatelessWidget {
 class _EntrarButton extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const _EntrarButton({
-    required this.onPressed,
-  });
+  const _EntrarButton({required this.onPressed});
 
   static const Color verdeMescla = Color(0xFF7FDD3A);
 
@@ -248,16 +305,11 @@ class _EntrarButton extends StatelessWidget {
         backgroundColor: verdeMescla,
         foregroundColor: Colors.black,
         padding: const EdgeInsets.symmetric(vertical: 23),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       child: const Text(
         'Entrar',
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -283,10 +335,7 @@ class _FooterLinks extends StatelessWidget {
           children: [
             const Text(
               'Não tem uma conta? ',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 13,
-              ),
+              style: TextStyle(color: Colors.white70, fontSize: 13),
             ),
             GestureDetector(
               onTap: onCadastrarTap,
@@ -307,10 +356,7 @@ class _FooterLinks extends StatelessWidget {
           child: const Text(
             'Esqueci minha senha',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: verdeMescla,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: verdeMescla, fontSize: 13),
           ),
         ),
       ],

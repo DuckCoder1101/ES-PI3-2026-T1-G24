@@ -1,3 +1,8 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { HttpsError, onCall } from "firebase-functions/https";
 
 import { normalizeString } from "../shared/utils";
