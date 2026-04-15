@@ -1,7 +1,7 @@
 // Autor: Vinicius Santuci Virgolino
 // RA: 25000294
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -136,9 +136,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
               ),
               const SizedBox(height: 34),
 
-              _BotaoCadastrar(
-                onPressed: _cadastrarUsuario
-                ),
+              _BotaoCadastrar(onPressed: _cadastrarUsuario),
               const SizedBox(height: 16),
 
               _FooterCadastro(
@@ -155,93 +153,88 @@ class _CadastroScreenState extends State<CadastroScreen> {
   }
 
   Future<void> _cadastrarUsuario() async {
-  final nome = _nomeController.text.trim();
-  final email = _emailController.text.trim();
-  final cpf = _cpfController.text.trim();
-  final telefone = _telefoneController.text.trim();
-  final senha = _senhaController.text.trim();
+    final nome = _nomeController.text.trim();
+    final email = _emailController.text.trim();
+    final cpf = _cpfController.text.trim();
+    final telefone = _telefoneController.text.trim();
+    final senha = _senhaController.text.trim();
 
-  if (nome.isEmpty ||
-      email.isEmpty ||
-      cpf.isEmpty ||
-      telefone.isEmpty ||
-      senha.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Preencha todos os campos obrigatórios.'),
-      ),
-    );
-    return;
-  }
-
-  try {
-    final credencial =
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-      email: email,
-      password: senha,
-    );
-
-    final uid = credencial.user!.uid;
-
-    await FirebaseFirestore.instance.collection('usuarios').doc(uid).set({
-      'nomeCompleto': nome,
-      'email': email,
-      'cpf': cpf,
-      'telefone': telefone,
-      'criadoEm': FieldValue.serverTimestamp(),
-    });
-
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Cadastro realizado com sucesso!'),
-      ),
-    );
-
-    Navigator.pop(context);
-  } on FirebaseAuthException catch (e) {
-    debugPrint('FirebaseAuthException: ${e.code} - ${e.message}');
-
-    String mensagemErro = 'Erro ao cadastrar usuário.';
-
-    if (e.code == 'email-already-in-use') {
-      mensagemErro = 'Este e-mail já está em uso.';
-    } else if (e.code == 'invalid-email') {
-      mensagemErro = 'O e-mail informado é inválido.';
-    } else if (e.code == 'weak-password') {
-      mensagemErro = 'A senha deve ter pelo menos 6 caracteres.';
-    } else if (e.code == 'operation-not-allowed') {
-      mensagemErro = 'O login por e-mail/senha não está habilitado no Firebase.';
+    if (nome.isEmpty ||
+        email.isEmpty ||
+        cpf.isEmpty ||
+        telefone.isEmpty ||
+        senha.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Preencha todos os campos obrigatórios.')),
+      );
+      return;
     }
 
-    if (!mounted) return;
+    try {
+      // 1. cria usuário no Firebase Auth
+      final credencial = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: senha);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(mensagemErro)),
-    );
-  } on FirebaseException catch (e) {
-    debugPrint('FirebaseException: ${e.code} - ${e.message}');
+      // 2. força refresh do token (IMPORTANTE pro onCall)
+      await credencial.user?.getIdToken(true);
 
-    if (!mounted) return;
+      // 3. chama Cloud Function signup
+      final functions = FirebaseFunctions.instance;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Erro no Firebase: ${e.message ?? e.code}'),
-      ),
-    );
-  } catch (e) {
-    debugPrint('Erro inesperado: $e');
+      final callable = functions.httpsCallable('signup');
 
-    if (!mounted) return;
+      final result = await callable.call({
+        'name': nome,
+        'cpf': cpf,
+        'phone': telefone,
+      });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Erro inesperado: $e'),
-      ),
-    );
+      final data = result.data;
+
+      if (data['success'] != true) {
+        throw Exception('Falha ao cadastrar usuário');
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cadastro realizado com sucesso!')),
+      );
+
+      Navigator.pop(context);
+    } on FirebaseFunctionsException catch (e) {
+      debugPrint('FunctionsException: ${e.code} - ${e.message}');
+      debugPrint('Details: ${e.details}');
+
+      String mensagemErro = 'Erro ao cadastrar usuário.';
+
+      if (e.code == 'invalid-argument') {
+        final fields = e.details?['fieldErrors'];
+
+        if (fields != null) {
+          mensagemErro = fields.values.join('\n');
+        } else {
+          mensagemErro = 'Dados inválidos.';
+        }
+      } else if (e.code == 'unauthenticated') {
+        mensagemErro = 'Usuário não autenticado.';
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(mensagemErro)));
+    } catch (e) {
+      debugPrint('Erro inesperado: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro inesperado: $e')));
+    }
   }
-}
 }
 
 class _LogoMesclaInvest extends StatelessWidget {

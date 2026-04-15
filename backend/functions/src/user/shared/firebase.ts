@@ -1,3 +1,8 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";

@@ -1,3 +1,8 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 export interface UserSignupDTO {
   name: string;
   email: string;
