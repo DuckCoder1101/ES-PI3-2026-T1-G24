@@ -1,6 +1,7 @@
 // Autor: Vinicius Santuci Virgolino
 // RA: 25000294
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'cadastro_screen.dart';
 
@@ -100,11 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 40),
 
-              _EntrarButton(
-                onPressed: () {
-                  // TODO: implementar autenticação
-                },
-              ),
+              _EntrarButton(onPressed: _loginUsuario),
 
               const SizedBox(height: 18),
 
@@ -117,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   );
                 },
-                
+
                 onEsqueciSenhaTap: () {
                   // TODO: navegar para recuperação de senha
                 },
@@ -127,6 +124,67 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _loginUsuario() async {
+    final email = _emailController.text.trim();
+    final senha = _senhaController.text.trim();
+
+    if (email.isEmpty || senha.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Preencha email e senha.')));
+      return;
+    }
+
+    try {
+      // 1. Login no Firebase Auth
+      final credencial = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: senha,
+      );
+
+      // 2. Garante que o token está atualizado (importante para onCall depois)
+      await credencial.user?.getIdToken(true);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login realizado com sucesso!')),
+      );
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Login efetuado com sucesso!")));
+
+      // Navigator.pushReplacementNamed(context, '/home');
+    } on FirebaseAuthException catch (e) {
+      debugPrint('FirebaseAuthException: ${e.code} - ${e.message}');
+
+      String mensagemErro = 'Erro ao fazer login.';
+
+      if (e.code == 'user-not-found') {
+        mensagemErro = 'Usuário não encontrado.';
+      } else if (e.code == 'wrong-password') {
+        mensagemErro = 'Senha incorreta.';
+      } else if (e.code == 'invalid-email') {
+        mensagemErro = 'E-mail inválido.';
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(mensagemErro)));
+    } catch (e) {
+      debugPrint('Erro inesperado: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erro inesperado: $e')));
+    }
   }
 }
 

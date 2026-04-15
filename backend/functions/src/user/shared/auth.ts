@@ -1,3 +1,8 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { CallableRequest, HttpsError } from "firebase-functions/https";
 import { UserProfile } from "../types/dtos";
 

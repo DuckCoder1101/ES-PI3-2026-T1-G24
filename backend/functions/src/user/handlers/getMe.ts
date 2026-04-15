@@ -1,3 +1,8 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { HttpsError, onCall } from "firebase-functions/https";
 import { findUserById } from "../repositories/userRepository";
 import { getUserProfile } from "../shared/auth";
