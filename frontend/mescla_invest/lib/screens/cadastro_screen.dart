@@ -2,18 +2,21 @@
 // RA: 25000294
 
 import 'package:flutter/material.dart';
-import 'cadastro_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class CadastroScreen extends StatefulWidget {
+  const CadastroScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<CadastroScreen> createState() => _CadastroScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _CadastroScreenState extends State<CadastroScreen> {
+  final _nomeController = TextEditingController();
   final _emailController = TextEditingController();
+  final _cpfController = TextEditingController();
+  final _telefoneController = TextEditingController();
   final _senhaController = TextEditingController();
+
   bool _senhaVisivel = false;
 
   static const Color verdeMescla = Color(0xFF7FDD3A);
@@ -22,7 +25,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    _nomeController.dispose();
     _emailController.dispose();
+    _cpfController.dispose();
+    _telefoneController.dispose();
     _senhaController.dispose();
     super.dispose();
   }
@@ -63,23 +69,58 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Padding(
-                padding: EdgeInsets.only(top: 110),
+                padding: EdgeInsets.only(top: 85),
                 child: _LogoMesclaInvest(),
               ),
-              const SizedBox(height: 55),
-              const _TituloEntrar(),
-              const SizedBox(height: 42),
+              const SizedBox(height: 45),
+              const _TituloCadastro(),
+              const SizedBox(height: 40),
 
-              _EmailField(
+              _CampoCadastro(
+                label: 'Nome Completo',
+                obrigatorio: true,
+                controller: _nomeController,
+                decoration: _inputDecoration(
+                  hintText: 'Seu nome',
+                ),
+                keyboardType: TextInputType.name,
+              ),
+              const SizedBox(height: 20),
+
+              _CampoCadastro(
+                label: 'E-mail',
+                obrigatorio: true,
                 controller: _emailController,
                 decoration: _inputDecoration(
                   hintText: 'ex: seuemail@email.com',
                 ),
+                keyboardType: TextInputType.emailAddress,
               ),
+              const SizedBox(height: 20),
 
-              const SizedBox(height: 28),
+              _CampoCadastro(
+                label: 'CPF',
+                obrigatorio: true,
+                controller: _cpfController,
+                decoration: _inputDecoration(
+                  hintText: '123.456.789 - 12',
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 20),
 
-              _SenhaField(
+              _CampoCadastro(
+                label: 'Telefone celular',
+                obrigatorio: true,
+                controller: _telefoneController,
+                decoration: _inputDecoration(
+                  hintText: '+12 34 5678 - 9123',
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 20),
+
+              _CampoSenhaCadastro(
                 controller: _senhaController,
                 senhaVisivel: _senhaVisivel,
                 decoration: _inputDecoration(
@@ -97,31 +138,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 34),
 
-              const SizedBox(height: 40),
-
-              _EntrarButton(
+              _BotaoCadastrar(
                 onPressed: () {
-                  // TODO: implementar autenticação
+                  // TODO: implementar cadastro
                 },
               ),
+              const SizedBox(height: 16),
 
-              const SizedBox(height: 18),
-
-              _FooterLinks(
-                onCadastrarTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CadastroScreen(),
-                    ),
-                  );
-                },
-                
-                onEsqueciSenhaTap: () {
-                  // TODO: navegar para recuperação de senha
+              _FooterCadastro(
+                onEntrarTap: () {
+                  Navigator.pop(context);
                 },
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -140,7 +171,10 @@ class _LogoMesclaInvest extends StatelessWidget {
     return RichText(
       textAlign: TextAlign.center,
       text: const TextSpan(
-        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+        ),
         children: [
           TextSpan(
             text: 'Mescla',
@@ -156,13 +190,13 @@ class _LogoMesclaInvest extends StatelessWidget {
   }
 }
 
-class _TituloEntrar extends StatelessWidget {
-  const _TituloEntrar();
+class _TituloCadastro extends StatelessWidget {
+  const _TituloCadastro();
 
   @override
   Widget build(BuildContext context) {
     return const Text(
-      'Entrar',
+      'Cadastro',
       textAlign: TextAlign.center,
       style: TextStyle(
         color: Colors.white,
@@ -173,25 +207,34 @@ class _TituloEntrar extends StatelessWidget {
   }
 }
 
-class _EmailField extends StatelessWidget {
+class _CampoCadastro extends StatelessWidget {
+  final String label;
+  final bool obrigatorio;
   final TextEditingController controller;
   final InputDecoration decoration;
+  final TextInputType keyboardType;
 
-  const _EmailField({required this.controller, required this.decoration});
+  const _CampoCadastro({
+    required this.label,
+    required this.obrigatorio,
+    required this.controller,
+    required this.decoration,
+    required this.keyboardType,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'E-mail',
-          style: TextStyle(color: Colors.white, fontSize: 16),
+        _LabelCampo(
+          texto: label,
+          obrigatorio: obrigatorio,
         ),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
-          keyboardType: TextInputType.emailAddress,
+          keyboardType: keyboardType,
           style: const TextStyle(color: Colors.white),
           decoration: decoration,
         ),
@@ -200,12 +243,12 @@ class _EmailField extends StatelessWidget {
   }
 }
 
-class _SenhaField extends StatelessWidget {
+class _CampoSenhaCadastro extends StatelessWidget {
   final TextEditingController controller;
   final bool senhaVisivel;
   final InputDecoration decoration;
 
-  const _SenhaField({
+  const _CampoSenhaCadastro({
     required this.controller,
     required this.senhaVisivel,
     required this.decoration,
@@ -216,9 +259,9 @@ class _SenhaField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Senha',
-          style: TextStyle(color: Colors.white, fontSize: 16),
+        const _LabelCampo(
+          texto: 'Crie sua Senha',
+          obrigatorio: true,
         ),
         const SizedBox(height: 8),
         TextField(
@@ -232,10 +275,43 @@ class _SenhaField extends StatelessWidget {
   }
 }
 
-class _EntrarButton extends StatelessWidget {
+class _LabelCampo extends StatelessWidget {
+  final String texto;
+  final bool obrigatorio;
+
+  const _LabelCampo({
+    required this.texto,
+    required this.obrigatorio,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return RichText(
+      text: TextSpan(
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+        children: [
+          TextSpan(text: texto),
+          if (obrigatorio)
+            const TextSpan(
+              text: '*',
+              style: TextStyle(color: Colors.red),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BotaoCadastrar extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const _EntrarButton({required this.onPressed});
+  const _BotaoCadastrar({
+    required this.onPressed,
+  });
 
   static const Color verdeMescla = Color(0xFF7FDD3A);
 
@@ -246,59 +322,53 @@ class _EntrarButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: verdeMescla,
         foregroundColor: Colors.black,
-        padding: const EdgeInsets.symmetric(vertical: 23),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
       ),
       child: const Text(
-        'Entrar',
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        'Cadastrar',
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
 }
 
-class _FooterLinks extends StatelessWidget {
-  final VoidCallback onCadastrarTap;
-  final VoidCallback onEsqueciSenhaTap;
+class _FooterCadastro extends StatelessWidget {
+  final VoidCallback onEntrarTap;
 
-  const _FooterLinks({
-    required this.onCadastrarTap,
-    required this.onEsqueciSenhaTap,
+  const _FooterCadastro({
+    required this.onEntrarTap,
   });
 
   static const Color verdeMescla = Color(0xFF7FDD3A);
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Não tem uma conta? ',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
-            ),
-            GestureDetector(
-              onTap: onCadastrarTap,
-              child: const Text(
-                'Cadastrar',
-                style: TextStyle(
-                  color: verdeMescla,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
+        const Text(
+          'Já tem uma conta? ',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        const SizedBox(height: 12),
         GestureDetector(
-          onTap: onEsqueciSenhaTap,
+          onTap: onEntrarTap,
           child: const Text(
-            'Esqueci minha senha',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: verdeMescla, fontSize: 13),
+            'Entrar',
+            style: TextStyle(
+              color: verdeMescla,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ],
