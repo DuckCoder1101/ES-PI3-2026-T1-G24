@@ -1,6 +1,8 @@
 // Autor: Vinicius Santuci Virgolino
 // RA: 25000294
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class CadastroScreen extends StatefulWidget {
@@ -80,9 +82,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
                 label: 'Nome Completo',
                 obrigatorio: true,
                 controller: _nomeController,
-                decoration: _inputDecoration(
-                  hintText: 'Seu nome',
-                ),
+                decoration: _inputDecoration(hintText: 'Seu nome'),
                 keyboardType: TextInputType.name,
               ),
               const SizedBox(height: 20),
@@ -102,9 +102,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
                 label: 'CPF',
                 obrigatorio: true,
                 controller: _cpfController,
-                decoration: _inputDecoration(
-                  hintText: '123.456.789 - 12',
-                ),
+                decoration: _inputDecoration(hintText: '123.456.789 - 12'),
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 20),
@@ -113,9 +111,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
                 label: 'Telefone celular',
                 obrigatorio: true,
                 controller: _telefoneController,
-                decoration: _inputDecoration(
-                  hintText: '+12 34 5678 - 9123',
-                ),
+                decoration: _inputDecoration(hintText: '+12 34 5678 - 9123'),
                 keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 20),
@@ -141,10 +137,8 @@ class _CadastroScreenState extends State<CadastroScreen> {
               const SizedBox(height: 34),
 
               _BotaoCadastrar(
-                onPressed: () {
-                  // TODO: implementar cadastro
-                },
-              ),
+                onPressed: _cadastrarUsuario
+                ),
               const SizedBox(height: 16),
 
               _FooterCadastro(
@@ -159,6 +153,95 @@ class _CadastroScreenState extends State<CadastroScreen> {
       ),
     );
   }
+
+  Future<void> _cadastrarUsuario() async {
+  final nome = _nomeController.text.trim();
+  final email = _emailController.text.trim();
+  final cpf = _cpfController.text.trim();
+  final telefone = _telefoneController.text.trim();
+  final senha = _senhaController.text.trim();
+
+  if (nome.isEmpty ||
+      email.isEmpty ||
+      cpf.isEmpty ||
+      telefone.isEmpty ||
+      senha.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Preencha todos os campos obrigatórios.'),
+      ),
+    );
+    return;
+  }
+
+  try {
+    final credencial =
+        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      email: email,
+      password: senha,
+    );
+
+    final uid = credencial.user!.uid;
+
+    await FirebaseFirestore.instance.collection('usuarios').doc(uid).set({
+      'nomeCompleto': nome,
+      'email': email,
+      'cpf': cpf,
+      'telefone': telefone,
+      'criadoEm': FieldValue.serverTimestamp(),
+    });
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Cadastro realizado com sucesso!'),
+      ),
+    );
+
+    Navigator.pop(context);
+  } on FirebaseAuthException catch (e) {
+    debugPrint('FirebaseAuthException: ${e.code} - ${e.message}');
+
+    String mensagemErro = 'Erro ao cadastrar usuário.';
+
+    if (e.code == 'email-already-in-use') {
+      mensagemErro = 'Este e-mail já está em uso.';
+    } else if (e.code == 'invalid-email') {
+      mensagemErro = 'O e-mail informado é inválido.';
+    } else if (e.code == 'weak-password') {
+      mensagemErro = 'A senha deve ter pelo menos 6 caracteres.';
+    } else if (e.code == 'operation-not-allowed') {
+      mensagemErro = 'O login por e-mail/senha não está habilitado no Firebase.';
+    }
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(mensagemErro)),
+    );
+  } on FirebaseException catch (e) {
+    debugPrint('FirebaseException: ${e.code} - ${e.message}');
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Erro no Firebase: ${e.message ?? e.code}'),
+      ),
+    );
+  } catch (e) {
+    debugPrint('Erro inesperado: $e');
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Erro inesperado: $e'),
+      ),
+    );
+  }
+}
 }
 
 class _LogoMesclaInvest extends StatelessWidget {
@@ -171,10 +254,7 @@ class _LogoMesclaInvest extends StatelessWidget {
     return RichText(
       textAlign: TextAlign.center,
       text: const TextSpan(
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-        ),
+        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         children: [
           TextSpan(
             text: 'Mescla',
@@ -227,10 +307,7 @@ class _CampoCadastro extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _LabelCampo(
-          texto: label,
-          obrigatorio: obrigatorio,
-        ),
+        _LabelCampo(texto: label, obrigatorio: obrigatorio),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
@@ -259,10 +336,7 @@ class _CampoSenhaCadastro extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _LabelCampo(
-          texto: 'Crie sua Senha',
-          obrigatorio: true,
-        ),
+        const _LabelCampo(texto: 'Crie sua Senha', obrigatorio: true),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
@@ -279,10 +353,7 @@ class _LabelCampo extends StatelessWidget {
   final String texto;
   final bool obrigatorio;
 
-  const _LabelCampo({
-    required this.texto,
-    required this.obrigatorio,
-  });
+  const _LabelCampo({required this.texto, required this.obrigatorio});
 
   @override
   Widget build(BuildContext context) {
@@ -309,9 +380,7 @@ class _LabelCampo extends StatelessWidget {
 class _BotaoCadastrar extends StatelessWidget {
   final VoidCallback onPressed;
 
-  const _BotaoCadastrar({
-    required this.onPressed,
-  });
+  const _BotaoCadastrar({required this.onPressed});
 
   static const Color verdeMescla = Color(0xFF7FDD3A);
 
@@ -323,16 +392,11 @@ class _BotaoCadastrar extends StatelessWidget {
         backgroundColor: verdeMescla,
         foregroundColor: Colors.black,
         padding: const EdgeInsets.symmetric(vertical: 20),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       child: const Text(
         'Cadastrar',
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -341,9 +405,7 @@ class _BotaoCadastrar extends StatelessWidget {
 class _FooterCadastro extends StatelessWidget {
   final VoidCallback onEntrarTap;
 
-  const _FooterCadastro({
-    required this.onEntrarTap,
-  });
+  const _FooterCadastro({required this.onEntrarTap});
 
   static const Color verdeMescla = Color(0xFF7FDD3A);
 
