@@ -8,7 +8,7 @@ import { HttpsError, onCall } from "firebase-functions/https";
 import { normalizeString } from "../shared/utils";
 import { checkCPF, checkPhone } from "../shared/validations";
 
-import { AppResponseDTO, UserSignupDTO } from "../types/dtos";
+import { UserSignupDTO } from "../types/dtos";
 import { createUserAccount } from "../repositories/userRepository";
 import { getUserProfile } from "../shared/auth";
 import { logger } from "firebase-functions";
@@ -19,7 +19,7 @@ import { logger } from "firebase-functions";
  * Verifica os dados da requisição
  * Se tudo estiver válido, chama a função de cadastro no repositório e salva a sessão
  */
-export const signup = onCall(async (request): Promise<AppResponseDTO> => {
+export const signup = onCall(async (request) => {
   const { uid, email } = getUserProfile(request);
   const data = request.data as UserSignupDTO;
 
@@ -53,12 +53,5 @@ export const signup = onCall(async (request): Promise<AppResponseDTO> => {
 
   return {
     success: true,
-    data: {
-      uid,
-      name,
-      cpf,
-      phone,
-      email,
-    },
   };
 });

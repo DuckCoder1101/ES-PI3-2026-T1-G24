@@ -13,3 +13,10 @@ export interface UserDocument {
   phone: string;
   createdAt: Timestamp;
 }
+
+export interface twoFaDocument {
+  uid: string;
+  enabled: boolean;
+  secret: string;
+  updatedAt: Timestamp;
+}

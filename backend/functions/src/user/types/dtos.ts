@@ -14,12 +14,3 @@ export interface UserProfile {
   uid: string;
   email: string;
 }
-
-export type AppResponseDTO =
-  | {
-      success: true;
-      data: unknown;
-    }
-  | {
-      success: false;
-    };
