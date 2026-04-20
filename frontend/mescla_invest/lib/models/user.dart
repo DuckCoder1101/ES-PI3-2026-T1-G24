@@ -1,4 +1,8 @@
-class UserDocument {
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/rendering.dart';
+
+class UserModel {
   final String uid;
   final String avatarUrl;
   final String name;
@@ -6,8 +10,9 @@ class UserDocument {
   final String cpf;
   final String phone;
   final DateTime createdAt;
+  final bool has2Fa;
 
-  UserDocument({
+  UserModel({
     required this.uid,
     required this.avatarUrl,
     required this.name,
@@ -15,9 +20,10 @@ class UserDocument {
     required this.cpf,
     required this.phone,
     required this.createdAt,
+    required this.has2Fa,
   });
 
-  factory UserDocument.fromMap(Map<String, dynamic> map) {
+  factory UserModel.fromMap(Map<String, dynamic> map) {
     // Extrai o mapa do createdAt
     final createdAtMap = map['createdAt'] as Map<String, dynamic>;
 
@@ -30,14 +36,43 @@ class UserDocument {
       isUtc: true,
     ).toLocal();
 
-    return UserDocument(
+    return UserModel(
       uid: map['uid'] ?? '',
       avatarUrl: map['avatarUrl'] ?? '',
       name: map['name'] ?? '',
       email: map['email'] ?? '',
       cpf: map['cpf'] ?? '',
       phone: map['phone'] ?? '',
-      createdAt: dateTime, // Agora é um DateTime comum
+      createdAt: dateTime,
+      has2Fa: map['has2Fa'] ?? false,
     );
+  }
+
+  static Future<UserModel> getFullUserData() async {
+    try {
+      final result = await FirebaseFunctions.instance
+          .httpsCallable('getMe')
+          .call();
+
+      if (result.data == null) {
+        throw Exception("Usuário não encontrado no banco de dados.");
+      }
+
+      final dataMap = Map<String, dynamic>.from(result.data);
+      final user = UserModel.fromMap(dataMap);
+
+      return user;
+    } catch (e) {
+      debugPrint("Erro no UserModel: $e");
+      rethrow;
+    }
+  }
+
+  static Future<void> signout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+    } catch (e) {
+      rethrow;
+    }
   }
 }

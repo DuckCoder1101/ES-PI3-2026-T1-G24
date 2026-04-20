@@ -75,17 +75,11 @@ class _SignupScreenState extends State<SignupScreen> {
 
       await credencial.user?.getIdToken(true);
 
-      final result = await FirebaseFunctions.instance
-          .httpsCallable('signup')
-          .call({
-            'name': _nomeController.text.trim(),
-            'cpf': _cpfController.text.trim(),
-            'phone': _telefoneController.text.trim(),
-          });
-
-      if (result.data['success'] != true) {
-        throw Exception('Falha no cadastro');
-      }
+      await FirebaseFunctions.instance.httpsCallable('signup').call({
+        'name': _nomeController.text.trim(),
+        'cpf': _cpfController.text.trim(),
+        'phone': _telefoneController.text.trim(),
+      });
 
       if (!mounted) return;
 

@@ -11,7 +11,7 @@ import { normalizeString } from "../shared/utils";
 import { checkCPF, checkPhone } from "../shared/validations";
 
 import { UserSignupDTO } from "../types/dtos";
-import { createUserAccount, existsCpf } from "../repositories/userRepository";
+import { createUserAccount, existsByCpf } from "../repositories/userRepository";
 import { getUserProfile } from "../shared/auth";
 
 /**
@@ -35,7 +35,7 @@ export const signup = onCall(async (request) => {
   if (!checkCPF(cpf)) fieldErrors.cpf = "CPF inválido!";
   if (!checkPhone(phone)) fieldErrors.phone = "Celular inválido!";
 
-  if (await existsCpf(cpf)) fieldErrors.cpf = "CPF já utilizado!";
+  if (await existsByCpf(cpf)) fieldErrors.cpf = "CPF já utilizado!";
 
   if (Object.keys(fieldErrors).length > 0) {
     console.log(

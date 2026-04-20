@@ -7,7 +7,6 @@ import 'package:mescla_invest/components/ui/icon.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/components/ui/input.dart';
 import 'package:mescla_invest/components/ui/primary_button.dart';
-import 'package:mescla_invest/models/authSession.dart';
 
 import 'forgot_password.dart'; // Importe a nova tela
 
@@ -36,77 +35,27 @@ class _SigninScreenState extends State<SigninScreen> {
     final senha = _senhaController.text.trim();
 
     if (email.isEmpty || senha.isEmpty) {
-      _showSnackBar('Preencha email e senha.');
+      _showSnackBar('Preencha todos os campos.');
       return;
     }
 
-    setState(() => _isLoading = true);
-
     try {
-      final credencial = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      setState(() => _isLoading = true);
+
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: senha,
       );
-
-      await FirebaseAuth.instance.currentUser?.getIdToken(true);
-      final idTokenResult = await credencial.user?.getIdTokenResult(true);
-
-      if (!mounted) return;
-
-      final bool has2FA = idTokenResult?.claims?['twoFactorEnabled'] ?? false;
-
-      if (has2FA) {
-        AuthSession.isFullyAuthenticated = false;
-        Navigator.pushReplacementNamed(context, '/auth/verify-otp');
-        return;
-      }
-
-      // sem 2FA
-      AuthSession.isFullyAuthenticated = true;
-      Navigator.pushReplacementNamed(context, '/home');
     } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-
-      String mensagemErro;
-
-      switch (e.code) {
-        case 'user-not-found':
-        case 'wrong-password':
-        case 'invalid-credential':
-          mensagemErro = 'E-mail ou senha incorretos.';
-          break;
-
-        case 'invalid-email':
-          mensagemErro = 'E-mail inválido.';
-          break;
-
-        case 'user-disabled':
-          mensagemErro = 'Esta conta foi desativada.';
-          break;
-
-        case 'too-many-requests':
-          mensagemErro = 'Muitas tentativas. Tente novamente mais tarde.';
-          break;
-
-        case 'network-request-failed':
-          mensagemErro = 'Erro de conexão. Verifique sua internet.';
-          break;
-
-        default:
-          mensagemErro = 'Erro ao fazer login. Tente novamente.';
-          debugPrint("Erro FirebaseAuth: ${e.code} - ${e.message}");
-      }
-
-      _showSnackBar(mensagemErro);
+      String message = 'Erro ao realizar login.';
+      if (e.code == 'user-not-found') message = 'E-mail não encontrado.';
+      if (e.code == 'wrong-password') message = 'Senha incorreta.';
+      _showSnackBar(message);
     } catch (e) {
-      if (!mounted) return;
-
-      debugPrint("Erro inesperado: $e");
-      _showSnackBar('Erro inesperado. Tente novamente.');
+      debugPrint("Erro no login: $e");
+      _showSnackBar('Ocorreu um erro inesperado.');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

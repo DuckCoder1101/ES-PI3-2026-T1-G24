@@ -5,7 +5,7 @@ import { twoFaDocument } from "../types/documents";
 
 const usersCollection = database.collection("users");
 
-const getTwoFaRef = (uid: string) =>
+export const getTwoFaRef = (uid: string) =>
   usersCollection.doc(uid).collection("security").doc("twoFa");
 
 /*

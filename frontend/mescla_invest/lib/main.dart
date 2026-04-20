@@ -35,12 +35,13 @@ class MyApp extends StatelessWidget {
       ),
       home: AuthGuard(child: const HomeScreen()),
       routes: {
-        "/home": (ctx) => const HomeScreen(),
+        "/home": (ctx) => const AuthGuard(child: HomeScreen()),
         "/auth/signin": (ctx) => const SigninScreen(),
         "/auth/signup": (ctx) => const SignupScreen(),
-        "/auth/verify-2fa": (ctx) => const Verify2FAScreen(),
-        "/auth/enable-2fa": (ctx) => const Enable2FAScreen(),
-        "/auth/confirm-2fa": (ctx) => const Confirm2FAScreen(),
+        "/auth/verify-2fa": (ctx) => Verify2FAScreen(),
+        "/auth/enable-2fa": (ctx) => const AuthGuard(child: Enable2FAScreen()),
+        "/auth/confirm-2fa": (ctx) =>
+            const AuthGuard(child: Confirm2FAScreen()),
       },
     );
   }

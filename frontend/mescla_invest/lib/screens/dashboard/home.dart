@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mescla_invest/components/layout/header.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/user.dart';
-import 'package:mescla_invest/services/userService.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,9 +11,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final UserService _userService = UserService();
-  UserDocument? _user;
-  String? _downloadUrl;
+  UserModel? _user;
   bool _isLoading = true;
 
   @override
@@ -26,11 +23,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadInitialData() async {
     try {
       // Utiliza o serviço unificado para buscar dados e foto
-      final data = await _userService.getFullUserData();
+      final data = await UserModel.getFullUserData();
       if (mounted) {
         setState(() {
-          _user = data['user'];
-          _downloadUrl = data['downloadUrl'];
+          _user = data;
           _isLoading = false;
         });
       }
@@ -52,10 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
             : Column(
                 children: [
                   // Navbar extraída e alimentada com dados da function
-                  AppHeader(
-                    userName: _user?.name ?? 'Investidor',
-                    avatarUrl: _downloadUrl,
-                  ),
+                  AppHeader(user: _user),
 
                   Expanded(
                     child: SingleChildScrollView(

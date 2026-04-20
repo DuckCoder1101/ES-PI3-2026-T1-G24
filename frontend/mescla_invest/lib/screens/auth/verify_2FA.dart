@@ -3,7 +3,7 @@
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/models/authSession.dart';
+import 'package:mescla_invest/components/ui/authGuard.dart';
 import 'package:pinput/pinput.dart';
 
 import 'package:mescla_invest/constants/colors.dart';
@@ -41,12 +41,11 @@ class _Verify2FAScreenState extends State<Verify2FAScreen> {
         "token": token,
       });
 
-      AuthSession.isFullyAuthenticated = true;
-
       if (!mounted) return;
-      setState(() => _isLoading = false);
 
-      Navigator.pushReplacementNamed(context, '/home');
+      auth2FaPassedProvider.value = true;
+
+      setState(() => _isLoading = false);
     } catch (e) {
       if (e is FirebaseFunctionsException) {
         _showSnackBar(e.message ?? 'Erro ao validar código.');
