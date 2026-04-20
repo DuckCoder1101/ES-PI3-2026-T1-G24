@@ -40,6 +40,7 @@ dependencies:
   firebase_functions: ^0.0.1-dev
   pinput: ^4.0.0
   qr_flutter: ^4.1.0
+  firebase_storage: ^13.3.0
 
 dev_dependencies:
   flutter_test:

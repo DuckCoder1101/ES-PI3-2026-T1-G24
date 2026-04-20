@@ -2,7 +2,7 @@
 // RA: 25000294
 
 import 'package:flutter/material.dart';
-import '../constants/colors.dart';
+import '../../constants/colors.dart';
 
 class AppInputDecoration {
   static InputDecoration field({required String hintText, Widget? suffixIcon}) {

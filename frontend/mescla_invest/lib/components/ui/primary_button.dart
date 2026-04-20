@@ -2,7 +2,7 @@
 // RA: 25000294
 
 import 'package:flutter/material.dart';
-import '../constants/colors.dart';
+import '../../constants/colors.dart';
 
 class PrimaryButton extends StatelessWidget {
   final String text;
@@ -23,7 +23,7 @@ class PrimaryButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.verdeMescla,
         foregroundColor: Colors.black,
-        padding: const EdgeInsets.symmetric(vertical: 22),
+        padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         disabledBackgroundColor: AppColors.verdeMescla.withValues(),
       ),

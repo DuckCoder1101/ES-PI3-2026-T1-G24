@@ -5,65 +5,64 @@ import { twoFaDocument } from "../types/documents";
 
 const usersCollection = database.collection("users");
 
-/*
- * Salva o código 2FA para o usuário x
- */
-export const settwoFaSecret = async (uid: string, secret: string) => {
-  const twoFaDoc = usersCollection.doc(uid).collection("secutiry").doc("twoFa");
+const getTwoFaRef = (uid: string) =>
+  usersCollection.doc(uid).collection("security").doc("twoFa");
 
-  await twoFaDoc.set({
+/*
+ * Salva o código 2FA
+ */
+export const set2FASecret = async (uid: string, secret: string) => {
+  const ref = getTwoFaRef(uid);
+
+  await ref.set({
     uid,
     enabled: false,
-    secret: secret,
+    secret,
     updatedAt: FieldValue.serverTimestamp(),
   });
 };
 
 /*
- * Habilita a 2FA para o usuário com o código já gerado
+ * Habilita 2FA
  */
 export const enable2FA = async (uid: string) => {
-  const twoFaDoc = usersCollection.doc(uid).collection("secutiry").doc("twoFa");
+  const ref = getTwoFaRef(uid);
+  const doc = await ref.get();
 
-  if (!twoFaDoc) {
+  if (!doc.exists) {
     throw new HttpsError(
       "not-found",
       "Código 2FA não encontrado para essa conta!",
     );
   }
 
-  await twoFaDoc.update({
-    enabled: true,
-  });
+  await ref.set({ enabled: true }, { merge: true });
 };
 
 /*
- * Desabilita o 2FA
+ * Remove 2FA
  */
 export const remove2FA = async (uid: string) => {
-  const twoFaDoc = usersCollection.doc(uid).collection("secutiry").doc("twoFa");
+  const ref = getTwoFaRef(uid);
+  const doc = await ref.get();
 
-  if (!twoFaDoc) {
+  if (!doc.exists) {
     throw new HttpsError(
       "not-found",
       "Código 2FA não encontrado para essa conta!",
     );
   }
 
-  await twoFaDoc.delete();
+  await ref.delete();
 };
 
 /*
- Retorna o secret do 2FA ou null se não existir
+ * Busca 2FA
  */
 export const get2FA = async (uid: string) => {
-  const twoFaDoc = await usersCollection
-    .doc(uid)
-    .collection("secutiry")
-    .doc("twoFa")
-    .get();
+  const doc = await getTwoFaRef(uid).get();
 
-  const twoFa = twoFaDoc.data() as twoFaDocument;
+  if (!doc.exists) return null;
 
-  return twoFa ?? null;
+  return doc.data() as twoFaDocument;
 };

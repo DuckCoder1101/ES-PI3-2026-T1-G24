@@ -1,13 +1,14 @@
-/// Autor: Cristian Eduardo Fava
-/// RA: 25000636
+// Autor: Cristian Eduardo Fava
+// RA: 25000636
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:mescla_invest/models/authSession.dart';
 import 'package:pinput/pinput.dart';
 
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/components/primary_button.dart';
-import 'package:mescla_invest/components/icon.dart';
+import 'package:mescla_invest/components/ui/primary_button.dart';
+import 'package:mescla_invest/components/ui/icon.dart';
 
 class Verify2FAScreen extends StatefulWidget {
   const Verify2FAScreen({super.key});
@@ -40,10 +41,12 @@ class _Verify2FAScreenState extends State<Verify2FAScreen> {
         "token": token,
       });
 
+      AuthSession.isFullyAuthenticated = true;
+
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      Navigator.pop(context);
+      Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
       if (e is FirebaseFunctionsException) {
         _showSnackBar(e.message ?? 'Erro ao validar código.');

@@ -1,27 +1,29 @@
+// Autor: Cristian Fava
+// RA: 25000636
+
 import { onCall } from "firebase-functions/https";
+import { logger } from "firebase-functions/v2";
 import speakeasy from "speakeasy";
-import QRCode from "qrcode";
 
 import { getUserProfile } from "../../shared/auth";
-import { settwoFaSecret } from "../../repositories/twoFaRepository";
+import { set2FASecret } from "../../repositories/twoFaRepository";
 
 export const enable2FA = onCall(async (request) => {
   const { uid } = getUserProfile(request);
+  logger.log("Gerando e salvando código 2FA para o usuário: " + uid);
 
   const secret = speakeasy.generateSecret({
     length: 20,
-    name: "Mescla_Invest",
   });
 
-  // Gera QRCode
-  const qrCode = await QRCode.toDataURL(secret.otpauth_url!);
+  const otpauth = `otpauth://totp/Mescla-Invest?secret=${secret.base32}&issuer=Mescla_Invest`;
 
   // Salva o secret
-  await settwoFaSecret(uid, secret.base32);
+  await set2FASecret(uid, secret.base32);
 
   return {
     success: true,
-    qrCode,
-    manualCode: secret.base32,
+    otpauth,
+    manualKey: secret.base32,
   };
 });

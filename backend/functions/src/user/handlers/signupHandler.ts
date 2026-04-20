@@ -4,14 +4,15 @@
  */
 
 import { HttpsError, onCall } from "firebase-functions/https";
+import { logger } from "firebase-functions";
+import admin from "firebase-admin";
 
 import { normalizeString } from "../shared/utils";
 import { checkCPF, checkPhone } from "../shared/validations";
 
 import { UserSignupDTO } from "../types/dtos";
-import { createUserAccount } from "../repositories/userRepository";
+import { createUserAccount, existsCpf } from "../repositories/userRepository";
 import { getUserProfile } from "../shared/auth";
-import { logger } from "firebase-functions";
 
 /**
  * @name signup
@@ -34,11 +35,18 @@ export const signup = onCall(async (request) => {
   if (!checkCPF(cpf)) fieldErrors.cpf = "CPF inválido!";
   if (!checkPhone(phone)) fieldErrors.phone = "Celular inválido!";
 
+  if (await existsCpf(cpf)) fieldErrors.cpf = "CPF já utilizado!";
+
   if (Object.keys(fieldErrors).length > 0) {
+    console.log(
+      "Erros ao criar usuário: " + Object.values(fieldErrors).join(", "),
+    );
+    admin.auth().deleteUser(uid);
+
     throw new HttpsError(
       "invalid-argument",
       "Informações inválidas ou faltantes!",
-      { fieldErrors },
+      fieldErrors,
     );
   }
 

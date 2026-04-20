@@ -1,5 +1,5 @@
-/// Autor: Cristian Eduardo Fava
-/// RA: 25000636
+// Autor: Cristian Eduardo Fava
+// RA: 25000636
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/components/primary_button.dart';
+import 'package:mescla_invest/components/ui/primary_button.dart';
 
 class Enable2FAScreen extends StatefulWidget {
   const Enable2FAScreen({super.key});
@@ -17,7 +17,7 @@ class Enable2FAScreen extends StatefulWidget {
 }
 
 class _Enable2FAScreenState extends State<Enable2FAScreen> {
-  String? _qrCodeUri;
+  String? _otpauth;
   String? _manualKey;
   bool _isFetching = true;
 
@@ -33,15 +33,12 @@ class _Enable2FAScreenState extends State<Enable2FAScreen> {
           .httpsCallable('enable2FA')
           .call();
 
-      debugPrint(result.data.toString());
-
       setState(() {
-        _qrCodeUri = result.data['qrCode'];
-        _manualKey = result.data['manualCode'];
+        _otpauth = result.data['otpauth'];
+        _manualKey = result.data['manualKey'];
         _isFetching = false;
       });
     } catch (e) {
-      debugPrint("DEU MERDA");
       debugPrint(e.toString());
       _showError('Erro ao carregar dados do MFA.');
     }
@@ -69,7 +66,7 @@ class _Enable2FAScreenState extends State<Enable2FAScreen> {
           : SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const Text(
                     'Ativar MFA / 2FA',
@@ -86,7 +83,7 @@ class _Enable2FAScreenState extends State<Enable2FAScreen> {
                   const SizedBox(height: 24),
 
                   // QR Code Real vindo da Function
-                  if (_qrCodeUri != null)
+                  if (_otpauth != null)
                     Center(
                       child: Container(
                         padding: const EdgeInsets.all(12),
@@ -94,7 +91,7 @@ class _Enable2FAScreenState extends State<Enable2FAScreen> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: QrImageView(data: _qrCodeUri!, size: 200),
+                        child: QrImageView(data: _otpauth!, size: 200),
                       ),
                     ),
                   const SizedBox(height: 16),
@@ -137,7 +134,7 @@ class _Enable2FAScreenState extends State<Enable2FAScreen> {
                   PrimaryButton(
                     text: 'Próximo Passo',
                     onPressed: () =>
-                        Navigator.pushNamed(context, 'confirm-2fa'),
+                        Navigator.pushNamed(context, '/auth/confirm-2fa'),
                   ),
                 ],
               ),

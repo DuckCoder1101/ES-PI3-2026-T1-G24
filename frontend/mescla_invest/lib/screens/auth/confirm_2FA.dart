@@ -1,12 +1,12 @@
-/// Autor: Cristian Eduardo Fava
-/// RA: 25000636
+// Autor: Cristian Eduardo Fava
+// RA: 25000636
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
 
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/components/primary_button.dart';
+import 'package:mescla_invest/components/ui/primary_button.dart';
 
 class Confirm2FAScreen extends StatefulWidget {
   const Confirm2FAScreen({super.key});

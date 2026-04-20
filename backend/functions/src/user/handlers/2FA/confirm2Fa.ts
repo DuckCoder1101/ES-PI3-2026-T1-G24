@@ -1,6 +1,7 @@
-import speakeasy from "speakeasy";
 import { HttpsError, onCall } from "firebase-functions/https";
+import { logger } from "firebase-functions/v2";
 import admin from "firebase-admin";
+import speakeasy from "speakeasy";
 
 import { getUserProfile } from "../../shared/auth";
 import { enable2FA, get2FA } from "../../repositories/twoFaRepository";
@@ -9,8 +10,9 @@ export const confirm2FA = onCall(async (request) => {
   const { uid } = getUserProfile(request);
   const { token } = request.data;
 
-  const twoFa = await get2FA(uid);
+  logger.log("Habilitando 2FA para o usuário: " + uid);
 
+  const twoFa = await get2FA(uid);
   if (!twoFa) {
     throw new HttpsError(
       "not-found",
@@ -22,7 +24,7 @@ export const confirm2FA = onCall(async (request) => {
     secret: twoFa.secret,
     encoding: "base32",
     token,
-    window: 1,
+    window: 2,
   });
 
   if (!isVerified) {

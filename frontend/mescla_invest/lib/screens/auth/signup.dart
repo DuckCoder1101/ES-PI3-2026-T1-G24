@@ -4,10 +4,14 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/components/icon.dart';
+import 'package:flutter/services.dart';
+
+import 'package:mescla_invest/components/ui/icon.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/components/input.dart';
-import 'package:mescla_invest/components/primary_button.dart';
+import 'package:mescla_invest/components/ui/input.dart';
+import 'package:mescla_invest/components/ui/primary_button.dart';
+import 'package:mescla_invest/formatters/cpfInputFormatter.dart';
+import 'package:mescla_invest/formatters/phoneInputFormmater.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -22,8 +26,12 @@ class _SignupScreenState extends State<SignupScreen> {
   final _cpfController = TextEditingController();
   final _telefoneController = TextEditingController();
   final _senhaController = TextEditingController();
+
   bool _senhaVisivel = false;
   bool _isLoading = false;
+
+  // Mapa de erros por campo
+  Map<String, String> _fieldErrors = {};
 
   @override
   void dispose() {
@@ -35,7 +43,16 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
+  void _setFieldErrors(Map errors) {
+    setState(() {
+      _fieldErrors = Map<String, String>.from(errors);
+    });
+  }
+
   Future<void> _cadastrarUsuario() async {
+    // Limpa erros antigos
+    setState(() => _fieldErrors = {});
+
     if ([
       _nomeController,
       _emailController,
@@ -66,13 +83,28 @@ class _SignupScreenState extends State<SignupScreen> {
             'phone': _telefoneController.text.trim(),
           });
 
-      if (result.data['success'] != true) throw Exception('Falha no cadastro');
+      if (result.data['success'] != true) {
+        throw Exception('Falha no cadastro');
+      }
 
       if (!mounted) return;
+
       _showSnackBar('Cadastro realizado com sucesso!', isError: false);
       Navigator.pop(context);
     } catch (e) {
-      _showSnackBar('Erro ao cadastrar: $e');
+      if (!mounted) return;
+
+      if (e is FirebaseFunctionsException) {
+        final details = e.details;
+
+        if (details is Map) {
+          _setFieldErrors(details);
+        }
+
+        _showSnackBar(e.message ?? 'Erro ao cadastrar.');
+      } else {
+        _showSnackBar('Erro inesperado: $e');
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -92,6 +124,8 @@ class _SignupScreenState extends State<SignupScreen> {
     TextEditingController controller,
     String hint, {
     TextInputType type = TextInputType.text,
+    TextInputFormatter? formatter,
+    String? errorKey,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,7 +136,10 @@ class _SignupScreenState extends State<SignupScreen> {
           controller: controller,
           keyboardType: type,
           style: const TextStyle(color: Colors.white),
-          decoration: AppInputDecoration.field(hintText: hint),
+          decoration: AppInputDecoration.field(hintText: hint).copyWith(
+            errorText: errorKey != null ? _fieldErrors[errorKey] : null,
+          ),
+          inputFormatters: formatter != null ? [formatter] : [],
         ),
         const SizedBox(height: 20),
       ],
@@ -135,24 +172,34 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               const SizedBox(height: 40),
 
-              _buildField('Nome Completo', _nomeController, 'Seu nome'),
+              _buildField(
+                'Nome Completo',
+                _nomeController,
+                'Seu nome',
+                errorKey: 'name',
+              ),
               _buildField(
                 'E-mail',
                 _emailController,
                 'ex: seuemail@email.com',
                 type: TextInputType.emailAddress,
+                errorKey: 'email',
               ),
               _buildField(
                 'CPF',
                 _cpfController,
-                '123.456.789 - 12',
+                '123.456.789-00',
                 type: TextInputType.number,
+                formatter: CpfInputFormatter(),
+                errorKey: 'cpf',
               ),
               _buildField(
                 'Telefone celular',
                 _telefoneController,
-                '+12 34 5678 - 9123',
+                '(19) 99999-9999',
                 type: TextInputType.phone,
+                formatter: PhoneInputFormatter(),
+                errorKey: 'phone',
               ),
 
               const InputLabel(texto: 'Crie sua Senha', obrigatorio: true),
@@ -171,15 +218,17 @@ class _SignupScreenState extends State<SignupScreen> {
                     onPressed: () =>
                         setState(() => _senhaVisivel = !_senhaVisivel),
                   ),
-                ),
+                ).copyWith(errorText: _fieldErrors['password']),
               ),
 
               const SizedBox(height: 34),
+
               PrimaryButton(
                 text: 'Cadastrar',
                 onPressed: _cadastrarUsuario,
                 isLoading: _isLoading,
               ),
+
               const SizedBox(height: 24),
 
               Row(

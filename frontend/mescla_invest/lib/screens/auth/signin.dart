@@ -3,21 +3,22 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/components/icon.dart';
+import 'package:mescla_invest/components/ui/icon.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/components/input.dart';
-import 'package:mescla_invest/components/primary_button.dart';
+import 'package:mescla_invest/components/ui/input.dart';
+import 'package:mescla_invest/components/ui/primary_button.dart';
+import 'package:mescla_invest/models/authSession.dart';
 
 import 'forgot_password.dart'; // Importe a nova tela
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class SigninScreen extends StatefulWidget {
+  const SigninScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<SigninScreen> createState() => _SigninScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _SigninScreenState extends State<SigninScreen> {
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
   bool _senhaVisivel = false;
@@ -47,37 +48,65 @@ class _LoginScreenState extends State<LoginScreen> {
         password: senha,
       );
 
+      await FirebaseAuth.instance.currentUser?.getIdToken(true);
       final idTokenResult = await credencial.user?.getIdTokenResult(true);
-      final bool has2FA = idTokenResult?.claims?['twoFactorEnabled'] ?? false;
 
       if (!mounted) return;
 
+      final bool has2FA = idTokenResult?.claims?['twoFactorEnabled'] ?? false;
+
       if (has2FA) {
+        AuthSession.isFullyAuthenticated = false;
         Navigator.pushReplacementNamed(context, '/auth/verify-otp');
         return;
       }
 
-      if (!mounted) return;
-      _showSnackBar('Login realizado com sucesso!', isError: false);
-
-      // Teste 2Fa
-      Navigator.pushNamed(context, "/auth/enable-2fa");
+      // sem 2FA
+      AuthSession.isFullyAuthenticated = true;
+      Navigator.pushReplacementNamed(context, '/home');
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
 
       String mensagemErro;
 
-      if (e.code == 'invalid-credential') {
-        mensagemErro = 'E-mail ou senha incorretos.';
-      } else if (e.code == 'user-disabled') {
-        mensagemErro = 'Esta conta foi desativada.';
-      } else if (e.code == 'too-many-requests') {
-        mensagemErro = 'Muitas tentativas. Tente novamente mais tarde.';
-      } else {
-        mensagemErro = 'Erro ao fazer login: ${e.message}';
+      switch (e.code) {
+        case 'user-not-found':
+        case 'wrong-password':
+        case 'invalid-credential':
+          mensagemErro = 'E-mail ou senha incorretos.';
+          break;
+
+        case 'invalid-email':
+          mensagemErro = 'E-mail inválido.';
+          break;
+
+        case 'user-disabled':
+          mensagemErro = 'Esta conta foi desativada.';
+          break;
+
+        case 'too-many-requests':
+          mensagemErro = 'Muitas tentativas. Tente novamente mais tarde.';
+          break;
+
+        case 'network-request-failed':
+          mensagemErro = 'Erro de conexão. Verifique sua internet.';
+          break;
+
+        default:
+          mensagemErro = 'Erro ao fazer login. Tente novamente.';
+          debugPrint("Erro FirebaseAuth: ${e.code} - ${e.message}");
       }
 
       _showSnackBar(mensagemErro);
+    } catch (e) {
+      if (!mounted) return;
+
+      debugPrint("Erro inesperado: $e");
+      _showSnackBar('Erro inesperado. Tente novamente.');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
