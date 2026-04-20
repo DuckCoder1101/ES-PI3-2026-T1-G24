@@ -22,7 +22,5 @@ export const getMe = onCall(async (request) => {
     throw new HttpsError("not-found", "Usuário não encontrado");
   }
 
-  return {
-    user,
-  };
+  return user;
 });

@@ -3,6 +3,8 @@
  * RA: 25000636
  */
 
+import { Timestamp } from "firebase-admin/firestore";
+
 export interface UserSignupDTO {
   name: string;
   email: string;
@@ -15,11 +17,13 @@ export interface UserProfile {
   email: string;
 }
 
-export type AppResponseDTO =
-  | {
-      success: true;
-      data: unknown;
-    }
-  | {
-      success: false;
-    };
+export interface UserFullDTO {
+  uid: string;
+  avatarUrl: string;
+  name: string;
+  email: string;
+  cpf: string;
+  phone: string;
+  createdAt: Timestamp;
+  has2Fa: boolean;
+}
