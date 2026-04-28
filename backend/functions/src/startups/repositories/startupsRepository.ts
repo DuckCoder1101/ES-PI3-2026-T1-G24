@@ -8,21 +8,24 @@ import { StartupDocument } from "../types/documents";
 import {
   StartupFullDTO,
   StartupListItemDTO,
-  StartupsSearchFilter,
+  StartupStageFilter,
 } from "../types/dtos";
 
 const startupsCollection = database.collection("startups");
 
-export const findAllStatups = async (
+export const searchStartups = async (
   offset: number,
   limit: number,
-  filter: StartupsSearchFilter,
+  filter: StartupStageFilter,
+  name: string | null
 ): Promise<StartupListItemDTO[]> => {
   const query = (
     filter === "all"
       ? startupsCollection
       : startupsCollection.where("stage", "==", filter)
   )
+    .where("name", ">=", name)
+    .where("name", "<=", name + "\uf8ff")
     .offset(offset)
     .limit(limit);
 

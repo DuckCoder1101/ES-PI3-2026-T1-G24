@@ -1,6 +1,6 @@
-import { StartupsSearchFilter } from "../types/dtos";
+import { StartupStageFilter } from "../types/dtos";
 
-export const StartupsSearchFilters: StartupsSearchFilter[] = [
+export const StartupsSearchFilters: StartupStageFilter[] = [
   "all",
   "nova",
   "em_operacao",
