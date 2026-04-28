@@ -10,8 +10,8 @@ import 'package:mescla_invest/components/ui/icon.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/components/ui/input.dart';
 import 'package:mescla_invest/components/ui/primary_button.dart';
-import 'package:mescla_invest/formatters/cpfInputFormatter.dart';
-import 'package:mescla_invest/formatters/phoneInputFormmater.dart';
+import 'package:mescla_invest/formatters/cpf_input_format.dart';
+import 'package:mescla_invest/formatters/phone_input_format.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -83,8 +83,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
       if (!mounted) return;
 
+      Navigator.of(context).pop();
       _showSnackBar('Cadastro realizado com sucesso!', isError: false);
-      Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
 

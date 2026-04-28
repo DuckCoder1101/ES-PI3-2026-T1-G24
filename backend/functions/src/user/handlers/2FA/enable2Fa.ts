@@ -5,7 +5,7 @@ import { onCall } from "firebase-functions/https";
 import { logger } from "firebase-functions/v2";
 import speakeasy from "speakeasy";
 
-import { getUserProfile } from "../../shared/auth";
+import { getUserProfile } from "../../../shared/auth";
 import { set2FASecret } from "../../repositories/twoFaRepository";
 
 export const enable2FA = onCall(async (request) => {

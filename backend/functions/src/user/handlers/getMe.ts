@@ -5,7 +5,7 @@
 
 import { HttpsError, onCall } from "firebase-functions/https";
 import { findUserById } from "../repositories/userRepository";
-import { getUserProfile } from "../shared/auth";
+import { getUserProfile } from "../../shared/auth";
 import { logger } from "firebase-functions";
 
 /**

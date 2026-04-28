@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/models/user.dart';
 import 'package:mescla_invest/screens/auth/signin.dart';
-import 'package:mescla_invest/screens/auth/verify_2FA.dart';
+import 'package:mescla_invest/screens/auth/verify_2fa.dart';
 
 // Este é o "passe" que indica que o 2FA foi validado manualmente nesta sessão
 final auth2FaPassedProvider = ValueNotifier<bool>(false);

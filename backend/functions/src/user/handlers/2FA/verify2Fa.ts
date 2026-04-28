@@ -2,7 +2,7 @@ import { HttpsError, onCall } from "firebase-functions/https";
 import { logger } from "firebase-functions/v2";
 import speakeasy from "speakeasy";
 
-import { getUserProfile } from "../../shared/auth";
+import { getUserProfile } from "../../../shared/auth";
 import { get2FA } from "../../repositories/twoFaRepository";
 
 export const verify2FA = onCall(async (request) => {

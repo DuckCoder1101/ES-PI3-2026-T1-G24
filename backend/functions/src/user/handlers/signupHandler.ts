@@ -7,12 +7,12 @@ import { HttpsError, onCall } from "firebase-functions/https";
 import { logger } from "firebase-functions";
 import admin from "firebase-admin";
 
-import { normalizeString } from "../shared/utils";
+import { normalizeString } from "../../shared/utils";
 import { checkCPF, checkPhone } from "../shared/validations";
 
 import { UserSignupDTO } from "../types/dtos";
 import { createUserAccount, existsByCpf } from "../repositories/userRepository";
-import { getUserProfile } from "../shared/auth";
+import { getUserProfile } from "../../shared/auth";
 
 /**
  * @name signup

@@ -1,7 +1,7 @@
 import { onCall } from "firebase-functions/https";
 import admin from "firebase-admin";
 
-import { getUserProfile } from "../../shared/auth";
+import { getUserProfile } from "../../../shared/auth";
 import { remove2FA } from "../../repositories/twoFaRepository";
 import { logger } from "firebase-functions";
 
