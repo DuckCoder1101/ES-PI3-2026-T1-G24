@@ -35,14 +35,14 @@ export const createUserAccount = async (uid: string, data: UserSignupDTO) => {
 export const findUserById = async (
   uid: string,
 ): Promise<UserFullDTO | null> => {
-  const userDoc = await usersCollection.doc(uid).get();
+  const snapshot = await usersCollection.doc(uid).get();
 
   // Busca o documento de segurança
   const twoFaDoc = await getTwoFaRef(uid).get();
 
-  if (!userDoc.exists) return null;
+  if (!snapshot.exists) return null;
 
-  const userData = userDoc.data();
+  const userData = snapshot.data();
   const twoFaData = twoFaDoc.data();
 
   return {

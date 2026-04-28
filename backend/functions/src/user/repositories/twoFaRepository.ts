@@ -32,9 +32,9 @@ export const set2FASecret = async (uid: string, secret: string) => {
  */
 export const enable2FA = async (uid: string) => {
   const ref = getTwoFaRef(uid);
-  const doc = await ref.get();
+  const snapshot = await ref.get();
 
-  if (!doc.exists) {
+  if (!snapshot.exists) {
     throw new HttpsError(
       "not-found",
       "Código 2FA não encontrado para essa conta!",
@@ -49,9 +49,9 @@ export const enable2FA = async (uid: string) => {
  */
 export const remove2FA = async (uid: string) => {
   const ref = getTwoFaRef(uid);
-  const doc = await ref.get();
+  const snapshot = await ref.get();
 
-  if (!doc.exists) {
+  if (!snapshot.exists) {
     throw new HttpsError(
       "not-found",
       "Código 2FA não encontrado para essa conta!",
@@ -65,9 +65,9 @@ export const remove2FA = async (uid: string) => {
  * Busca 2FA
  */
 export const get2FA = async (uid: string) => {
-  const doc = await getTwoFaRef(uid).get();
+  const snapshot = await getTwoFaRef(uid).get();
 
-  if (!doc.exists) return null;
+  if (!snapshot.exists) return null;
 
-  return doc.data() as twoFaDocument;
+  return snapshot.data() as twoFaDocument;
 };
