@@ -3,7 +3,7 @@
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/components/ui/authGuard.dart';
+import 'package:mescla_invest/components/ui/auth_guard.dart';
 import 'package:mescla_invest/constants/firebase.dart';
 import 'package:mescla_invest/firebase_options.dart';
 import 'package:mescla_invest/screens/auth/confirm_2fa.dart';

@@ -3,7 +3,7 @@
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/components/ui/authGuard.dart';
+import 'package:mescla_invest/components/ui/auth_guard.dart';
 import 'package:pinput/pinput.dart';
 
 import 'package:mescla_invest/constants/colors.dart';
