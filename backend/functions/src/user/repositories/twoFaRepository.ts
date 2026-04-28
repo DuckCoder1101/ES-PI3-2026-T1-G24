@@ -1,6 +1,11 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { FieldValue } from "firebase-admin/firestore";
-import { database } from "../shared/firebase";
 import { HttpsError } from "firebase-functions/https";
+import { database } from "../../shared/firebase";
 import { twoFaDocument } from "../types/documents";
 
 const usersCollection = database.collection("users");

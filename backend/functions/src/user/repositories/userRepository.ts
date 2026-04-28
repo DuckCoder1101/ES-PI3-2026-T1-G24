@@ -4,7 +4,7 @@
  */
 
 import { FieldValue } from "firebase-admin/firestore";
-import { database } from "../shared/firebase";
+import { database } from "../../shared/firebase";
 import { UserFullDTO, UserSignupDTO } from "../types/dtos";
 import { getTwoFaRef } from "./twoFaRepository";
 

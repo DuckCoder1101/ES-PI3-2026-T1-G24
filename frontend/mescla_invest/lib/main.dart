@@ -6,11 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:mescla_invest/components/ui/authGuard.dart';
 import 'package:mescla_invest/constants/firebase.dart';
 import 'package:mescla_invest/firebase_options.dart';
-import 'package:mescla_invest/screens/auth/confirm_2FA.dart';
-import 'package:mescla_invest/screens/auth/enable_2FA.dart';
+import 'package:mescla_invest/screens/auth/confirm_2fa.dart';
+import 'package:mescla_invest/screens/auth/enable_2fa.dart';
 import 'package:mescla_invest/screens/auth/signin.dart';
 import 'package:mescla_invest/screens/auth/signup.dart';
-import 'package:mescla_invest/screens/auth/verify_2FA.dart';
+import 'package:mescla_invest/screens/auth/verify_2fa.dart';
 import 'package:mescla_invest/screens/dashboard/home.dart';
 
 Future<void> main() async {
@@ -38,7 +38,7 @@ class MyApp extends StatelessWidget {
         "/home": (ctx) => const AuthGuard(child: HomeScreen()),
         "/auth/signin": (ctx) => const SigninScreen(),
         "/auth/signup": (ctx) => const SignupScreen(),
-        "/auth/verify-2fa": (ctx) => Verify2FAScreen(),
+        "/auth/verify-2fa": (ctx) => const Verify2FAScreen(),
         "/auth/enable-2fa": (ctx) => const AuthGuard(child: Enable2FAScreen()),
         "/auth/confirm-2fa": (ctx) =>
             const AuthGuard(child: Confirm2FAScreen()),

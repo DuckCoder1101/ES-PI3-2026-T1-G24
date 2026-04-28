@@ -42,14 +42,18 @@ class _SigninScreenState extends State<SigninScreen> {
     try {
       setState(() => _isLoading = true);
 
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: senha,
       );
+
+      await credential.user?.getIdToken(true);
     } on FirebaseAuthException catch (e) {
       String message = 'Erro ao realizar login.';
+
       if (e.code == 'user-not-found') message = 'E-mail não encontrado.';
       if (e.code == 'wrong-password') message = 'Senha incorreta.';
+
       _showSnackBar(message);
     } catch (e) {
       debugPrint("Erro no login: $e");

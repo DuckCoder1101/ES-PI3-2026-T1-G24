@@ -3,7 +3,7 @@ import { logger } from "firebase-functions/v2";
 import admin from "firebase-admin";
 import speakeasy from "speakeasy";
 
-import { getUserProfile } from "../../shared/auth";
+import { getUserProfile } from "../../../shared/auth";
 import { enable2FA, get2FA } from "../../repositories/twoFaRepository";
 
 export const confirm2FA = onCall(async (request) => {

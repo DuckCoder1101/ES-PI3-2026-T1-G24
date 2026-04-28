@@ -4,7 +4,7 @@
  */
 
 import { CallableRequest, HttpsError } from "firebase-functions/https";
-import { UserProfile } from "../types/dtos";
+import { UserProfile } from "../user/types/dtos";
 
 export const getUserProfile = (req: CallableRequest): UserProfile => {
   if (!req.auth) {
