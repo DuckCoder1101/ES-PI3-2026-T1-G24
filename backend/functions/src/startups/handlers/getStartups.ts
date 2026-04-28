@@ -5,15 +5,17 @@
 
 import { HttpsError, onCall } from "firebase-functions/https";
 import { normalizeString } from "../../shared/utils";
-import { GetStartupsRequestBodyDTO, StartupsSearchFilter } from "../types/dtos";
+import { GetStartupsRequestBodyDTO, StartupStageFilter } from "../types/dtos";
 import { StartupsSearchFilters } from "../shared/constants";
-import { findAllStatups } from "../repositories/startupsRepository";
+import { searchStartups } from "../repositories/startupsRepository";
 
 export const getStartups = onCall(async (req) => {
   const { filter, offset, limit } = req.data as GetStartupsRequestBodyDTO;
-  const normalizedFilter = normalizeString(filter) as StartupsSearchFilter;
 
-  if (!normalizedFilter || !StartupsSearchFilters.includes(normalizedFilter)) {
+  const stage = normalizeString(filter.stage) as StartupStageFilter;
+  const name = normalizeString(filter.name);
+
+  if (!stage || !StartupsSearchFilters.includes(stage)) {
     throw new HttpsError(
       "invalid-argument",
       "Invalid or null filter! The filter must be 'all' | 'nova' | 'em_operacao' | 'em_expansao' ",
@@ -32,11 +34,11 @@ export const getStartups = onCall(async (req) => {
       "invalid-argument",
       "Invalid or null search limit! The limit must be a number between 0 and 10.",
     );
-
-    const startups = await findAllStatups(offset, limit, filter);
-
-    return {
-      startups,
-    };
   }
+
+  const startups = await searchStartups(offset, limit, stage, name);
+
+  return {
+    startups,
+  };
 });

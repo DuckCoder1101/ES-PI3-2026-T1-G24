@@ -1,7 +1,7 @@
 import { Timestamp } from "firebase-admin/firestore";
 import { ExternalMember, Founder, StartupStage } from "./documents";
 
-export type StartupsSearchFilter = StartupStage | "all";
+export type StartupStageFilter = StartupStage | "all";
 
 export interface StartupListItemDTO {
   id: string;
@@ -35,9 +35,12 @@ export interface StartupFullDTO {
 }
 
 export interface GetStartupsRequestBodyDTO {
-  filter: StartupsSearchFilter;
   offset: number;
   limit: number;
+  filter: {
+    name: string;
+    stage: StartupStageFilter;
+  }
 }
 
 export interface GetStartupDetailsBodyDTO {
