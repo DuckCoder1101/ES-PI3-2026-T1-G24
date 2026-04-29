@@ -12,5 +12,10 @@ export const getStartupDetails = onCall(async (req) => {
   }
 
   const startup = await getFullStartup(startupId);
+
+  if (!startup) {
+    throw new HttpsError("not-found", "Startup não encontrada!");
+  }
+
   return startup;
 });

@@ -58,9 +58,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           TextButton(
                             onPressed: () => {
-                              Navigator.pushNamed(context, "/auth/enable-2fa"),
+                              Navigator.pushNamed(
+                                context,
+                                "/dashboard/startup-details",
+                                arguments: "3T6WbL2zAqFLL26ehGvU",
+                              ),
                             },
-                            child: Text("TESTE DE 2FA"),
+                            child: Text("TESTE DE Startup details"),
                           ),
                           _buildSearchBar(),
                           const SizedBox(height: 24),

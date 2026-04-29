@@ -5,11 +5,7 @@
 
 import { database } from "../../shared/firebase";
 import { StartupDocument } from "../types/documents";
-import {
-  StartupFullDTO,
-  StartupListItemDTO,
-  StartupStageFilter,
-} from "../types/dtos";
+import { StartupListItemDTO, StartupStageFilter } from "../types/dtos";
 
 const startupsCollection = database.collection("startups");
 
@@ -17,7 +13,7 @@ export const searchStartups = async (
   offset: number,
   limit: number,
   filter: StartupStageFilter,
-  name: string | null
+  name: string | null,
 ): Promise<StartupListItemDTO[]> => {
   const query = (
     filter === "all"
@@ -41,7 +37,7 @@ export const searchStartups = async (
 
 export const getFullStartup = async (
   startupId: string,
-): Promise<StartupFullDTO | null> => {
+): Promise<StartupDocument | null> => {
   const doc = await startupsCollection.doc(startupId).get();
   const startup = doc.data() as StartupDocument;
 
@@ -49,8 +45,5 @@ export const getFullStartup = async (
     return null;
   }
 
-  return {
-    id: doc.id,
-    ...startup,
-  };
+  return startup;
 };
