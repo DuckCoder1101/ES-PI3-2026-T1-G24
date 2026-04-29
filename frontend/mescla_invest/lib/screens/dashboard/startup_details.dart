@@ -13,6 +13,7 @@ class StartupDetailsScreen extends StatefulWidget {
 
 class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
   late Future<StartupModel> _startupFuture;
+  String _activeTab = 'Sobre';
 
   @override
   void initState() {
@@ -41,187 +42,270 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
             );
           }
 
+          if (!snapshot.hasData) {
+            return const Center(
+              child: Text(
+                "Startup não encontrada",
+                style: TextStyle(color: Colors.white),
+              ),
+            );
+          }
+
           final startup = snapshot.data!;
 
-          return CustomScrollView(
-            slivers: [
-              _buildHeader(startup),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                // Header com Imagem de Capa
+                Stack(
+                  children: [
+                    Container(
+                      height: 250,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: NetworkImage(
+                            startup.galleryPaths.isNotEmpty
+                                ? startup.galleryPaths[0]
+                                : 'https://via.placeholder.com/400x250',
+                          ),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      height: 250,
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.transparent, Colors.black],
+                        ),
+                      ),
+                    ),
+                    PositionRectangle(
+                      top: 40,
+                      left: 10,
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                  ],
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.all(20.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildTabs(),
-                      const SizedBox(height: 20),
-                      _buildStatsRow(startup),
-                      const SizedBox(height: 30),
-                      _buildSectionTitle("SUMÁRIO EXECUTIVO"),
-                      _buildInfoCard(startup.description),
-                      const SizedBox(height: 30),
-                      _buildSectionTitle("VÍDEOS"),
-                      _buildVideoPlaceholder(startup.videoPath),
-                      const SizedBox(height: 40),
-                      SizedBox(
-                        width: double.infinity,
-                        child: PrimaryButton(
-                          text: "Comprar / Vender Tokens",
-                          onPressed: () => debugPrint("Trade acionado"),
+                      // Nome e Tags
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              startup.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          _buildTag(
+                            startup.stage.name.toUpperCase(),
+                            AppColors.verdeMescla.withOpacity(0.2),
+                            AppColors.verdeMescla,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        startup.type,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
                         ),
                       ),
-                      const SizedBox(height: 20),
+
+                      const SizedBox(height: 24),
+
+                      // Barra de Navegação de Abas
+                      _buildTabBar(),
+
+                      const SizedBox(height: 24),
+
+                      // Conteúdo Dinâmico com base na aba
+                      _buildTabContent(startup),
+
+                      const SizedBox(height: 30),
+
+                      // Botão de Investimento Fixo no final
+                      PrimaryButton(
+                        text: "Investir agora",
+                        onPressed: () {
+                          // Lógica de investimento
+                        },
+                      ),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _buildHeader(StartupModel startup) {
-    return SliverAppBar(
-      expandedHeight: 180,
-      backgroundColor: const Color(0xFF1B2D0C), // Tom verde escuro da imagem
-      pinned: true,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: AppColors.verdeMescla),
-        onPressed: () => Navigator.pop(context),
-      ),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 80, 20, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                startup.name,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  _buildTag(
-                    startup.stage.toString(),
-                    AppColors.verdeMescla.withValues(),
-                    AppColors.verdeMescla,
-                  ),
-                  const SizedBox(width: 8),
-                  _buildTag(startup.type, Colors.white10, Colors.white70),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatsRow(StartupModel startup) {
-    return Row(
-      children: [
-        _buildStatItem(
-          "R\$ ${startup.tokenPrice.toStringAsFixed(2)}",
-          "Preço token",
-        ),
-        const SizedBox(width: 12),
-        _buildStatItem(startup.totalTokens.toString(), "Tokens emitidos"),
-        const SizedBox(width: 12),
-        _buildStatItem("R\$ ${startup.totalRaised.toString()}k", "Captado"),
-      ],
-    );
-  }
-
-  Widget _buildStatItem(String value, String label) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.campoEscuro,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white38, fontSize: 12),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoCard(String text) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.campoEscuro,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(color: Colors.white70, height: 1.5),
-      ),
-    );
-  }
-
-  Widget _buildVideoPlaceholder(String? path) {
-    return Container(
-      height: 180,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.campoEscuro,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Center(
-        child: Icon(
-          Icons.play_arrow_rounded,
-          size: 64,
-          color: AppColors.verdeMescla,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTabs() {
+  Widget _buildTabBar() {
+    List<String> tabs = ['Sobre', 'Sócios', 'Q&A', 'Updates'];
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: ['Sobre', 'Sócios', 'Q&A', 'Updates'].map((tab) {
-        bool isSelected = tab == 'Sobre';
-        return Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.campoEscuro : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            border: isSelected ? Border.all(color: Colors.white10) : null,
-          ),
-          child: Text(
-            tab,
-            style: TextStyle(
-              color: isSelected ? AppColors.verdeMescla : Colors.white38,
-              fontWeight: FontWeight.bold,
+      children: tabs.map((tab) {
+        bool isSelected = _activeTab == tab;
+        return GestureDetector(
+          onTap: () => setState(() => _activeTab = tab),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.campoEscuro : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+              border: isSelected ? Border.all(color: Colors.white10) : null,
+            ),
+            child: Text(
+              tab,
+              style: TextStyle(
+                color: isSelected ? AppColors.verdeMescla : Colors.white38,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
         );
       }).toList(),
+    );
+  }
+
+  Widget _buildTabContent(StartupModel startup) {
+    switch (_activeTab) {
+      case 'Sócios':
+        return _buildSociosTab(startup);
+      case 'Q&A':
+        return _buildQATab();
+      case 'Updates':
+        return const Center(
+          child: Text(
+            "Sem atualizações recentes.",
+            style: TextStyle(color: Colors.white38),
+          ),
+        );
+      case 'Sobre':
+      default:
+        return _buildSobreTab(startup);
+    }
+  }
+
+  Widget _buildSobreTab(StartupModel startup) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (startup.videoPath != null) _buildVideoSection(startup.videoPath!),
+        _buildSectionTitle("DESCRIÇÃO"),
+        Text(
+          startup.description,
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 16,
+            height: 1.5,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSociosTab(StartupModel startup) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle("FUNDADORES"),
+        if (startup.founders.isEmpty)
+          const Text(
+            "Informação não disponível.",
+            style: TextStyle(color: Colors.white38),
+          )
+        else
+          ...startup.founders.map(
+            (f) => ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const CircleAvatar(
+                backgroundColor: AppColors.campoEscuro,
+                child: Icon(Icons.person, color: AppColors.verdeMescla),
+              ),
+              title: Text(f.name, style: const TextStyle(color: Colors.white)),
+              subtitle: Text(
+                "${f.role} • ${f.equityPercent}%",
+                style: const TextStyle(color: Colors.white70),
+              ),
+            ),
+          ),
+        const SizedBox(height: 24),
+        if (startup.externalMembers.isNotEmpty) ...[
+          _buildSectionTitle("CONSELHO / MENTORES"),
+          ...startup.externalMembers.map(
+            (e) => ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const CircleAvatar(
+                backgroundColor: AppColors.campoEscuro,
+                child: Icon(Icons.gavel, color: Colors.blueAccent),
+              ),
+              title: Text(e.name, style: const TextStyle(color: Colors.white)),
+              subtitle: Text(
+                e.role,
+                style: const TextStyle(color: Colors.white70),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildQATab() {
+    return Column(
+      children: [
+        const Center(
+          child: Text(
+            "Tem alguma dúvida sobre o projeto?",
+            style: TextStyle(color: Colors.white70),
+          ),
+        ),
+        const SizedBox(height: 16),
+        PrimaryButton(text: "Enviar Pergunta", onPressed: () {}),
+      ],
+    );
+  }
+
+  Widget _buildVideoSection(String videoUrl) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle("VÍDEO"),
+        Container(
+          height: 200,
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 24),
+          decoration: BoxDecoration(
+            color: AppColors.campoEscuro,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(
+            Icons.play_circle_fill,
+            size: 64,
+            color: AppColors.verdeMescla,
+          ),
+        ),
+      ],
     );
   }
 
@@ -255,5 +339,22 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
         ),
       ),
     );
+  }
+}
+
+// Widget auxiliar simples para posicionar o botão de volta no Stack
+class PositionRectangle extends StatelessWidget {
+  final double? top, left;
+  final Widget child;
+  const PositionRectangle({
+    super.key,
+    this.top,
+    this.left,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(top: top, left: left, child: child);
   }
 }
