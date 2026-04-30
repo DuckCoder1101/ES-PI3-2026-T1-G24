@@ -37,8 +37,10 @@ dependencies:
   cloud_functions: ^6.2.0
   firebase_core: ^4.7.0
   firebase_auth: ^6.4.0
-  cloud_firestore: ^6.3.0
   firebase_functions: ^0.0.1-dev
+  pinput: ^4.0.0
+  qr_flutter: ^4.1.0
+  firebase_storage: ^13.3.0
 
 dev_dependencies:
   flutter_test:

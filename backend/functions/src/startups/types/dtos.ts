@@ -1,18 +1,48 @@
-import { StartupStage } from './documents';
+import { Timestamp } from "firebase-admin/firestore";
+import { ExternalMember, Founder, StartupStage } from "./documents";
 
-export interface AuthUser {
-	uid: string;
-	email: string;
-}
+export type StartupStageFilter = StartupStage | "all";
 
 export interface StartupListItemDTO {
-	id: string;
-	name: string;
-	stage: StartupStage;
-	shortDescription: string;
-	capitalRaisedCents: number;
-	totalTokensIssued: number;
-	currentTokenPriceCents: number;
-	coverImageUrl?: string;
-	tags: string[];
+  id: string;
+  name: string;
+  stage: StartupStage;
+  shortDescription: string;
+  capitalRaisedCents: number;
+  totalTokensIssued: number;
+  currentTokenPriceCents: number;
+  coverImageUrl?: string;
+  tags: string[];
+}
+
+export interface StartupFullDTO {
+  id: string;
+  name: string;
+  stage: StartupStage;
+  shortDescription: string;
+  description: string;
+  executiveSummary: string;
+  capitalRaisedCents: number;
+  totalTokensIssued: number;
+  currentTokenPriceCents: number;
+  founders: Founder[];
+  externalMember: ExternalMember[];
+  videos: string[];
+  pitchDeckUrl?: string;
+  coverImageUrl: string;
+  tags: string[];
+  createdAt?: Timestamp;
+}
+
+export interface GetStartupsRequestBodyDTO {
+  offset: number;
+  limit: number;
+  filter: {
+    name: string;
+    stage: StartupStageFilter;
+  }
+}
+
+export interface GetStartupDetailsBodyDTO {
+  startupId: string;
 }
