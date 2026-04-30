@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mescla_invest/components/ui/primary_button.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/startup.dart';
+import 'package:mescla_invest/screens/qa_screen.dart';
 
 class StartupDetailsScreen extends StatefulWidget {
   final String startupId;
@@ -272,19 +273,32 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
   }
 
   Widget _buildQATab() {
-    return Column(
-      children: [
-        const Center(
-          child: Text(
-            "Tem alguma dúvida sobre o projeto?",
-            style: TextStyle(color: Colors.white70),
-          ),
+  return Column(
+    children: [
+      const Center(
+        child: Text(
+          "Tem alguma dúvida sobre o projeto?",
+          style: TextStyle(color: Colors.white70),
         ),
-        const SizedBox(height: 16),
-        PrimaryButton(text: "Enviar Pergunta", onPressed: () {}),
-      ],
-    );
-  }
+      ),
+      const SizedBox(height: 16),
+      PrimaryButton(
+        text: "Ver Perguntas e Respostas",
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => QaScreen(
+                startupId: widget.startupId,
+                startupName: 'Startup',
+              ),
+            ),
+          );
+        },
+      ),
+    ],
+  );
+}
 
   Widget _buildVideoSection(String videoUrl) {
     return Column(
