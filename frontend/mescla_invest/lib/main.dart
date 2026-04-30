@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:mescla_invest/components/ui/auth_guard.dart';
 import 'package:mescla_invest/firebase_options.dart';
 import 'package:mescla_invest/screens/auth/confirm_2fa.dart';
+import 'package:mescla_invest/screens/qa_screen.dart';
 import 'package:mescla_invest/screens/auth/enable_2fa.dart';
 import 'package:mescla_invest/screens/auth/signin.dart';
 import 'package:mescla_invest/screens/auth/signup.dart';
