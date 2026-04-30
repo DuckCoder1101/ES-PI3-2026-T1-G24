@@ -38,6 +38,7 @@ dependencies:
   firebase_core: ^4.7.0
   firebase_auth: ^6.4.0
   firebase_functions: ^0.0.1-dev
+  cloud_firestore: ^6.3.0
   pinput: ^4.0.0
   qr_flutter: ^4.1.0
   firebase_storage: ^13.3.0
