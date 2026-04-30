@@ -3,7 +3,7 @@
  * RA: 25000636
  */
 
-import 'package:cloud_f add .unctions/cloud_functions.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mescla_invest/models/external_member.dart';
