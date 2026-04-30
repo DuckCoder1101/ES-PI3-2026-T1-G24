@@ -3,10 +3,10 @@
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/components/ui/auth_guard.dart';
+import 'package:mescla_invest/constants/firebase.dart';
+import 'package:mescla_invest/widgets/ui/auth_guard.dart';
 import 'package:mescla_invest/firebase_options.dart';
 import 'package:mescla_invest/screens/auth/confirm_2fa.dart';
-import 'package:mescla_invest/screens/qa_screen.dart';
 import 'package:mescla_invest/screens/auth/enable_2fa.dart';
 import 'package:mescla_invest/screens/auth/signin.dart';
 import 'package:mescla_invest/screens/auth/signup.dart';
@@ -20,7 +20,7 @@ Future<void> main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // Somente em DEV
-  // FirebaseService.init();
+  FirebaseService.init();
 
   runApp(const MyApp());
 }

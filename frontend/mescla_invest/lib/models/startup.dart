@@ -1,38 +1,17 @@
-import 'package:cloud_functions/cloud_functions.dart';
+/*
+ * Autor: Cristian Fava
+ * RA: 25000636
+ */
+
+import 'package:cloud_f add .unctions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/widgets.dart';
+import 'package:mescla_invest/models/external_member.dart';
+import 'package:mescla_invest/models/founder.dart';
 
 enum StartupStage { nova, em_operacao, em_espansao }
 
-class Founder {
-  final String name;
-  final String role;
-  final double equityPercent;
-
-  Founder({
-    required this.name,
-    required this.role,
-    required this.equityPercent,
-  });
-
-  factory Founder.fromMap(Map<String, dynamic> map) {
-    return Founder(
-      name: map['name'] ?? '',
-      role: map['role'] ?? '',
-      equityPercent: (map['equityPercent'] ?? 0).toDouble(),
-    );
-  }
-}
-
-class ExternalMember {
-  final String name;
-  final String role;
-
-  ExternalMember({required this.name, required this.role});
-
-  factory ExternalMember.fromMap(Map<String, dynamic> map) {
-    return ExternalMember(name: map['name'] ?? '', role: map['role'] ?? '');
-  }
-}
+enum StartupStageFilter { nova, em_operacao, em_espansao, all }
 
 class StartupModel {
   final String id;
@@ -126,6 +105,37 @@ class StartupModel {
       );
     } catch (e) {
       throw Exception("Erro ao carregar detalhes da startup: $e");
+    }
+  }
+
+  static Future<List<StartupModel>> getStartups({
+    required int offset,
+    required int limit,
+    required StartupStageFilter stageFilter,
+    required String nameFilter,
+  }) async {
+    try {
+      final response = await FirebaseFunctions.instance
+          .httpsCallable('getStartups')
+          .call({
+            // Garante que offset e limit sejam tratados como números puros
+            'offset': offset.toInt(),
+            'limit': limit.toInt(),
+            'filter': {'stage': stageFilter.name, 'name': nameFilter},
+          });
+
+      // Verifique se a estrutura de retorno coincide com o que o backend envia { startups: [...] }
+      final data = response.data as Map<dynamic, dynamic>;
+      final List rawList = data['startups'] ?? [];
+
+      return rawList
+          .map(
+            (s) => StartupModel.fromMap(s['id'], Map<String, dynamic>.from(s)),
+          )
+          .toList();
+    } catch (e) {
+      debugPrint("Erro ao buscar listagem: $e");
+      return [];
     }
   }
 

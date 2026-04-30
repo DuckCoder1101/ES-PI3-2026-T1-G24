@@ -3,12 +3,12 @@
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/components/ui/auth_guard.dart';
+import 'package:mescla_invest/widgets/ui/auth_guard.dart';
 import 'package:pinput/pinput.dart';
 
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/components/ui/primary_button.dart';
-import 'package:mescla_invest/components/ui/icon.dart';
+import 'package:mescla_invest/widgets/ui/primary_button.dart';
+import 'package:mescla_invest/widgets/ui/icon.dart';
 
 class Verify2FAScreen extends StatefulWidget {
   const Verify2FAScreen({super.key});

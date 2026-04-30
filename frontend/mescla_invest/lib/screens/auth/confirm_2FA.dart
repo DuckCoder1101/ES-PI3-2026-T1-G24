@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
 
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/components/ui/primary_button.dart';
+import 'package:mescla_invest/widgets/ui/primary_button.dart';
 
 class Confirm2FAScreen extends StatefulWidget {
   const Confirm2FAScreen({super.key});

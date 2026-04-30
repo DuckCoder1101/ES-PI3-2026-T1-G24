@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/components/ui/primary_button.dart';
+import 'package:mescla_invest/widgets/ui/primary_button.dart';
 
 class Enable2FAScreen extends StatefulWidget {
   const Enable2FAScreen({super.key});
