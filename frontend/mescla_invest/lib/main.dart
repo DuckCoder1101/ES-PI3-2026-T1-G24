@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/firebase_options.dart';
 import 'package:mescla_invest/screens/login_screen.dart';
+import 'package:mescla_invest/screens/qa_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +24,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF7FDD3A)),
       ),
-      home: const LoginScreen(),
+      home: const QaScreen(startupId: '3T6WbL2zAqFLL26ehGvU', startupName: 'EcoTech PUC'),
     );
   }
 }
