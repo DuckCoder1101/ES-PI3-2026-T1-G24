@@ -1,5 +1,13 @@
+/*
+ * Autor: Cristian Fava
+ * RA: 25000636
+ */
+
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/components/ui/primary_button.dart';
+import 'package:mescla_invest/widgets/layout/startup/about.dart';
+import 'package:mescla_invest/widgets/layout/startup/partners.dart';
+import 'package:mescla_invest/widgets/layout/startup/questions_answers.dart';
+import 'package:mescla_invest/widgets/ui/primary_button.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/startup.dart';
 
@@ -115,7 +123,7 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
                           ),
                           _buildTag(
                             startup.stage.name.toUpperCase(),
-                            AppColors.verdeMescla.withOpacity(0.2),
+                            AppColors.verdeMescla.withValues(alpha: 0.8),
                             AppColors.verdeMescla,
                           ),
                         ],
@@ -190,137 +198,20 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
   Widget _buildTabContent(StartupModel startup) {
     switch (_activeTab) {
       case 'Sócios':
-        return _buildSociosTab(startup);
+        return TabSocios(startup: startup, startupId: widget.startupId);
       case 'Q&A':
-        return _buildQATab();
+        return TabQA(startupId: widget.startupId, startupName: startup.name);
       case 'Updates':
         return const Center(
           child: Text(
-            "Sem atualizações recentes.",
+            "Sem atualizações.",
             style: TextStyle(color: Colors.white38),
           ),
         );
       case 'Sobre':
       default:
-        return _buildSobreTab(startup);
+        return TabSobre(startup: startup, startupId: widget.startupId);
     }
-  }
-
-  Widget _buildSobreTab(StartupModel startup) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (startup.videoPath != null) _buildVideoSection(startup.videoPath!),
-        _buildSectionTitle("DESCRIÇÃO"),
-        Text(
-          startup.description,
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 16,
-            height: 1.5,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSociosTab(StartupModel startup) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle("FUNDADORES"),
-        if (startup.founders.isEmpty)
-          const Text(
-            "Informação não disponível.",
-            style: TextStyle(color: Colors.white38),
-          )
-        else
-          ...startup.founders.map(
-            (f) => ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const CircleAvatar(
-                backgroundColor: AppColors.campoEscuro,
-                child: Icon(Icons.person, color: AppColors.verdeMescla),
-              ),
-              title: Text(f.name, style: const TextStyle(color: Colors.white)),
-              subtitle: Text(
-                "${f.role} • ${f.equityPercent}%",
-                style: const TextStyle(color: Colors.white70),
-              ),
-            ),
-          ),
-        const SizedBox(height: 24),
-        if (startup.externalMembers.isNotEmpty) ...[
-          _buildSectionTitle("CONSELHO / MENTORES"),
-          ...startup.externalMembers.map(
-            (e) => ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const CircleAvatar(
-                backgroundColor: AppColors.campoEscuro,
-                child: Icon(Icons.gavel, color: Colors.blueAccent),
-              ),
-              title: Text(e.name, style: const TextStyle(color: Colors.white)),
-              subtitle: Text(
-                e.role,
-                style: const TextStyle(color: Colors.white70),
-              ),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildQATab() {
-    return Column(
-      children: [
-        const Center(
-          child: Text(
-            "Tem alguma dúvida sobre o projeto?",
-            style: TextStyle(color: Colors.white70),
-          ),
-        ),
-        const SizedBox(height: 16),
-        PrimaryButton(text: "Enviar Pergunta", onPressed: () {}),
-      ],
-    );
-  }
-
-  Widget _buildVideoSection(String videoUrl) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle("VÍDEO"),
-        Container(
-          height: 200,
-          width: double.infinity,
-          margin: const EdgeInsets.only(bottom: 24),
-          decoration: BoxDecoration(
-            color: AppColors.campoEscuro,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(
-            Icons.play_circle_fill,
-            size: 64,
-            color: AppColors.verdeMescla,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        title,
-        style: const TextStyle(
-          color: AppColors.verdeMescla,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 1.2,
-        ),
-      ),
-    );
   }
 
   Widget _buildTag(String text, Color bg, Color textCol) {

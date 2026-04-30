@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/components/layout/header.dart';
+import 'package:mescla_invest/models/startup.dart';
+import 'package:mescla_invest/widgets/layout/header.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/user.dart';
 
@@ -12,7 +13,13 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   UserModel? _user;
+  List<StartupModel> _startups = [];
   bool _isLoading = true;
+
+  // Estados de Filtro
+  StartupStageFilter _selectedStage = StartupStageFilter.all;
+  String _searchName = "";
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -21,18 +28,43 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadInitialData() async {
+    setState(() => _isLoading = true);
     try {
-      // Utiliza o serviço unificado para buscar dados e foto
-      final data = await UserModel.getFullUserData();
+      final user = await UserModel.getFullUserData();
+      // Busca startups usando os filtros atuais
+      final startups = await StartupModel.getStartups(
+        offset: 0,
+        limit: 10,
+        stageFilter: _selectedStage,
+        nameFilter: _searchName,
+      );
+
       if (mounted) {
         setState(() {
-          _user = data;
+          _user = user;
+          _startups = startups;
           _isLoading = false;
         });
       }
     } catch (e) {
-      debugPrint("Erro ao carregar HomeScreen: $e");
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // Função para atualizar apenas a lista quando o filtro mudar
+  Future<void> _refreshList() async {
+    setState(() => _isLoading = true);
+    final data = await StartupModel.getStartups(
+      offset: 0,
+      limit: 10,
+      stageFilter: _selectedStage,
+      nameFilter: _searchName,
+    );
+    if (mounted) {
+      setState(() {
+        _startups = data;
+        _isLoading = false;
+      });
     }
   }
 
@@ -41,58 +73,64 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.fundoEscuro,
       body: SafeArea(
-        child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: AppColors.verdeMescla),
-              )
-            : Column(
-                children: [
-                  // Navbar extraída e alimentada com dados da function
-                  AppHeader(user: _user),
-
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          TextButton(
-                            onPressed: () => {
-                              Navigator.pushNamed(
-                                context,
-                                "/dashboard/startup-details",
-                                arguments: "3T6WbL2zAqFLL26ehGvU",
-                              ),
-                            },
-                            child: Text("TESTE DE Startup details"),
-                          ),
-                          _buildSearchBar(),
-                          const SizedBox(height: 24),
-                          _buildFilterTags(),
-                          const SizedBox(height: 24),
-                          const Text(
-                            '12 STARTUPS ENCONTRADAS',
-                            style: TextStyle(
-                              color: AppColors.verdeMescla,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          // Card seguindo o layout do seu protótipo
-                          _buildStartupCard(
-                            title: 'EcoTech PUC',
-                            description:
-                                'Soluções sustentáveis para gestão de resíduos urbanos utilizando IoT.',
-                            status: 'Em operação',
-                            tokens: '1.200 tokens',
-                          ),
-                        ],
+        child: Column(
+          children: [
+            AppHeader(user: _user),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSearchBar(),
+                    const SizedBox(height: 24),
+                    _buildFilterTags(),
+                    const SizedBox(height: 24),
+                    Text(
+                      '${_startups.length} STARTUPS ENCONTRADAS',
+                      style: const TextStyle(
+                        color: AppColors.verdeMescla,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: _isLoading
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.verdeMescla,
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: _startups.length,
+                              itemBuilder: (context, index) {
+                                final startup = _startups[index];
+                                return GestureDetector(
+                                  onTap: () => Navigator.pushNamed(
+                                    context,
+                                    "/dashboard/startup-details",
+                                    arguments: startup.id,
+                                  ),
+                                  child: _buildStartupCard(
+                                    title: startup.name,
+                                    description: startup.shortDescription,
+                                    status: startup.stage.name,
+                                    tokens: "${startup.totalTokens} tokens",
+                                    imageUrl: startup.galleryPaths.isNotEmpty
+                                        ? startup.galleryPaths[0]
+                                        : null,
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
               ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -102,43 +140,68 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: AppColors.campoEscuro,
-        borderRadius: BorderRadius.circular(30), // Formato pílula do protótipo
+        borderRadius: BorderRadius.circular(30),
       ),
-      child: const TextField(
-        style: TextStyle(color: Colors.white),
+      child: TextField(
+        controller: _searchController,
+        style: const TextStyle(color: Colors.white),
+        onSubmitted: (value) {
+          setState(() => _searchName = value);
+          _refreshList();
+        },
         decoration: InputDecoration(
-          icon: Icon(
-            Icons.radio_button_unchecked,
-            color: Colors.white38,
-            size: 20,
-          ),
+          icon: const Icon(Icons.search, color: Colors.white38, size: 20),
           hintText: 'Buscar startups...',
-          hintStyle: TextStyle(color: Colors.white38),
+          hintStyle: const TextStyle(color: Colors.white38),
           border: InputBorder.none,
+          suffixIcon: _searchName.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, color: Colors.white38),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchName = "");
+                    _refreshList();
+                  },
+                )
+              : null,
         ),
       ),
     );
   }
 
   Widget _buildFilterTags() {
-    final tags = ['Todas', 'Nova', 'Em Operação', 'Em expansão'];
+    final Map<String, StartupStageFilter> filters = {
+      'Todas': StartupStageFilter.all,
+      'Nova': StartupStageFilter.nova,
+      'Em Operação': StartupStageFilter.em_operacao,
+      'Em expansão': StartupStageFilter.em_espansao,
+    };
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: tags.map((tag) {
-          bool isSelected = tag == 'Todas';
-          return Container(
-            margin: const EdgeInsets.only(right: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(
-              color: isSelected ? AppColors.verdeMescla : AppColors.campoEscuro,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              tag,
-              style: TextStyle(
-                color: isSelected ? Colors.black : Colors.white70,
-                fontWeight: FontWeight.bold,
+        children: filters.entries.map((entry) {
+          bool isSelected = _selectedStage == entry.value;
+          return GestureDetector(
+            onTap: () {
+              setState(() => _selectedStage = entry.value);
+              _refreshList();
+            },
+            child: Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.verdeMescla
+                    : AppColors.campoEscuro,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                entry.key,
+                style: TextStyle(
+                  color: isSelected ? Colors.black : Colors.white70,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           );
@@ -152,6 +215,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required String description,
     required String status,
     required String tokens,
+    String? imageUrl,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -161,24 +225,35 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Column(
         children: [
-          // Área da Capa com Gradiente
           Container(
             height: 140,
             width: double.infinity,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF2D4F1E), Color(0xFF1E1E1E)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
               ),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              image: imageUrl != null
+                  ? DecorationImage(
+                      image: NetworkImage(imageUrl),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+              gradient: imageUrl == null
+                  ? const LinearGradient(
+                      colors: [Color(0xFF2D4F1E), Color(0xFF1E1E1E)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    )
+                  : null,
             ),
-            child: const Center(
-              child: Text(
-                'capa da startup',
-                style: TextStyle(color: Colors.white38),
-              ),
-            ),
+            child: imageUrl == null
+                ? const Center(
+                    child: Text(
+                      'capa da startup',
+                      style: TextStyle(color: Colors.white38),
+                    ),
+                  )
+                : null,
           ),
           Padding(
             padding: const EdgeInsets.all(20),
@@ -197,12 +272,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   description,
                   style: const TextStyle(color: Colors.white60, fontSize: 14),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildBadge(status),
+                    _buildBadge(status.replaceAll('_', ' ')),
                     Text(
                       tokens,
                       style: const TextStyle(

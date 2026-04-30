@@ -14,6 +14,6 @@ class FirebaseService {
 
   static void init() {
     functions.useFunctionsEmulator('localhost', 5001);
-    auth.useAuthEmulator('localhost', 9099);
+    // auth.useAuthEmulator('localhost', 9099);
   }
 }

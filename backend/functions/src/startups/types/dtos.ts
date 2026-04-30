@@ -1,5 +1,11 @@
 import { Timestamp } from "firebase-admin/firestore";
-import { ExternalMember, Founder, StartupStage } from "./documents";
+import {
+  ExternalMember,
+  Founder,
+  QuestionAnwserDocument,
+  QuestionVisibility,
+  StartupStage,
+} from "./documents";
 
 export type StartupStageFilter = StartupStage | "all";
 
@@ -40,9 +46,25 @@ export interface GetStartupsRequestBodyDTO {
   filter: {
     name: string;
     stage: StartupStageFilter;
-  }
+  };
 }
 
 export interface GetStartupDetailsBodyDTO {
   startupId: string;
+}
+
+export interface QuestionRegisterDTO {
+  authorUId: string;
+  content: string;
+  visibility: QuestionVisibility;
+}
+
+export interface QuestionListDTO {
+  id: string;
+  authorUId: string;
+  content: string;
+  isAuthor: boolean;
+  visibility: QuestionVisibility;
+  answers: QuestionAnwserDocument[];
+  createdAt: Timestamp;
 }

@@ -22,14 +22,17 @@ export const getStartups = onCall(async (req) => {
     );
   }
 
-  if (!offset || typeof offset != "number" || offset < 0) {
+  if (typeof offset != "number" || offset < 0) {
+    console.log("Offset: " + offset);
     throw new HttpsError(
       "invalid-argument",
       "Invalid or null search offset! The offset must be a number greater or equal then 0.",
     );
   }
 
-  if (!limit || typeof limit != "number" || limit <= 0 || limit > 10) {
+  if (typeof limit != "number" || limit <= 0 || limit > 10) {
+    console.log("Limite: " + limit);
+
     throw new HttpsError(
       "invalid-argument",
       "Invalid or null search limit! The limit must be a number between 0 and 10.",

@@ -36,15 +36,16 @@ export interface StartupDocument {
 }
 
 export interface QuestionDocument {
+  id: string;
   authorUId: string;
-  text: string;
+  content: string;
   visibility: QuestionVisibility;
-  anwsers: QuestionAnwserDocument[];
+  answers: QuestionAnwserDocument[];
   createdAt: Timestamp;
 }
 
 export interface QuestionAnwserDocument {
   authorUId: string;
-  text: string;
+  content: string;
   createdAt: Timestamp;
 }

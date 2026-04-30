@@ -3,10 +3,10 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/components/ui/icon.dart';
+import 'package:mescla_invest/widgets/ui/icon.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/components/ui/input.dart';
-import 'package:mescla_invest/components/ui/primary_button.dart';
+import 'package:mescla_invest/widgets/ui/input.dart';
+import 'package:mescla_invest/widgets/ui/primary_button.dart';
 
 import 'forgot_password.dart'; // Importe a nova tela
 
