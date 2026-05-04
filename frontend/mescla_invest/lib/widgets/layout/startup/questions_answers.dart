@@ -4,7 +4,7 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/models/question.dart';
+import 'package:mescla_invest/models/startup/question.dart';
 
 class TabQA extends StatefulWidget {
   final String startupId;

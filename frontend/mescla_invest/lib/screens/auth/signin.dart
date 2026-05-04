@@ -3,6 +3,7 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mescla_invest/models/user.dart';
 import 'package:mescla_invest/widgets/ui/icon.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/widgets/ui/input.dart';
@@ -19,57 +20,56 @@ class SigninScreen extends StatefulWidget {
 
 class _SigninScreenState extends State<SigninScreen> {
   final _emailController = TextEditingController();
-  final _senhaController = TextEditingController();
+  final _passwordController = TextEditingController();
+
   bool _senhaVisivel = false;
   bool _isLoading = false;
+
+  String? _errorMessage;
 
   @override
   void dispose() {
     _emailController.dispose();
-    _senhaController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
   Future<void> _loginUsuario() async {
-    final email = _emailController.text.trim();
-    final senha = _senhaController.text.trim();
-
-    if (email.isEmpty || senha.isEmpty) {
-      _showSnackBar('Preencha todos os campos.');
-      return;
-    }
-
     try {
       setState(() => _isLoading = true);
 
-      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: senha,
-      );
-
-      await credential.user?.getIdToken(true);
+      // Tenta efetuar o login
+      await UserModel.signin(_emailController.text, _passwordController.text);
+    } on ArgumentError catch (e) {
+      _errorMessage = e.message;
     } on FirebaseAuthException catch (e) {
-      String message = 'Erro ao realizar login.';
-
-      if (e.code == 'user-not-found') message = 'E-mail não encontrado.';
-      if (e.code == 'wrong-password') message = 'Senha incorreta.';
-
-      _showSnackBar(message);
+      // Mensagens de erro de acordo com o código
+      if (e.code == "user-not-found" || e.code == "auth/wrong-password") {
+        _errorMessage = "E-Mail ou senha inválidos!";
+      } else if (e.code == "auth/network-request-failed") {
+        _errorMessage = "Falha ao conectar com a internet!";
+      } else {
+        debugPrint(e.code);
+        rethrow;
+      }
     } catch (e) {
-      debugPrint("Erro no login: $e");
-      _showSnackBar('Ocorreu um erro inesperado.');
+      debugPrint(e.toString());
+      _errorMessage = "Tente novamente mais tarde ou contate o suporte!";
     } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
+      if (mounted) {
+        setState(() => _isLoading = false);
 
-  void _showSnackBar(String message, {bool isError = true}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.redAccent : Colors.green,
-      ),
-    );
+        // Mensagem final
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_errorMessage ?? "Login efetuado com sucesso!"),
+            backgroundColor: _errorMessage != null
+                ? Colors.redAccent
+                : Colors.green,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -114,7 +114,7 @@ class _SigninScreenState extends State<SigninScreen> {
               const InputLabel(texto: 'Senha'),
               const SizedBox(height: 8),
               TextField(
-                controller: _senhaController,
+                controller: _passwordController,
                 obscureText: !_senhaVisivel,
                 style: const TextStyle(color: Colors.white),
                 decoration: AppInputDecoration.field(

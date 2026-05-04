@@ -9,7 +9,7 @@ import 'package:mescla_invest/widgets/layout/startup/partners.dart';
 import 'package:mescla_invest/widgets/layout/startup/questions_answers.dart';
 import 'package:mescla_invest/widgets/ui/primary_button.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/models/startup.dart';
+import 'package:mescla_invest/models/startup/startup.dart';
 
 class StartupDetailsScreen extends StatefulWidget {
   final String startupId;

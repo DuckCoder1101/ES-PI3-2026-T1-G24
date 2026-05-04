@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/models/startup.dart';
+import 'package:mescla_invest/models/startup/startup.dart';
 import 'package:mescla_invest/widgets/layout/header.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/user.dart';

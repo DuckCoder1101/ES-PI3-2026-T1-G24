@@ -6,8 +6,8 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/widgets.dart';
-import 'package:mescla_invest/models/external_member.dart';
-import 'package:mescla_invest/models/founder.dart';
+import 'package:mescla_invest/models/startup/external_member.dart';
+import 'package:mescla_invest/models/startup/founder.dart';
 
 enum StartupStage { nova, em_operacao, em_espansao }
 

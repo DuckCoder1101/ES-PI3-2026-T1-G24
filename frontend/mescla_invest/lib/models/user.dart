@@ -6,6 +6,7 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/rendering.dart';
+import 'package:mescla_invest/utils/validations.dart';
 
 class UserModel {
   final String uid;
@@ -71,6 +72,28 @@ class UserModel {
       debugPrint("Erro no UserModel: $e");
       rethrow;
     }
+  }
+
+  static Future<void> register() async {}
+
+  static Future<void> signin(String email, String password) async {
+    email = email.trim();
+    password = password.trim();
+
+    if (!Validator.isValidEmail(email)) {
+      throw ArgumentError.value(email, "Email", "Endereço de email inválido!");
+    }
+
+    if (!Validator.isValidPassword(password)) {
+      throw ArgumentError.value(email, "Passwrod", "Senha inválida!");
+    }
+
+    final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+
+    await credential.user?.getIdToken(true);
   }
 
   static Future<void> signout() async {

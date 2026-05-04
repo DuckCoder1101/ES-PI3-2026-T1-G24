@@ -4,7 +4,7 @@
  */
 
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:mescla_invest/models/answer.dart';
+import 'package:mescla_invest/models/startup/answer.dart';
 
 enum QuestionVisibility { publica, privada }
 

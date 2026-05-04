@@ -5,7 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/models/startup.dart';
+import 'package:mescla_invest/models/startup/startup.dart';
 
 class TabSobre extends StatelessWidget {
   final StartupModel startup;
