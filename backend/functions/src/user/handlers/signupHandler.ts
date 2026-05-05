@@ -25,8 +25,8 @@ export const signup = onCall(async (request) => {
   const data = request.data as UserSignupDTO;
 
   const name = normalizeString(data.name);
-  const cpf = normalizeString(data.cpf);
-  const phone = normalizeString(data.phone);
+  const cpf = normalizeString(data.cpf).replace(/\D/g, "");
+  const phone = normalizeString(data.phone).replace(/\D/g, "");
 
   // Mapa de erros
   const fieldErrors: Record<string, string> = {};
@@ -38,10 +38,7 @@ export const signup = onCall(async (request) => {
   if (await existsByCpf(cpf)) fieldErrors.cpf = "CPF já utilizado!";
 
   if (Object.keys(fieldErrors).length > 0) {
-    console.log(
-      "Erros ao criar usuário: " + Object.values(fieldErrors).join(", "),
-    );
-    admin.auth().deleteUser(uid);
+    await admin.auth().deleteUser(uid);
 
     throw new HttpsError(
       "invalid-argument",

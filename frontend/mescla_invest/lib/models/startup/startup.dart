@@ -5,13 +5,10 @@
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/widgets.dart';
-import 'package:mescla_invest/models/external_member.dart';
-import 'package:mescla_invest/models/founder.dart';
 
-enum StartupStage { nova, em_operacao, em_espansao }
+enum StartupStage { nova, em_operacao, em_expansao }
 
-enum StartupStageFilter { nova, em_operacao, em_espansao, all }
+enum StartupStageFilter { nova, em_operacao, em_expansao, all }
 
 class StartupModel {
   final String id;
@@ -26,8 +23,8 @@ class StartupModel {
   final String type;
   final String? videoPath;
   final List<String> galleryPaths;
-  final List<Founder> founders;
-  final List<ExternalMember> externalMembers;
+  final List<FounderModel> founders;
+  final List<ExternalMemberModel> externalMembers;
   final List<String> tags;
 
   StartupModel({
@@ -59,7 +56,7 @@ class StartupModel {
         stageEnum = StartupStage.em_operacao;
         break;
       case 'em_expansao':
-        stageEnum = StartupStage.em_espansao;
+        stageEnum = StartupStage.em_expansao;
         break;
       case 'nova':
       default:
@@ -85,10 +82,10 @@ class StartupModel {
       galleryPaths: List<String>.from(map['galleryPaths'] ?? []),
       tags: List<String>.from(map['tags'] ?? []),
       founders: (map['founders'] as List? ?? [])
-          .map((f) => Founder.fromMap(Map<String, dynamic>.from(f)))
+          .map((f) => FounderModel.fromMap(Map<String, dynamic>.from(f)))
           .toList(),
       externalMembers: (map['externalMember'] as List? ?? [])
-          .map((e) => ExternalMember.fromMap(Map<String, dynamic>.from(e)))
+          .map((e) => ExternalMemberModel.fromMap(Map<String, dynamic>.from(e)))
           .toList(),
     );
   }
@@ -104,7 +101,7 @@ class StartupModel {
         Map<String, dynamic>.from(response.data),
       );
     } catch (e) {
-      throw Exception("Erro ao carregar detalhes da startup: $e");
+      rethrow;
     }
   }
 
@@ -134,13 +131,46 @@ class StartupModel {
           )
           .toList();
     } catch (e) {
-      debugPrint("Erro ao buscar listagem: $e");
-      return [];
+      rethrow;
     }
   }
 
   Future<String> getDownloadUrl(String path) async {
     if (path.startsWith('http')) return path;
     return await FirebaseStorage.instance.ref(path).getDownloadURL();
+  }
+}
+
+class ExternalMemberModel {
+  final String name;
+  final String role;
+
+  ExternalMemberModel({required this.name, required this.role});
+
+  factory ExternalMemberModel.fromMap(Map<String, dynamic> map) {
+    return ExternalMemberModel(
+      name: map['name'] ?? '',
+      role: map['role'] ?? '',
+    );
+  }
+}
+
+class FounderModel {
+  final String name;
+  final String role;
+  final double equityPercent;
+
+  FounderModel({
+    required this.name,
+    required this.role,
+    required this.equityPercent,
+  });
+
+  factory FounderModel.fromMap(Map<String, dynamic> map) {
+    return FounderModel(
+      name: map['name'] ?? '',
+      role: map['role'] ?? '',
+      equityPercent: (map['equityPercent'] ?? 0).toDouble(),
+    );
   }
 }

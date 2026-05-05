@@ -1,70 +1,114 @@
+/*
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636 
+ */
+
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/models/startup.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+import 'package:mescla_invest/models/startup/startup.dart';
+import 'package:mescla_invest/models/user.dart';
 import 'package:mescla_invest/widgets/layout/header.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/models/user.dart';
+import 'package:mescla_invest/screens/app_root.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class CatalogScreen extends StatefulWidget {
+  const CatalogScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<CatalogScreen> createState() => _CatalogScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  UserModel? _user;
+class _CatalogScreenState extends State<CatalogScreen> {
+  final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
+
   List<StartupModel> _startups = [];
   bool _isLoading = true;
+  bool _isMoreLoading = false;
+  bool _hasMore = true;
 
-  // Estados de Filtro
+  int _offset = 0;
+  final int _limit = 10;
+
   StartupStageFilter _selectedStage = StartupStageFilter.all;
   String _searchName = "";
-  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _loadInitialData();
+    _scrollController.addListener(_onScroll);
+    _fetchStartups(reset: true);
   }
 
-  Future<void> _loadInitialData() async {
-    setState(() => _isLoading = true);
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200 &&
+        !_isMoreLoading &&
+        !_isLoading &&
+        _hasMore) {
+      _fetchStartups();
+    }
+  }
+
+  Future<void> _fetchStartups({bool reset = false}) async {
+    if (reset) {
+      setState(() {
+        _offset = 0;
+        _hasMore = true;
+        _startups = [];
+        _isLoading = true;
+      });
+    } else {
+      if (_isMoreLoading) return;
+      setState(() => _isMoreLoading = true);
+    }
+
+    String? errorMsg;
     try {
-      final user = await UserModel.getFullUserData();
-      // Busca startups usando os filtros atuais
-      final startups = await StartupModel.getStartups(
-        offset: 0,
-        limit: 10,
+      final newStartups = await StartupModel.getStartups(
+        offset: _offset,
+        limit: _limit,
         stageFilter: _selectedStage,
         nameFilter: _searchName,
       );
 
       if (mounted) {
         setState(() {
-          _user = user;
-          _startups = startups;
-          _isLoading = false;
+          _startups.addAll(newStartups);
+          _offset = _startups.length;
+
+          if (newStartups.length < _limit) {
+            _hasMore = false;
+          }
         });
       }
+    } on FirebaseFunctionsException catch (e) {
+      errorMsg = e.message ?? "Erro ao processar requisição.";
     } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
+      errorMsg = "Erro ao carregar startups. Verifique sua conexão.";
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isMoreLoading = false;
+        });
 
-  // Função para atualizar apenas a lista quando o filtro mudar
-  Future<void> _refreshList() async {
-    setState(() => _isLoading = true);
-    final data = await StartupModel.getStartups(
-      offset: 0,
-      limit: 10,
-      stageFilter: _selectedStage,
-      nameFilter: _searchName,
-    );
-    if (mounted) {
-      setState(() {
-        _startups = data;
-        _isLoading = false;
-      });
+        if (errorMsg != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMsg),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -75,7 +119,12 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            AppHeader(user: _user),
+            ValueListenableBuilder<UserModel?>(
+              valueListenable: authUserDataProvider,
+              builder: (context, user, _) {
+                return AppHeader(user: user);
+              },
+            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -87,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildFilterTags(),
                     const SizedBox(height: 24),
                     Text(
-                      '${_startups.length} STARTUPS ENCONTRADAS',
+                      '${_startups.length}${_hasMore ? "+" : ""} STARTUPS ENCONTRADAS',
                       style: const TextStyle(
                         color: AppColors.verdeMescla,
                         fontWeight: FontWeight.bold,
@@ -102,28 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 color: AppColors.verdeMescla,
                               ),
                             )
-                          : ListView.builder(
-                              itemCount: _startups.length,
-                              itemBuilder: (context, index) {
-                                final startup = _startups[index];
-                                return GestureDetector(
-                                  onTap: () => Navigator.pushNamed(
-                                    context,
-                                    "/dashboard/startup-details",
-                                    arguments: startup.id,
-                                  ),
-                                  child: _buildStartupCard(
-                                    title: startup.name,
-                                    description: startup.shortDescription,
-                                    status: startup.stage.name,
-                                    tokens: "${startup.totalTokens} tokens",
-                                    imageUrl: startup.galleryPaths.isNotEmpty
-                                        ? startup.galleryPaths[0]
-                                        : null,
-                                  ),
-                                );
-                              },
-                            ),
+                          : _buildListView(),
                     ),
                   ],
                 ),
@@ -132,6 +160,42 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildListView() {
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.only(bottom: 20),
+      itemCount: _startups.length + (_hasMore ? 1 : 0),
+      itemBuilder: (context, index) {
+        if (index < _startups.length) {
+          final startup = _startups[index];
+          return GestureDetector(
+            onTap: () => Navigator.pushNamed(
+              context,
+              "/dashboard/startup-details",
+              arguments: startup.id,
+            ),
+            child: _buildStartupCard(
+              title: startup.name,
+              description: startup.shortDescription,
+              status: startup.stage.name.replaceAll('_', ' '),
+              tokens: "${startup.totalTokens} tokens",
+              imageUrl: startup.galleryPaths.isNotEmpty
+                  ? startup.galleryPaths[0]
+                  : null,
+            ),
+          );
+        } else {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(
+              child: CircularProgressIndicator(color: AppColors.verdeMescla),
+            ),
+          );
+        }
+      },
     );
   }
 
@@ -147,7 +211,7 @@ class _HomeScreenState extends State<HomeScreen> {
         style: const TextStyle(color: Colors.white),
         onSubmitted: (value) {
           setState(() => _searchName = value);
-          _refreshList();
+          _fetchStartups(reset: true);
         },
         decoration: InputDecoration(
           icon: const Icon(Icons.search, color: Colors.white38, size: 20),
@@ -160,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: () {
                     _searchController.clear();
                     setState(() => _searchName = "");
-                    _refreshList();
+                    _fetchStartups(reset: true);
                   },
                 )
               : null,
@@ -174,7 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'Todas': StartupStageFilter.all,
       'Nova': StartupStageFilter.nova,
       'Em Operação': StartupStageFilter.em_operacao,
-      'Em expansão': StartupStageFilter.em_espansao,
+      'Em expansão': StartupStageFilter.em_expansao,
     };
 
     return SingleChildScrollView(
@@ -184,8 +248,10 @@ class _HomeScreenState extends State<HomeScreen> {
           bool isSelected = _selectedStage == entry.value;
           return GestureDetector(
             onTap: () {
-              setState(() => _selectedStage = entry.value);
-              _refreshList();
+              if (_selectedStage != entry.value) {
+                setState(() => _selectedStage = entry.value);
+                _fetchStartups(reset: true);
+              }
             },
             child: Container(
               margin: const EdgeInsets.only(right: 8),
@@ -246,14 +312,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     )
                   : null,
             ),
-            child: imageUrl == null
-                ? const Center(
-                    child: Text(
-                      'capa da startup',
-                      style: TextStyle(color: Colors.white38),
-                    ),
-                  )
-                : null,
           ),
           Padding(
             padding: const EdgeInsets.all(20),
@@ -279,7 +337,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildBadge(status.replaceAll('_', ' ')),
+                    _buildBadge(status),
                     Text(
                       tokens,
                       style: const TextStyle(

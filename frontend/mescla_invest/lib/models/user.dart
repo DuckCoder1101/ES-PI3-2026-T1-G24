@@ -5,7 +5,7 @@
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/rendering.dart';
+import 'package:mescla_invest/screens/app_root.dart';
 
 class UserModel {
   final String uid;
@@ -59,23 +59,77 @@ class UserModel {
           .httpsCallable('getMe')
           .call();
 
-      if (result.data == null) {
-        throw Exception("Usuário não encontrado no banco de dados.");
-      }
-
       final dataMap = Map<String, dynamic>.from(result.data);
       final user = UserModel.fromMap(dataMap);
 
       return user;
     } catch (e) {
-      debugPrint("Erro no UserModel: $e");
+      rethrow;
+    }
+  }
+
+  static Future<void> register({
+    required String email,
+    required String password,
+    required String name,
+    required String cpf,
+    required String phone,
+  }) async {
+    email = email.toLowerCase().trim();
+    password = password.trim();
+    name = name.trim();
+    cpf = cpf.trim();
+    phone = phone.trim();
+
+    try {
+      final credential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
+
+      await credential.user?.getIdToken();
+
+      await FirebaseFunctions.instance.httpsCallable('signup').call({
+        'name': name,
+        'cpf': cpf,
+        'phone': phone,
+      });
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  static Future<void> signin(String email, String password) async {
+    email = email.trim();
+    password = password.trim();
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } catch (err) {
       rethrow;
     }
   }
 
   static Future<void> signout() async {
     try {
+      auth2FaPassedProvider.value = false;
       await FirebaseAuth.instance.signOut();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  static Future<Map<String, String?>> get2FACode() async {
+    try {
+      final result = await FirebaseFunctions.instance
+          .httpsCallable('enable2FA')
+          .call();
+
+      return {
+        "otpauth": result.data['otpauth'],
+        "manualKey": result.data['manualKey'],
+      };
     } catch (e) {
       rethrow;
     }

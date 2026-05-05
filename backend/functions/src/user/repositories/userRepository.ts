@@ -6,7 +6,6 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { database } from "../../shared/firebase";
 import { UserFullDTO, UserSignupDTO } from "../types/dtos";
-import { getTwoFaRef } from "./twoFaRepository";
 
 const usersCollection = database.collection("users");
 
@@ -23,32 +22,22 @@ export const createUserAccount = async (uid: string, data: UserSignupDTO) => {
 
     tx.set(cpfRef, { uid });
     tx.set(userRef, {
-      uid,
+      ...data,
       has2Fa: false,
       createdAt: FieldValue.serverTimestamp(),
-      ...data,
     });
   });
 };
 
-// No ficheiro userRepository.ts
-export const findUserById = async (
-  uid: string,
-): Promise<UserFullDTO | null> => {
+export const getById = async (uid: string): Promise<UserFullDTO | null> => {
   const snapshot = await usersCollection.doc(uid).get();
-
-  // Busca o documento de segurança
-  const twoFaDoc = await getTwoFaRef(uid).get();
-
   if (!snapshot.exists) return null;
 
   const userData = snapshot.data();
-  const twoFaData = twoFaDoc.data();
 
   return {
     uid,
     ...userData,
-    has2Fa: twoFaData?.enabled ?? false,
   } as UserFullDTO;
 };
 
