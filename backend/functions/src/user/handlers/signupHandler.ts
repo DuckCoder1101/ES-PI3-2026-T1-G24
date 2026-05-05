@@ -38,7 +38,7 @@ export const signup = onCall(async (request) => {
   if (await existsByCpf(cpf)) fieldErrors.cpf = "CPF já utilizado!";
 
   if (Object.keys(fieldErrors).length > 0) {
-    admin.auth().deleteUser(uid);
+    await admin.auth().deleteUser(uid);
 
     throw new HttpsError(
       "invalid-argument",

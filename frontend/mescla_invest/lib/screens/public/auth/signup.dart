@@ -6,7 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mescla_invest/models/user.dart';
-
 import 'package:mescla_invest/widgets/ui/icon.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/widgets/ui/input.dart';
@@ -39,8 +38,6 @@ class _SignupScreenState extends State<SignupScreen> {
       _passwordController.text.length <= 16;
 
   String? _errorMessage;
-
-  // Mapa de erros por campo
   Map<String, String> _fieldErrors = {};
 
   @override
@@ -62,7 +59,7 @@ class _SignupScreenState extends State<SignupScreen> {
       _passwordController,
     ].any((c) => c.text.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text("Preencha todos os campos!"),
           backgroundColor: Colors.redAccent,
         ),
@@ -86,11 +83,7 @@ class _SignupScreenState extends State<SignupScreen> {
       );
 
       if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          "/dashboard/home",
-          (route) => false,
-        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } on FirebaseFunctionsException catch (e) {
       setState(() {
@@ -102,6 +95,15 @@ class _SignupScreenState extends State<SignupScreen> {
               "Erro desconhecido no servidor! Tente novamente mais tarde!";
         }
       });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_errorMessage!),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     } on FirebaseAuthException catch (e) {
       setState(() {
         if (e.code == "email-already-in-use") {
@@ -110,32 +112,36 @@ class _SignupScreenState extends State<SignupScreen> {
         } else if (e.code == "weak-password") {
           _errorMessage =
               "A senha precisa ter entre 8 a 16 dígitos, incluindo uma letra maiúscula, uma letra minúscula e um número!";
+        } else {
+          _errorMessage = "Erro de autenticação. Tente novamente.";
         }
       });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_errorMessage!),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     } catch (err) {
       debugPrint(err.toString());
 
-      if (!mounted) {
-        debugPrint("Not mounted!");
-        return;
-      }
+      if (!mounted) return;
 
       setState(() {
         _errorMessage = "Erro desconhecido. Tente novamente mais tarde!";
       });
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_errorMessage ?? "Conta cadastrada com sucesso!"),
-            backgroundColor: _errorMessage != null
-                ? Colors.redAccent
-                : Colors.green,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_errorMessage!),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -168,7 +174,6 @@ class _SignupScreenState extends State<SignupScreen> {
             enabledBorder: _border(
               _fieldErrors[errorKey] != null ? Colors.red : Colors.transparent,
             ),
-
             focusedBorder: _border(
               _fieldErrors[errorKey] != null
                   ? Colors.red
@@ -182,18 +187,23 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
-  Widget _passwordRequirement(String text) {
+  Widget _passwordRequirement(String text, {required bool met}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: [
-          const Icon(Icons.cancel_rounded, color: Colors.redAccent, size: 18),
-
+          Icon(
+            met ? Icons.check_circle_rounded : Icons.cancel_rounded,
+            color: met ? Colors.green : Colors.redAccent,
+            size: 18,
+          ),
           const SizedBox(width: 8),
-
           Text(
             text,
-            style: const TextStyle(color: Colors.white70, fontSize: 13),
+            style: TextStyle(
+              color: met ? Colors.white70 : Colors.white54,
+              fontSize: 13,
+            ),
           ),
         ],
       ),
@@ -257,33 +267,26 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
 
               const InputLabel(texto: 'Crie sua Senha', obrigatorio: true),
-
               const SizedBox(height: 8),
 
               TextField(
                 controller: _passwordController,
                 obscureText: !_senhaVisivel,
                 style: const TextStyle(color: Colors.white),
-
                 onChanged: (_) {
                   setState(() {
                     _fieldErrors.remove('password');
                   });
                 },
-
                 decoration: AppInputDecoration.field(
                   hintText: '• • • • • • •',
-
                   suffixIcon: IconButton(
                     icon: Icon(
                       _senhaVisivel ? Icons.visibility : Icons.visibility_off,
                       color: AppColors.textoHint,
                     ),
-
                     onPressed: () {
-                      setState(() {
-                        _senhaVisivel = !_senhaVisivel;
-                      });
+                      setState(() => _senhaVisivel = !_senhaVisivel);
                     },
                   ),
                 ).copyWith(errorText: _fieldErrors['password']),
@@ -291,20 +294,22 @@ class _SignupScreenState extends State<SignupScreen> {
 
               const SizedBox(height: 14),
 
-              // CHECKLIST
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (!_hasMinMaxLength)
-                    _passwordRequirement('Entre 8 e 16 caracteres'),
-
-                  if (!_hasUppercase)
-                    _passwordRequirement('Uma letra maiúscula'),
-
-                  if (!_hasLowercase)
-                    _passwordRequirement('Uma letra minúscula'),
-
-                  if (!_hasNumber) _passwordRequirement('Um número'),
+                  _passwordRequirement(
+                    'Entre 8 e 16 caracteres',
+                    met: _hasMinMaxLength,
+                  ),
+                  _passwordRequirement(
+                    'Uma letra maiúscula',
+                    met: _hasUppercase,
+                  ),
+                  _passwordRequirement(
+                    'Uma letra minúscula',
+                    met: _hasLowercase,
+                  ),
+                  _passwordRequirement('Um número', met: _hasNumber),
                 ],
               ),
 
@@ -315,6 +320,8 @@ class _SignupScreenState extends State<SignupScreen> {
                 onPressed: _cadastrarUsuario,
                 isLoading: _isLoading,
               ),
+
+              const SizedBox(height: 32),
             ],
           ),
         ),

@@ -32,12 +32,17 @@ class _Enable2FAScreenState extends State<Enable2FAScreen> {
     String? errorMsg;
 
     try {
-      _isFetching = true;
+      setState(() {
+        _isFetching = true;
+      });
 
       final data = await UserModel.get2FACode();
 
-      _otpauth = data["otpauth"];
-      _manualKey = data["manualKey"];
+      setState(() {
+        _isFetching = false;
+        _otpauth = data["otpauth"];
+        _manualKey = data["manualKey"];
+      });
     } on FirebaseFunctionsException catch (err) {
       if (err.code == "unauthenticated") {
         errorMsg = "Usuário não autenticado!";
@@ -53,7 +58,9 @@ class _Enable2FAScreenState extends State<Enable2FAScreen> {
       debugPrint("Erro ao buscar código de 2FA: $err");
       errorMsg = "Erro inesperado ao buscar código de 2FA!";
     } finally {
-      _isFetching = false;
+      setState(() {
+        _isFetching = false;
+      });
 
       if (mounted && errorMsg != null) {
         ScaffoldMessenger.of(context).showSnackBar(

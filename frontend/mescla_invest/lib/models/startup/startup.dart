@@ -6,9 +6,9 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
-enum StartupStage { nova, em_operacao, em_espansao }
+enum StartupStage { nova, em_operacao, em_expansao }
 
-enum StartupStageFilter { nova, em_operacao, em_espansao, all }
+enum StartupStageFilter { nova, em_operacao, em_expansao, all }
 
 class StartupModel {
   final String id;
@@ -56,7 +56,7 @@ class StartupModel {
         stageEnum = StartupStage.em_operacao;
         break;
       case 'em_expansao':
-        stageEnum = StartupStage.em_espansao;
+        stageEnum = StartupStage.em_expansao;
         break;
       case 'nova':
       default:

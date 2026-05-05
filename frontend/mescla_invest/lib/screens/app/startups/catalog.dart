@@ -1,9 +1,15 @@
-import 'package:cloud_functions/cloud_functions.dart';
+/*
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636 
+ */
+
 import 'package:flutter/material.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:mescla_invest/models/startup/startup.dart';
+import 'package:mescla_invest/models/user.dart';
 import 'package:mescla_invest/widgets/layout/header.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/widgets/logic/app_root.dart';
+import 'package:mescla_invest/screens/app_root.dart';
 
 class CatalogScreen extends StatefulWidget {
   const CatalogScreen({super.key});
@@ -42,7 +48,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
   }
 
   void _onScroll() {
-    // Verifica se chegou ao fim e se não há uma busca já em andamento
     if (_scrollController.position.pixels >=
             _scrollController.position.maxScrollExtent - 200 &&
         !_isMoreLoading &&
@@ -61,13 +66,11 @@ class _CatalogScreenState extends State<CatalogScreen> {
         _isLoading = true;
       });
     } else {
-      // Evita chamadas duplicadas
       if (_isMoreLoading) return;
       setState(() => _isMoreLoading = true);
     }
 
     String? errorMsg;
-
     try {
       final newStartups = await StartupModel.getStartups(
         offset: _offset,
@@ -79,7 +82,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
       if (mounted) {
         setState(() {
           _startups.addAll(newStartups);
-          // O offset é sempre o total de itens que já temos na lista
           _offset = _startups.length;
 
           if (newStartups.length < _limit) {
@@ -112,15 +114,17 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Carregamento de usuário via AppRoot[cite: 1, 5]
-    final user = authUserDataProvider.value;
-
     return Scaffold(
       backgroundColor: AppColors.fundoEscuro,
       body: SafeArea(
         child: Column(
           children: [
-            AppHeader(user: user),
+            ValueListenableBuilder<UserModel?>(
+              valueListenable: authUserDataProvider,
+              builder: (context, user, _) {
+                return AppHeader(user: user);
+              },
+            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -234,7 +238,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
       'Todas': StartupStageFilter.all,
       'Nova': StartupStageFilter.nova,
       'Em Operação': StartupStageFilter.em_operacao,
-      'Em espansão': StartupStageFilter.em_espansao,
+      'Em expansão': StartupStageFilter.em_expansao,
     };
 
     return SingleChildScrollView(

@@ -36,12 +36,11 @@ class _SigninScreenState extends State<SigninScreen> {
   Future<void> _loginUsuario() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text("Preencha todos os campos!"),
           backgroundColor: Colors.redAccent,
         ),
       );
-
       return;
     }
 
@@ -55,11 +54,7 @@ class _SigninScreenState extends State<SigninScreen> {
       await UserModel.signin(_emailController.text, _passwordController.text);
 
       if (mounted) {
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          "/dashboard/home",
-          (route) => false,
-        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } on FirebaseAuthException catch (e) {
       setState(() {
@@ -70,8 +65,19 @@ class _SigninScreenState extends State<SigninScreen> {
           _errorMessage = "E-Mail ou senha inválidos!";
         } else if (e.code == "network-request-failed") {
           _errorMessage = "Falha ao conectar com a internet!";
+        } else {
+          _errorMessage = "Erro de autenticação. Tente novamente.";
         }
       });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_errorMessage!),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
     } catch (err) {
       debugPrint(err.toString());
 
@@ -80,19 +86,15 @@ class _SigninScreenState extends State<SigninScreen> {
       setState(() {
         _errorMessage = "Erro desconhecido. Tente novamente mais tarde!";
       });
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_errorMessage ?? "Login efetuado com sucesso!"),
-            backgroundColor: _errorMessage != null
-                ? Colors.redAccent
-                : Colors.green,
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_errorMessage!),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -133,23 +135,17 @@ class _SigninScreenState extends State<SigninScreen> {
               const SizedBox(height: 42),
 
               const InputLabel(texto: 'E-mail'),
-
               const SizedBox(height: 8),
 
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 style: const TextStyle(color: Colors.white),
-
-                // NOVO: limpa erro ao digitar
                 onChanged: (_) {
                   if (_invalidCredentials) {
-                    setState(() {
-                      _invalidCredentials = false;
-                    });
+                    setState(() => _invalidCredentials = false);
                   }
                 },
-
                 decoration:
                     AppInputDecoration.field(
                       hintText: 'ex: seuemail@email.com',
@@ -157,7 +153,6 @@ class _SigninScreenState extends State<SigninScreen> {
                       enabledBorder: _border(
                         _invalidCredentials ? Colors.red : Colors.transparent,
                       ),
-
                       focusedBorder: _border(
                         _invalidCredentials
                             ? Colors.red
@@ -169,27 +164,20 @@ class _SigninScreenState extends State<SigninScreen> {
               const SizedBox(height: 28),
 
               const InputLabel(texto: 'Senha'),
-
               const SizedBox(height: 8),
 
               TextField(
                 controller: _passwordController,
                 obscureText: !_senhaVisivel,
                 style: const TextStyle(color: Colors.white),
-
-                // NOVO: limpa erro ao digitar
                 onChanged: (_) {
                   if (_invalidCredentials) {
-                    setState(() {
-                      _invalidCredentials = false;
-                    });
+                    setState(() => _invalidCredentials = false);
                   }
                 },
-
                 decoration:
                     AppInputDecoration.field(
                       hintText: '• • • • • • •',
-
                       suffixIcon: IconButton(
                         icon: Icon(
                           _senhaVisivel
@@ -198,16 +186,13 @@ class _SigninScreenState extends State<SigninScreen> {
                           color: AppColors.textoHint,
                         ),
                         onPressed: () {
-                          setState(() {
-                            _senhaVisivel = !_senhaVisivel;
-                          });
+                          setState(() => _senhaVisivel = !_senhaVisivel);
                         },
                       ),
                     ).copyWith(
                       enabledBorder: _border(
                         _invalidCredentials ? Colors.red : Colors.transparent,
                       ),
-
                       focusedBorder: _border(
                         _invalidCredentials
                             ? Colors.red
@@ -226,22 +211,17 @@ class _SigninScreenState extends State<SigninScreen> {
 
               const SizedBox(height: 18),
 
-              Column(
-                children: [
-                  GestureDetector(
-                    onTap: () =>
-                        Navigator.pushNamed(context, "/auth/forgot-password"),
-                    child: const Text(
-                      'Esqueci minha senha',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: AppColors.verdeMescla,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ],
+              GestureDetector(
+                onTap: () =>
+                    Navigator.pushNamed(context, "/auth/forgot-password"),
+                child: const Text(
+                  'Esqueci minha senha',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.verdeMescla, fontSize: 13),
+                ),
               ),
+
+              const SizedBox(height: 32),
             ],
           ),
         ),

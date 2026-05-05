@@ -5,7 +5,7 @@
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:mescla_invest/widgets/logic/app_root.dart';
+import 'package:mescla_invest/screens/app_root.dart';
 
 class UserModel {
   final String uid;
@@ -82,10 +82,10 @@ class UserModel {
     phone = phone.trim();
 
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      final credential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
+
+      await credential.user?.getIdToken();
 
       await FirebaseFunctions.instance.httpsCallable('signup').call({
         'name': name,

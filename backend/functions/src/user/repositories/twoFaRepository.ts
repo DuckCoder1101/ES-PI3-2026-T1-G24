@@ -43,7 +43,7 @@ export const enable2FA = async (uid: string) => {
 
   await database.runTransaction(async (tx) => {
     tx.set(ref, { enabled: true }, { merge: true });
-    tx.set(usersCollection.doc(uid), { hasTwoFa: true }, { merge: true });
+    tx.set(usersCollection.doc(uid), { has2Fa: true }, { merge: true });
   });
 };
 
@@ -63,7 +63,7 @@ export const remove2FA = async (uid: string) => {
 
   await database.runTransaction(async (tx) => {
     tx.delete(ref);
-    tx.set(usersCollection.doc(uid), { hasTwoFa: false }, { merge: true });
+    tx.set(usersCollection.doc(uid), { has2Fa: false }, { merge: true });
   });
 };
 

@@ -3,7 +3,7 @@
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/widgets/logic/app_root.dart';
+import 'package:mescla_invest/screens/app_root.dart';
 import 'package:pinput/pinput.dart';
 
 import 'package:mescla_invest/constants/colors.dart';

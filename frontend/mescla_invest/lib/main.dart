@@ -2,25 +2,28 @@
 // RA: 25000294
 
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/screens/public/auth/forgot_password.dart';
 import 'package:mescla_invest/screens/public/welcome.dart';
 import 'package:mescla_invest/utils/firebase.dart';
-import 'package:mescla_invest/widgets/logic/app_root.dart';
+import 'package:mescla_invest/screens/app_root.dart';
 import 'package:mescla_invest/firebase_options.dart';
 import 'package:mescla_invest/screens/app/user/2fa/confirm_2fa.dart';
 import 'package:mescla_invest/screens/app/user/2fa/enable_2fa.dart';
 import 'package:mescla_invest/screens/public/auth/signin.dart';
 import 'package:mescla_invest/screens/public/auth/signup.dart';
-import 'package:mescla_invest/screens/app/user/2fa/verify_2fa.dart';
+import 'package:mescla_invest/screens/public/auth/verify_2fa.dart';
 import 'package:mescla_invest/screens/app/startups/catalog.dart';
 import 'package:mescla_invest/screens/app/startups/startup_details.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  FirebaseService.init();
+
+  if (kDebugMode) {
+    FirebaseService.init();
+  }
 
   runApp(const MyApp());
 }
