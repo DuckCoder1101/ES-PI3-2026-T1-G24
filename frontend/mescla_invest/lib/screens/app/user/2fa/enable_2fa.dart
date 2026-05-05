@@ -4,6 +4,7 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mescla_invest/models/user.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import 'package:mescla_invest/constants/colors.dart';
@@ -28,26 +29,38 @@ class _Enable2FAScreenState extends State<Enable2FAScreen> {
   }
 
   Future<void> _fetch2FADetails() async {
+    String? errorMsg;
+
     try {
-      final result = await FirebaseFunctions.instance
-          .httpsCallable('enable2FA')
-          .call();
+      _isFetching = true;
 
-      setState(() {
-        _otpauth = result.data['otpauth'];
-        _manualKey = result.data['manualKey'];
-        _isFetching = false;
-      });
-    } catch (e) {
-      debugPrint(e.toString());
-      _showError('Erro ao carregar dados do MFA.');
+      final data = await UserModel.get2FACode();
+
+      _otpauth = data["otpauth"];
+      _manualKey = data["manualKey"];
+    } on FirebaseFunctionsException catch (err) {
+      if (err.code == "unauthenticated") {
+        errorMsg = "Usuário não autenticado!";
+        await UserModel.signout();
+      } else {
+        debugPrint(
+          "Erro interno ao buscar código de 2FA: ${err.code}, ${err.message}",
+        );
+        errorMsg =
+            "Erro interno ao buscar código de 2FA! Tente novamente mais tarde!";
+      }
+    } catch (err) {
+      debugPrint("Erro ao buscar código de 2FA: $err");
+      errorMsg = "Erro inesperado ao buscar código de 2FA!";
+    } finally {
+      _isFetching = false;
+
+      if (mounted && errorMsg != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMsg), backgroundColor: Colors.redAccent),
+        );
+      }
     }
-  }
-
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
-    );
   }
 
   @override

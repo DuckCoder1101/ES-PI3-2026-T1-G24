@@ -5,19 +5,23 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/screens/public/auth/forgot_password.dart';
 import 'package:mescla_invest/screens/public/welcome.dart';
+import 'package:mescla_invest/utils/firebase.dart';
 import 'package:mescla_invest/widgets/logic/app_root.dart';
 import 'package:mescla_invest/firebase_options.dart';
-import 'package:mescla_invest/screens/public/auth/2fa/confirm_2fa.dart';
-import 'package:mescla_invest/screens/public/auth/2fa/enable_2fa.dart';
+import 'package:mescla_invest/screens/app/user/2fa/confirm_2fa.dart';
+import 'package:mescla_invest/screens/app/user/2fa/enable_2fa.dart';
 import 'package:mescla_invest/screens/public/auth/signin.dart';
 import 'package:mescla_invest/screens/public/auth/signup.dart';
-import 'package:mescla_invest/screens/public/auth/2fa/verify_2fa.dart';
-import 'package:mescla_invest/screens/app/catalog.dart';
-import 'package:mescla_invest/screens/app/startup_details.dart';
+import 'package:mescla_invest/screens/app/user/2fa/verify_2fa.dart';
+import 'package:mescla_invest/screens/app/startups/catalog.dart';
+import 'package:mescla_invest/screens/app/startups/startup_details.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  FirebaseService.init();
+
   runApp(const MyApp());
 }
 
@@ -38,7 +42,7 @@ class MyApp extends StatelessWidget {
 
         "/dashboard/home": (ctx) => const CatalogScreen(),
         "/dashboard/startup-details": (ctx) {
-          final startupId = ModalRoute.of(ctx)!.settings.arguments as String;
+          final startupId = ModalRoute.of(ctx)!.settings.arguments as String?;
           return StartupDetailsScreen(startupId: startupId);
         },
 

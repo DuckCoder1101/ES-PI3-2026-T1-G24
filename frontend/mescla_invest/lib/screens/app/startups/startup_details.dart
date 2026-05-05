@@ -3,6 +3,7 @@
  * RA: 25000636
  */
 
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/models/startup/question.dart';
 import 'package:mescla_invest/widgets/ui/primary_button.dart';
@@ -10,21 +11,56 @@ import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/startup/startup.dart';
 
 class StartupDetailsScreen extends StatefulWidget {
-  final String startupId;
-  const StartupDetailsScreen({super.key, required this.startupId});
+  final String? startupId;
+  const StartupDetailsScreen({super.key, this.startupId});
 
   @override
   State<StartupDetailsScreen> createState() => _StartupDetailsScreenState();
 }
 
 class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
-  late Future<StartupModel> _startupFuture;
+  Future<StartupModel>? _startupFuture;
   String _activeTab = 'Sobre';
 
   @override
   void initState() {
     super.initState();
-    _startupFuture = StartupModel.getStartupDetails(widget.startupId);
+
+    if (widget.startupId == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.pop(context);
+      });
+      return;
+    }
+
+    String? errorMsg;
+    try {
+      _startupFuture = StartupModel.getStartupDetails(widget.startupId!);
+    } on FirebaseFunctionsException catch (err) {
+      if (err.code == "not-found") {
+        errorMsg = "Startup não encontrada!";
+      } else {
+        errorMsg =
+            "Erro inesperado interno ao buscar dados de startup! Tente novamente mais tarde!";
+      }
+    } catch (err) {
+      debugPrint("Erro ao buscar dados de startup: $err");
+      errorMsg = "Erro inesperado ao buscar dados de starup!";
+    } finally {
+      if (errorMsg != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMsg!),
+                backgroundColor: Colors.redAccent,
+              ),
+            );
+            Navigator.pop(context);
+          }
+        });
+      }
+    }
   }
 
   @override
@@ -73,7 +109,7 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
                           image: NetworkImage(
                             startup.galleryPaths.isNotEmpty
                                 ? startup.galleryPaths[0]
-                                : 'https://via.placeholder.com/400x250',
+                                : "",
                           ),
                           fit: BoxFit.cover,
                         ),
@@ -196,9 +232,9 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
   Widget _buildTabContent(StartupModel startup) {
     switch (_activeTab) {
       case 'Sócios':
-        return TabPartners(startup: startup, startupId: widget.startupId);
+        return TabPartners(startup: startup, startupId: widget.startupId!);
       case 'Q&A':
-        return TabQA(startupId: widget.startupId, startupName: startup.name);
+        return TabQA(startupId: widget.startupId!, startupName: startup.name);
       case 'Updates':
         return const Center(
           child: Text(
@@ -208,7 +244,7 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
         );
       case 'Sobre':
       default:
-        return TabAbout(startup: startup, startupId: widget.startupId);
+        return TabAbout(startup: startup, startupId: widget.startupId!);
     }
   }
 

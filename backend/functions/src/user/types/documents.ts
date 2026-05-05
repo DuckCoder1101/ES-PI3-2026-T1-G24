@@ -12,6 +12,7 @@ export interface UserDocument {
   email: string;
   cpf: string;
   phone: string;
+  hasTwoFa: boolean;
   createdAt: Timestamp;
 }
 

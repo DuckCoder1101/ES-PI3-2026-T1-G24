@@ -2,7 +2,7 @@
 // RA: 25000636
 
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/screens/app/catalog.dart';
+import 'package:mescla_invest/screens/app/startups/catalog.dart';
 import 'package:mescla_invest/constants/colors.dart';
 
 class MainNavigation extends StatefulWidget {

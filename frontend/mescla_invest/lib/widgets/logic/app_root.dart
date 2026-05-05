@@ -2,8 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'package:mescla_invest/models/user.dart';
-import 'package:mescla_invest/screens/app/catalog.dart';
-import 'package:mescla_invest/screens/public/auth/2fa/verify_2fa.dart';
+import 'package:mescla_invest/screens/app/startups/catalog.dart';
+import 'package:mescla_invest/screens/app/user/2fa/verify_2fa.dart';
 import 'package:mescla_invest/screens/public/welcome.dart';
 
 final auth2FaPassedProvider = ValueNotifier<bool>(false);

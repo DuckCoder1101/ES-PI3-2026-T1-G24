@@ -119,4 +119,19 @@ class UserModel {
       rethrow;
     }
   }
+
+  static Future<Map<String, String?>> get2FACode() async {
+    try {
+      final result = await FirebaseFunctions.instance
+          .httpsCallable('enable2FA')
+          .call();
+
+      return {
+        "otpauth": result.data['otpauth'],
+        "manualKey": result.data['manualKey'],
+      };
+    } catch (e) {
+      rethrow;
+    }
+  }
 }
