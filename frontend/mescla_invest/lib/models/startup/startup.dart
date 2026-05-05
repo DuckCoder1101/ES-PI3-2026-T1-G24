@@ -5,7 +5,6 @@
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/widgets.dart';
 import 'package:mescla_invest/models/startup/external_member.dart';
 import 'package:mescla_invest/models/startup/founder.dart';
 
@@ -104,7 +103,7 @@ class StartupModel {
         Map<String, dynamic>.from(response.data),
       );
     } catch (e) {
-      throw Exception("Erro ao carregar detalhes da startup: $e");
+      rethrow;
     }
   }
 
@@ -134,8 +133,7 @@ class StartupModel {
           )
           .toList();
     } catch (e) {
-      debugPrint("Erro ao buscar listagem: $e");
-      return [];
+      rethrow;
     }
   }
 

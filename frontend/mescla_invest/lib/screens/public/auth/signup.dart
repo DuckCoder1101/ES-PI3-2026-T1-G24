@@ -5,6 +5,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mescla_invest/models/user.dart';
 
 import 'package:mescla_invest/widgets/ui/icon.dart';
 import 'package:mescla_invest/constants/colors.dart';
@@ -21,95 +22,127 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
-  final _nomeController = TextEditingController();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _cpfController = TextEditingController();
-  final _telefoneController = TextEditingController();
-  final _senhaController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   bool _senhaVisivel = false;
   bool _isLoading = false;
+
+  bool get _hasUppercase => RegExp(r'[A-Z]').hasMatch(_passwordController.text);
+  bool get _hasLowercase => RegExp(r'[a-z]').hasMatch(_passwordController.text);
+  bool get _hasNumber => RegExp(r'\d').hasMatch(_passwordController.text);
+  bool get _hasMinMaxLength =>
+      _passwordController.text.length >= 8 &&
+      _passwordController.text.length <= 16;
+
+  String? _errorMessage;
 
   // Mapa de erros por campo
   Map<String, String> _fieldErrors = {};
 
   @override
   void dispose() {
-    _nomeController.dispose();
+    _nameController.dispose();
     _emailController.dispose();
     _cpfController.dispose();
-    _telefoneController.dispose();
-    _senhaController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
-  void _setFieldErrors(Map errors) {
-    setState(() {
-      _fieldErrors = Map<String, String>.from(errors);
-    });
-  }
-
   Future<void> _cadastrarUsuario() async {
-    // Limpa erros antigos
-    setState(() => _fieldErrors = {});
-
     if ([
-      _nomeController,
+      _nameController,
       _emailController,
       _cpfController,
-      _telefoneController,
-      _senhaController,
+      _phoneController,
+      _passwordController,
     ].any((c) => c.text.isEmpty)) {
-      _showSnackBar('Preencha todos os campos obrigatórios.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Preencha todos os campos!"),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      _fieldErrors = {};
+    });
 
     try {
-      final credencial = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-            email: _emailController.text.trim(),
-            password: _senhaController.text.trim(),
-          );
+      await UserModel.register(
+        email: _emailController.text,
+        password: _passwordController.text,
+        name: _nameController.text,
+        cpf: _cpfController.text,
+        phone: _phoneController.text,
+      );
 
-      await credencial.user?.getIdToken(true);
-
-      await FirebaseFunctions.instance.httpsCallable('signup').call({
-        'name': _nomeController.text.trim(),
-        'cpf': _cpfController.text.trim(),
-        'phone': _telefoneController.text.trim(),
-      });
-
-      if (!mounted) return;
-
-      Navigator.of(context).pop();
-      _showSnackBar('Cadastro realizado com sucesso!', isError: false);
-    } catch (e) {
-      if (!mounted) return;
-
-      if (e is FirebaseFunctionsException) {
-        final details = e.details;
-
-        if (details is Map) {
-          _setFieldErrors(details);
-        }
-
-        _showSnackBar(e.message ?? 'Erro ao cadastrar.');
-      } else {
-        _showSnackBar('Erro inesperado: $e');
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          "/dashboard/home",
+          (route) => false,
+        );
       }
+    } on FirebaseFunctionsException catch (e) {
+      setState(() {
+        if (e.code == "invalid-argument" && e.details is Map) {
+          _errorMessage = "Um ou mais campos inválidos!";
+          _fieldErrors = Map<String, String>.from(e.details);
+        } else {
+          _errorMessage =
+              "Erro desconhecido no servidor! Tente novamente mais tarde!";
+        }
+      });
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        if (e.code == "email-already-in-use") {
+          _errorMessage =
+              "Este email já está sendo utilizado por outro usuário!";
+        } else if (e.code == "weak-password") {
+          _errorMessage =
+              "A senha precisa ter entre 8 a 16 dígitos, incluindo uma letra maiúscula, uma letra minúscula e um número!";
+        }
+      });
+    } catch (err) {
+      debugPrint(err.toString());
+
+      if (!mounted) {
+        debugPrint("Not mounted!");
+        return;
+      }
+
+      setState(() {
+        _errorMessage = "Erro desconhecido. Tente novamente mais tarde!";
+      });
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_errorMessage ?? "Conta cadastrada com sucesso!"),
+            backgroundColor: _errorMessage != null
+                ? Colors.redAccent
+                : Colors.green,
+          ),
+        );
+      }
     }
   }
 
-  void _showSnackBar(String message, {bool isError = true}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.redAccent : Colors.green,
-      ),
+  InputBorder _border(Color color) {
+    return OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: color, width: 2),
     );
   }
 
@@ -132,11 +165,38 @@ class _SignupScreenState extends State<SignupScreen> {
           style: const TextStyle(color: Colors.white),
           decoration: AppInputDecoration.field(hintText: hint).copyWith(
             errorText: errorKey != null ? _fieldErrors[errorKey] : null,
+            enabledBorder: _border(
+              _fieldErrors[errorKey] != null ? Colors.red : Colors.transparent,
+            ),
+
+            focusedBorder: _border(
+              _fieldErrors[errorKey] != null
+                  ? Colors.red
+                  : AppColors.verdeMescla,
+            ),
           ),
           inputFormatters: formatter != null ? [formatter] : [],
         ),
         const SizedBox(height: 20),
       ],
+    );
+  }
+
+  Widget _passwordRequirement(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          const Icon(Icons.cancel_rounded, color: Colors.redAccent, size: 18),
+
+          const SizedBox(width: 8),
+
+          Text(
+            text,
+            style: const TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+        ],
+      ),
     );
   }
 
@@ -168,7 +228,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
               _buildField(
                 'Nome Completo',
-                _nomeController,
+                _nameController,
                 'Seu nome',
                 errorKey: 'name',
               ),
@@ -189,7 +249,7 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
               _buildField(
                 'Telefone celular',
-                _telefoneController,
+                _phoneController,
                 '(19) 99999-9999',
                 type: TextInputType.phone,
                 formatter: PhoneInputFormatter(),
@@ -197,22 +257,55 @@ class _SignupScreenState extends State<SignupScreen> {
               ),
 
               const InputLabel(texto: 'Crie sua Senha', obrigatorio: true),
+
               const SizedBox(height: 8),
+
               TextField(
-                controller: _senhaController,
+                controller: _passwordController,
                 obscureText: !_senhaVisivel,
                 style: const TextStyle(color: Colors.white),
+
+                onChanged: (_) {
+                  setState(() {
+                    _fieldErrors.remove('password');
+                  });
+                },
+
                 decoration: AppInputDecoration.field(
                   hintText: '• • • • • • •',
+
                   suffixIcon: IconButton(
                     icon: Icon(
                       _senhaVisivel ? Icons.visibility : Icons.visibility_off,
                       color: AppColors.textoHint,
                     ),
-                    onPressed: () =>
-                        setState(() => _senhaVisivel = !_senhaVisivel),
+
+                    onPressed: () {
+                      setState(() {
+                        _senhaVisivel = !_senhaVisivel;
+                      });
+                    },
                   ),
                 ).copyWith(errorText: _fieldErrors['password']),
+              ),
+
+              const SizedBox(height: 14),
+
+              // CHECKLIST
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (!_hasMinMaxLength)
+                    _passwordRequirement('Entre 8 e 16 caracteres'),
+
+                  if (!_hasUppercase)
+                    _passwordRequirement('Uma letra maiúscula'),
+
+                  if (!_hasLowercase)
+                    _passwordRequirement('Uma letra minúscula'),
+
+                  if (!_hasNumber) _passwordRequirement('Um número'),
+                ],
               ),
 
               const SizedBox(height: 34),
@@ -222,34 +315,6 @@ class _SignupScreenState extends State<SignupScreen> {
                 onPressed: _cadastrarUsuario,
                 isLoading: _isLoading,
               ),
-
-              const SizedBox(height: 24),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Já tem uma conta? ',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: const Text(
-                      'Entrar',
-                      style: TextStyle(
-                        color: AppColors.verdeMescla,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
             ],
           ),
         ),

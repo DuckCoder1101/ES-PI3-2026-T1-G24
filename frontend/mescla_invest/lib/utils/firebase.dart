@@ -13,7 +13,7 @@ class FirebaseService {
   static final FirebaseAuth auth = FirebaseAuth.instance;
 
   static void init() {
-    functions.useFunctionsEmulator('localhost', 5001);
+    // functions.useFunctionsEmulator('localhost', 5001);
     // auth.useAuthEmulator('localhost', 9099);
   }
 }

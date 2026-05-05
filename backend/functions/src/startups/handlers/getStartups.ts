@@ -16,17 +16,14 @@ export const getStartups = onCall(async (req) => {
   const name = normalizeString(filter.name);
 
   if (!stage || !StartupsSearchFilters.includes(stage)) {
-    throw new HttpsError(
-      "invalid-argument",
-      "Invalid or null filter! The filter must be 'all' | 'nova' | 'em_operacao' | 'em_expansao' ",
-    );
+    throw new HttpsError("invalid-argument", "Filtro de busca inválido!");
   }
 
   if (typeof offset != "number" || offset < 0) {
     console.log("Offset: " + offset);
     throw new HttpsError(
       "invalid-argument",
-      "Invalid or null search offset! The offset must be a number greater or equal then 0.",
+      "Offset inválido! O offset deve ser um número >= 0.",
     );
   }
 
@@ -35,7 +32,7 @@ export const getStartups = onCall(async (req) => {
 
     throw new HttpsError(
       "invalid-argument",
-      "Invalid or null search limit! The limit must be a number between 0 and 10.",
+      "Limite inválido! O limite deve ser um número entre 1 e 10.",
     );
   }
 

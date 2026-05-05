@@ -5,8 +5,7 @@
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/rendering.dart';
-import 'package:mescla_invest/utils/validations.dart';
+import 'package:mescla_invest/widgets/logic/app_root.dart';
 
 class UserModel {
   final String uid;
@@ -60,44 +59,61 @@ class UserModel {
           .httpsCallable('getMe')
           .call();
 
-      if (result.data == null) {
-        throw Exception("Usuário não encontrado no banco de dados.");
-      }
-
       final dataMap = Map<String, dynamic>.from(result.data);
       final user = UserModel.fromMap(dataMap);
 
       return user;
     } catch (e) {
-      debugPrint("Erro no UserModel: $e");
       rethrow;
     }
   }
 
-  static Future<void> register() async {}
+  static Future<void> register({
+    required String email,
+    required String password,
+    required String name,
+    required String cpf,
+    required String phone,
+  }) async {
+    email = email.toLowerCase().trim();
+    password = password.trim();
+    name = name.trim();
+    cpf = cpf.trim();
+    phone = phone.trim();
+
+    try {
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      await FirebaseFunctions.instance.httpsCallable('signup').call({
+        'name': name,
+        'cpf': cpf,
+        'phone': phone,
+      });
+    } catch (e) {
+      rethrow;
+    }
+  }
 
   static Future<void> signin(String email, String password) async {
     email = email.trim();
     password = password.trim();
 
-    if (!Validator.isValidEmail(email)) {
-      throw ArgumentError.value(email, "Email", "Endereço de email inválido!");
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } catch (err) {
+      rethrow;
     }
-
-    if (!Validator.isValidPassword(password)) {
-      throw ArgumentError.value(email, "Passwrod", "Senha inválida!");
-    }
-
-    final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-      email: email,
-      password: password,
-    );
-
-    await credential.user?.getIdToken(true);
   }
 
   static Future<void> signout() async {
     try {
+      auth2FaPassedProvider.value = false;
       await FirebaseAuth.instance.signOut();
     } catch (e) {
       rethrow;

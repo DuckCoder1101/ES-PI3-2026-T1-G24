@@ -3,25 +3,21 @@
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/utils/firebase.dart';
-import 'package:mescla_invest/widgets/ui/auth_guard.dart';
+import 'package:mescla_invest/screens/public/auth/forgot_password.dart';
+import 'package:mescla_invest/screens/public/welcome.dart';
+import 'package:mescla_invest/widgets/logic/app_root.dart';
 import 'package:mescla_invest/firebase_options.dart';
-import 'package:mescla_invest/screens/auth/2fa/confirm.dart';
-import 'package:mescla_invest/screens/auth/2fa/enable.dart';
-import 'package:mescla_invest/screens/auth/signin.dart';
-import 'package:mescla_invest/screens/auth/signup.dart';
-import 'package:mescla_invest/screens/auth/2fa/verify.dart';
-import 'package:mescla_invest/screens/dashboard/home.dart';
-import 'package:mescla_invest/screens/dashboard/startup_details.dart';
+import 'package:mescla_invest/screens/public/auth/2fa/confirm_2fa.dart';
+import 'package:mescla_invest/screens/public/auth/2fa/enable_2fa.dart';
+import 'package:mescla_invest/screens/public/auth/signin.dart';
+import 'package:mescla_invest/screens/public/auth/signup.dart';
+import 'package:mescla_invest/screens/public/auth/2fa/verify_2fa.dart';
+import 'package:mescla_invest/screens/app/catalog.dart';
+import 'package:mescla_invest/screens/app/startup_details.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // Somente em DEV
-  FirebaseService.init();
-
   runApp(const MyApp());
 }
 
@@ -36,9 +32,11 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF7FDD3A)),
       ),
-      home: AuthGuard(child: const HomeScreen()),
+      home: AppRoot(),
       routes: {
-        "/dashboard/home": (ctx) => const AuthGuard(child: HomeScreen()),
+        "/welcome": (ctx) => const WelcomeScreen(),
+
+        "/dashboard/home": (ctx) => const CatalogScreen(),
         "/dashboard/startup-details": (ctx) {
           final startupId = ModalRoute.of(ctx)!.settings.arguments as String;
           return StartupDetailsScreen(startupId: startupId);
@@ -46,10 +44,10 @@ class MyApp extends StatelessWidget {
 
         "/auth/signin": (ctx) => const SigninScreen(),
         "/auth/signup": (ctx) => const SignupScreen(),
+        "/auth/forgot-password": (ctx) => const ForgotPasswordScreen(),
         "/auth/verify-2fa": (ctx) => const Verify2FAScreen(),
-        "/auth/enable-2fa": (ctx) => const AuthGuard(child: Enable2FAScreen()),
-        "/auth/confirm-2fa": (ctx) =>
-            const AuthGuard(child: Confirm2FAScreen()),
+        "/auth/enable-2fa": (ctx) => const Enable2FAScreen(),
+        "/auth/confirm-2fa": (ctx) => const Confirm2FAScreen(),
       },
     );
   }

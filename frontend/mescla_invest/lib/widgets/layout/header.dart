@@ -82,7 +82,7 @@ class _AppHeaderState extends State<AppHeader> {
               _buildHoverMenuItem(
                 '2fa',
                 Icons.security_outlined,
-                'Segurança 2FA',
+                widget.user!.has2Fa ? "Desabilitar 2FA" : "Habilitar 2FA",
               ),
               const PopupMenuDivider(height: 1),
               _buildHoverMenuItem(

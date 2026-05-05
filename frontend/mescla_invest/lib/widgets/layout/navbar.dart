@@ -2,7 +2,7 @@
 // RA: 25000636
 
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/screens/dashboard/home.dart';
+import 'package:mescla_invest/screens/app/catalog.dart';
 import 'package:mescla_invest/constants/colors.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -17,7 +17,7 @@ class _MainNavigationState extends State<MainNavigation> {
 
   final List<Widget> _screens = [
     const Center(child: Text('Home')),
-    const HomeScreen(),
+    const CatalogScreen(),
     const Center(child: Text('Balcão')),
     const Center(child: Text('Carteira')),
     const Center(child: Text('Perfil')),
@@ -35,10 +35,6 @@ class _MainNavigationState extends State<MainNavigation> {
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Home',
-          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.show_chart),
             label: 'Startups',
