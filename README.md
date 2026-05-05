@@ -70,13 +70,13 @@ As tecnologias podem variar conforme a implementação do grupo, podendo incluir
 
 # 👥 Integrantes do Grupo
 
-| RA           | Nome                                     |
-| ------------ | ---------------------------------------- |
-| RA: 25000636 | Nome: Cristian Eduardo Fava              |
-| RA: 25002210 | Nome: Arthur Barres Tavares da Silva     |
-| RA: 25009767 | Nome: Gustavo Antônio Marino             |
-| RA: 25000131 | Nome: Maria Eduarda Perez Mostaro Campos |
-| RA: 25000294 | Nome: Vinicius Santuci Virgolino         |
+| RA       | Nome                               |
+| ---------| -----------------------------------|
+| 25000636 | Cristian Eduardo Fava              |
+| 25002210 | Arthur Barres Tavares da Silva     |
+| 25009767 | Gustavo Antônio Marino             |
+| 25000131 | Maria Eduarda Perez Mostaro Campos |
+| 25000294 | Vinicius Santuci Virgolino         |
 
 ---
 
