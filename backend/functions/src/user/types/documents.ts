@@ -6,18 +6,18 @@
 import { Timestamp } from "firebase-admin/firestore";
 
 export interface UserDocument {
-  uid: string;
-  avatarUrl: string;
+  cpf: string;
   name: string;
   email: string;
-  cpf: string;
   phone: string;
+  avatarUrl: string;
   has2Fa: boolean;
   createdAt: Timestamp;
+
+  investments: string[];
 }
 
-export interface twoFaDocument {
-  uid: string;
+export interface TwoFaDocument {
   enabled: boolean;
   secret: string;
   updatedAt: Timestamp;

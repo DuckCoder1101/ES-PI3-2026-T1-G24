@@ -6,7 +6,7 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/https";
 import { database } from "../../shared/firebase";
-import { twoFaDocument } from "../types/documents";
+import { TwoFaDocument } from "../types/documents";
 
 const usersCollection = database.collection("users");
 
@@ -75,5 +75,5 @@ export const get2FA = async (uid: string) => {
 
   if (!snapshot.exists) return null;
 
-  return snapshot.data() as twoFaDocument;
+  return snapshot.data() as TwoFaDocument;
 };
