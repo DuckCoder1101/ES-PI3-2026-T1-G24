@@ -4,6 +4,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/models/user.dart';
+import 'package:mescla_invest/screens/public/auth/verify_2fa.dart';
 import 'package:mescla_invest/widgets/ui/icon.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/widgets/ui/input.dart';
@@ -53,6 +54,22 @@ class _SigninScreenState extends State<SigninScreen> {
     try {
       await UserModel.signin(_emailController.text, _passwordController.text);
 
+      // Login simples (sem MFA): AppRoot detecta via authStateChanges
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } on FirebaseAuthMultiFactorException catch (e) {
+      // Usuário tem TOTP enrolado: redireciona para verificação
+      if (!mounted) return;
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => Verify2FAScreen(multiFactorException: e),
+        ),
+      );
+
+      // Após resolver o MFA, volta à raiz (AppRoot assumirá o controle)
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
@@ -80,13 +97,10 @@ class _SigninScreenState extends State<SigninScreen> {
       }
     } catch (err) {
       debugPrint(err.toString());
-
       if (!mounted) return;
-
-      setState(() {
-        _errorMessage = "Erro desconhecido. Tente novamente mais tarde!";
-      });
-
+      setState(
+        () => _errorMessage = "Erro desconhecido. Tente novamente mais tarde!",
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_errorMessage!),
@@ -98,12 +112,10 @@ class _SigninScreenState extends State<SigninScreen> {
     }
   }
 
-  InputBorder _border(Color color) {
-    return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: color, width: 2),
-    );
-  }
+  InputBorder _border(Color color) => OutlineInputBorder(
+    borderRadius: BorderRadius.circular(12),
+    borderSide: BorderSide(color: color, width: 2),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -119,9 +131,7 @@ class _SigninScreenState extends State<SigninScreen> {
                 padding: EdgeInsets.only(top: 110),
                 child: LogoMesclaInvest(),
               ),
-
               const SizedBox(height: 55),
-
               const Text(
                 'Entrar',
                 textAlign: TextAlign.center,
@@ -131,12 +141,9 @@ class _SigninScreenState extends State<SigninScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-
               const SizedBox(height: 42),
-
               const InputLabel(texto: 'E-mail'),
               const SizedBox(height: 8),
-
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -160,12 +167,9 @@ class _SigninScreenState extends State<SigninScreen> {
                       ),
                     ),
               ),
-
               const SizedBox(height: 28),
-
               const InputLabel(texto: 'Senha'),
               const SizedBox(height: 8),
-
               TextField(
                 controller: _passwordController,
                 obscureText: !_senhaVisivel,
@@ -185,9 +189,8 @@ class _SigninScreenState extends State<SigninScreen> {
                               : Icons.visibility_off,
                           color: AppColors.textoHint,
                         ),
-                        onPressed: () {
-                          setState(() => _senhaVisivel = !_senhaVisivel);
-                        },
+                        onPressed: () =>
+                            setState(() => _senhaVisivel = !_senhaVisivel),
                       ),
                     ).copyWith(
                       enabledBorder: _border(
@@ -200,17 +203,13 @@ class _SigninScreenState extends State<SigninScreen> {
                       ),
                     ),
               ),
-
               const SizedBox(height: 40),
-
               PrimaryButton(
                 text: 'Entrar',
                 onPressed: _loginUsuario,
                 isLoading: _isLoading,
               ),
-
               const SizedBox(height: 18),
-
               GestureDetector(
                 onTap: () =>
                     Navigator.pushNamed(context, "/auth/forgot-password"),
@@ -220,7 +219,6 @@ class _SigninScreenState extends State<SigninScreen> {
                   style: TextStyle(color: AppColors.verdeMescla, fontSize: 13),
                 ),
               ),
-
               const SizedBox(height: 32),
             ],
           ),

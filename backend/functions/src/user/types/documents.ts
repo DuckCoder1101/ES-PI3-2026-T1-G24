@@ -11,15 +11,8 @@ export interface UserDocument {
   email: string;
   phone: string;
   avatarUrl: string;
-  has2Fa: boolean;
   funds: number;
   createdAt: Timestamp;
 
   investments: string[];
-}
-
-export interface TwoFaDocument {
-  enabled: boolean;
-  secret: string;
-  updatedAt: Timestamp;
 }

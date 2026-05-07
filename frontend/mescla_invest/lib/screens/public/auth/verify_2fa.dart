@@ -1,17 +1,20 @@
 // Autor: Cristian Eduardo Fava
 // RA: 25000636
 
-import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/screens/app_root.dart';
 import 'package:pinput/pinput.dart';
 
 import 'package:mescla_invest/constants/colors.dart';
+import 'package:mescla_invest/models/user.dart';
 import 'package:mescla_invest/widgets/ui/primary_button.dart';
 import 'package:mescla_invest/widgets/ui/icon.dart';
 
+/// Tela de verificação TOTP usada durante o login
 class Verify2FAScreen extends StatefulWidget {
-  const Verify2FAScreen({super.key});
+  final FirebaseAuthMultiFactorException multiFactorException;
+
+  const Verify2FAScreen({super.key, required this.multiFactorException});
 
   @override
   State<Verify2FAScreen> createState() => _Verify2FAScreenState();
@@ -27,31 +30,28 @@ class _Verify2FAScreenState extends State<Verify2FAScreen> {
     super.dispose();
   }
 
-  Future<void> _enviarCodigo() async {
-    final token = _pinController.text;
+  Future<void> _verificarCodigo() async {
+    final token = _pinController.text.trim();
     if (token.length != 6) {
-      _showSnackBar('Digite o código completo.');
+      _showSnackBar('Digite o código completo de 6 dígitos.');
       return;
     }
 
+    setState(() => _isLoading = true);
+
     try {
-      setState(() => _isLoading = true);
+      await UserModel.resolveTotp(widget.multiFactorException, token);
 
-      await FirebaseFunctions.instance.httpsCallable("verify2FA").call({
-        "token": token,
-      });
-
-      if (!mounted) return;
-
-      auth2FaPassedProvider.value = true;
-
-      setState(() => _isLoading = false);
-    } catch (e) {
-      if (e is FirebaseFunctionsException) {
-        _showSnackBar(e.message ?? 'Erro ao validar código.');
-      } else {
-        _showSnackBar('Ocorreu um erro inesperado.');
+      if (mounted) {
+        Navigator.of(context).pop();
       }
+    } on FirebaseAuthException catch (e) {
+      final message = e.code == 'invalid-verification-code'
+          ? 'Código inválido. Verifique e tente novamente.'
+          : 'Erro ao validar código: ${e.message}';
+      _showSnackBar(message);
+    } catch (_) {
+      _showSnackBar('Ocorreu um erro inesperado.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -68,7 +68,6 @@ class _Verify2FAScreenState extends State<Verify2FAScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Estilo Pinput idêntico à tela de ativação para consistência
     final defaultPinTheme = PinTheme(
       width: 45,
       height: 55,
@@ -92,13 +91,11 @@ class _Verify2FAScreenState extends State<Verify2FAScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Logo MesclaInvest centralizado no topo
               const Padding(
                 padding: EdgeInsets.only(top: 80),
                 child: LogoMesclaInvest(),
               ),
               const SizedBox(height: 60),
-
               const Text(
                 'Verificação de duas etapas',
                 textAlign: TextAlign.center,
@@ -108,9 +105,13 @@ class _Verify2FAScreenState extends State<Verify2FAScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              const SizedBox(height: 12),
+              const Text(
+                'Abra seu app autenticador e insira\no código de 6 dígitos.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white54, fontSize: 14),
+              ),
               const SizedBox(height: 48),
-
-              // Label alinhado à esquerda
               const Text(
                 'Código de verificação',
                 style: TextStyle(
@@ -120,8 +121,6 @@ class _Verify2FAScreenState extends State<Verify2FAScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-
-              // Campo OTP (Pinput) centralizado
               Center(
                 child: Pinput(
                   controller: _pinController,
@@ -133,17 +132,13 @@ class _Verify2FAScreenState extends State<Verify2FAScreen> {
                       border: Border.all(color: AppColors.verdeMescla),
                     ),
                   ),
-                  // Opcional: Enviar automaticamente quando preencher os 6 dígitos
-                  onCompleted: (pin) => _enviarCodigo(),
+                  onCompleted: (_) => _verificarCodigo(),
                 ),
               ),
               const SizedBox(height: 40),
-
-              // Botão Enviar Reutilizado
               PrimaryButton(
-                text:
-                    'Enviar Código', // Ajustado do protótipo que dizia "Enviar Email"
-                onPressed: _enviarCodigo,
+                text: 'Verificar',
+                onPressed: _verificarCodigo,
                 isLoading: _isLoading,
               ),
               const SizedBox(height: 24),

@@ -39,16 +39,14 @@ export const createUserAccount = async (uid: string, data: UserSignupDTO) => {
 /*
  * Retorna todos os dados do usuário com base no ID
  */
-export const getById = async (uid: string): Promise<UserFullDTO | null> => {
+export const getById = async (uid: string): Promise<UserFullDTO> => {
   const snapshot = await usersCollection.doc(uid).get();
-  if (!snapshot.exists) return null;
-
-  const userData = snapshot.data();
+  const userData = snapshot.data() as UserDocument;
 
   return {
     uid,
     ...userData,
-  } as UserFullDTO;
+  } satisfies UserFullDTO;
 };
 
 /*
