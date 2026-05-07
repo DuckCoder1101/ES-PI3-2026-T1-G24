@@ -1,8 +1,8 @@
 import { HttpsError, onCall } from "firebase-functions/https";
-import { getQuestionsByVisibility } from "../../repositories/questionsRepository";
+import { getStartupQuestions } from "../../repositories/questionsRepository";
 import { getUserProfile } from "../../../shared/auth";
 
-export const listQuestions = onCall(async (req) => {
+export const getQuestions = onCall(async (req) => {
   const { startupId, visibility } = req.data;
   const { uid } = getUserProfile(req);
 
@@ -13,7 +13,6 @@ export const listQuestions = onCall(async (req) => {
     );
   }
 
-  const questions = await getQuestionsByVisibility(startupId, visibility, uid);
-
+  const questions = await getStartupQuestions(startupId, visibility, uid);
   return { questions };
 });

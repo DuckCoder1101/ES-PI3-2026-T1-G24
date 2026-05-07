@@ -60,13 +60,12 @@ class QuestionModel {
   }) async {
     try {
       final response = await FirebaseFunctions.instance
-          .httpsCallable('listQuestions')
+          .httpsCallable('getQuestions')
           .call({
             'startupId': startupId,
             'visibility': visibility.name, // Envia a string para o TS[cite: 16]
           });
 
-      // O retorno do handler listQuestions.ts envolve os dados em um campo 'questions'
       final Map<String, dynamic> data = Map<String, dynamic>.from(
         response.data,
       );
@@ -76,7 +75,7 @@ class QuestionModel {
           .map((q) => QuestionModel.fromMap(Map<String, dynamic>.from(q)))
           .toList();
     } catch (e) {
-      throw Exception("Erro ao buscar perguntas: $e");
+      rethrow;
     }
   }
 
@@ -92,7 +91,7 @@ class QuestionModel {
         'visibility': visibility.name, // Envia a string para o TS[cite: 16]
       });
     } catch (e) {
-      throw Exception("Erro ao registrar pergunta: $e");
+      rethrow;
     }
   }
 
@@ -106,7 +105,7 @@ class QuestionModel {
         'questionId': questionId,
       });
     } catch (e) {
-      throw Exception("Erro ao apagar pergunta: $e");
+      rethrow;
     }
   }
 }

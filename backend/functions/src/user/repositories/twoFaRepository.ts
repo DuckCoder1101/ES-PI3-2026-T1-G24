@@ -14,10 +14,15 @@ export const getTwoFaRef = (uid: string) =>
   usersCollection.doc(uid).collection("security").doc("twoFa");
 
 /*
- * Salva o código 2FA
+ * Salva o código 2FA ainda desativado na conta do usuário
+ * Lança um erro caso o usuário não seja encontrado
  */
-export const set2FASecret = async (uid: string, secret: string) => {
+export const setUser2FaSecret = async (uid: string, secret: string) => {
   const ref = getTwoFaRef(uid);
+
+  if (!ref) {
+    throw new HttpsError("not-found", "Usuário não encontrado!");
+  }
 
   await ref.set({
     uid,
@@ -28,9 +33,10 @@ export const set2FASecret = async (uid: string, secret: string) => {
 };
 
 /*
- * Habilita 2FA
+ * Habilita 2FA já existente para o usuário
+ * Lança um erro caso não seja encontrado o código
  */
-export const enable2FA = async (uid: string) => {
+export const enableUser2Fa = async (uid: string) => {
   const ref = getTwoFaRef(uid);
   const snapshot = await ref.get();
 
@@ -48,9 +54,10 @@ export const enable2FA = async (uid: string) => {
 };
 
 /*
- * Remove 2FA
+ * Desativa e remove o 2FA para o usuário
+ * Lança um erro caso não seja encontrado o código
  */
-export const remove2FA = async (uid: string) => {
+export const removeUser2Fa = async (uid: string) => {
   const ref = getTwoFaRef(uid);
   const snapshot = await ref.get();
 
@@ -70,10 +77,15 @@ export const remove2FA = async (uid: string) => {
 /*
  * Busca 2FA
  */
-export const get2FA = async (uid: string) => {
+export const getUser2Fa = async (uid: string) => {
   const snapshot = await getTwoFaRef(uid).get();
 
-  if (!snapshot.exists) return null;
+  if (!snapshot.exists) {
+    throw new HttpsError(
+      "not-found",
+      "Código 2FA não encontrado para essa conta!",
+    );
+  }
 
   return snapshot.data() as TwoFaDocument;
 };

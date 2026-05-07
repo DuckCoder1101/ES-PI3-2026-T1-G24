@@ -1,9 +1,18 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { HttpsError, onCall } from "firebase-functions/https";
 import { logger } from "firebase-functions/v2";
 import speakeasy from "speakeasy";
 
 import { getUserProfile } from "../../../shared/auth";
-import { get2FA } from "../../repositories/twoFaRepository";
+import { getUser2Fa } from "../../repositories/twoFaRepository";
+
+/*
+ * Verifica o código digitado pelo usuário com o hash salvo no banco
+ */
 
 export const verify2FA = onCall(async (request) => {
   const { uid } = getUserProfile(request);
@@ -11,9 +20,8 @@ export const verify2FA = onCall(async (request) => {
 
   logger.log("Verificando 2FA do usuário: " + uid);
 
-  const twoFa = await get2FA(uid);
-
-  if (!twoFa || !twoFa.enabled) {
+  const twoFa = await getUser2Fa(uid);
+  if (!twoFa.enabled) {
     return {
       success: true,
       data: null,
@@ -28,7 +36,7 @@ export const verify2FA = onCall(async (request) => {
   });
 
   if (!verified) {
-    throw new HttpsError("invalid-argument", "Código inválido");
+    throw new HttpsError("invalid-argument", "Código 2Fa inválido");
   }
 
   return {

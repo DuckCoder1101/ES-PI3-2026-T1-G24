@@ -6,9 +6,15 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { database } from "../../shared/firebase";
 import { UserFullDTO, UserSignupDTO } from "../types/dtos";
+import { HttpsError } from "firebase-functions/https";
+import { UserDocument } from "../types/documents";
 
 const usersCollection = database.collection("users");
 
+/*
+ * Cadastra um novo usuário na coleção users do firestore
+ * Lança um erro caso já exista um usuário com o mesmo CPF
+ */
 export const createUserAccount = async (uid: string, data: UserSignupDTO) => {
   await database.runTransaction(async (tx) => {
     const cpfRef = database.collection("cpf_index").doc(data.cpf);
@@ -17,18 +23,22 @@ export const createUserAccount = async (uid: string, data: UserSignupDTO) => {
     const cpfDoc = await tx.get(cpfRef);
 
     if (cpfDoc.exists) {
-      throw new Error("CPF já cadastrado");
+      throw new HttpsError("already-exists", "CPF já cadastrado!");
     }
 
     tx.set(cpfRef, { uid });
     tx.set(userRef, {
       ...data,
       has2Fa: false,
+      funds: 1000,
       createdAt: FieldValue.serverTimestamp(),
     });
   });
 };
 
+/*
+ * Retorna todos os dados do usuário com base no ID
+ */
 export const getById = async (uid: string): Promise<UserFullDTO | null> => {
   const snapshot = await usersCollection.doc(uid).get();
   if (!snapshot.exists) return null;
@@ -41,7 +51,34 @@ export const getById = async (uid: string): Promise<UserFullDTO | null> => {
   } as UserFullDTO;
 };
 
-export const existsByCpf = async (cpf: string): Promise<boolean> => {
-  const cpfDoc = await database.collection("cpf_index").doc(cpf).get();
-  return cpfDoc.exists;
+/*
+ * Adiciona um deternminado valor à carteira do usuário
+ */
+export const addUserFunds = async (uid: string, funds: number) => {
+  const snapshot = await usersCollection.doc(uid).get();
+
+  if (!snapshot) {
+    throw new HttpsError("not-found", "Usuário não encontrado!");
+  }
+
+  const user = snapshot.data() as UserDocument;
+  await snapshot.ref.set({ funds: user.funds + funds }, { merge: true });
+};
+
+/*
+ * Remove um deternminado valor da carteira do usuário se ele tem saldo sulficiente
+ */
+export const subUserFunds = async (uid: string, funds: number) => {
+  const snapshot = await usersCollection.doc(uid).get();
+
+  if (!snapshot) {
+    throw new HttpsError("not-found", "Usuário não encontrado!");
+  }
+
+  const user = snapshot.data() as UserDocument;
+  if (user.funds - funds < 0) {
+    throw new HttpsError("out-of-range", "Fundos insuficientes!");
+  }
+
+  await snapshot.ref.set({ funds: user.funds - funds }, { merge: true });
 };

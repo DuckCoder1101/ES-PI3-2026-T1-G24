@@ -6,7 +6,7 @@ import { logger } from "firebase-functions/v2";
 import speakeasy from "speakeasy";
 
 import { getUserProfile } from "../../../shared/auth";
-import { set2FASecret } from "../../repositories/twoFaRepository";
+import { setUser2FaSecret } from "../../repositories/twoFaRepository";
 
 export const enable2FA = onCall(async (request) => {
   const { uid } = getUserProfile(request);
@@ -19,7 +19,7 @@ export const enable2FA = onCall(async (request) => {
   const otpauth = `otpauth://totp/Mescla-Invest?secret=${secret.base32}&issuer=Mescla_Invest`;
 
   // Salva o secret
-  await set2FASecret(uid, secret.base32);
+  await setUser2FaSecret(uid, secret.base32);
 
   return {
     success: true,

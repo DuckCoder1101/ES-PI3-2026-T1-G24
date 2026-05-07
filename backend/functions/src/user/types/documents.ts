@@ -12,6 +12,7 @@ export interface UserDocument {
   phone: string;
   avatarUrl: string;
   has2Fa: boolean;
+  funds: number;
   createdAt: Timestamp;
 
   investments: string[];

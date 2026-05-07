@@ -107,9 +107,8 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
                       decoration: BoxDecoration(
                         image: DecorationImage(
                           image: NetworkImage(
-                            startup.galleryPaths.isNotEmpty
-                                ? startup.galleryPaths[0]
-                                : "",
+                            startup.thumbnailUrl ??
+                                "https://placehold.co/600x400/png",
                           ),
                           fit: BoxFit.cover,
                         ),
@@ -161,14 +160,6 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
                             AppColors.verdeMescla,
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        startup.type,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 16,
-                        ),
                       ),
 
                       const SizedBox(height: 24),
@@ -278,7 +269,6 @@ class TabAbout extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (startup.videoPath != null) _buildVideoSection(),
         const Text(
           "DESCRIÇÃO",
           style: TextStyle(
@@ -286,7 +276,9 @@ class TabAbout extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
+
         const SizedBox(height: 12),
+
         Text(
           startup.description,
           style: const TextStyle(
@@ -295,6 +287,8 @@ class TabAbout extends StatelessWidget {
             height: 1.5,
           ),
         ),
+
+        if (startup.videoUrl != null) _buildVideoSection(),
       ],
     );
   }

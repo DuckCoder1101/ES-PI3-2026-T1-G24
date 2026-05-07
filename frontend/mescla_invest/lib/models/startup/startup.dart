@@ -5,6 +5,7 @@
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 
 enum StartupStage { nova, em_operacao, em_expansao }
 
@@ -20,12 +21,22 @@ class StartupModel {
   final int totalTokens;
   final double totalRaised;
   final StartupStage stage;
-  final String type;
+
+  final String? thumbnailPath;
   final String? videoPath;
-  final List<String> galleryPaths;
+
+  String? _thumbnailUrl;
+  String? _videoUrl;
+
+  String? get thumbnailUrl => _thumbnailUrl;
+  String? get videoUrl => _videoUrl;
+
+  bool _triedToLoadFiles = false;
+
+  final List<String> tags;
+
   final List<FounderModel> founders;
   final List<ExternalMemberModel> externalMembers;
-  final List<String> tags;
 
   StartupModel({
     required this.id,
@@ -37,16 +48,14 @@ class StartupModel {
     required this.totalTokens,
     required this.totalRaised,
     required this.stage,
-    required this.type,
-    this.videoPath,
-    this.galleryPaths = const [],
+    required this.thumbnailPath,
+    required this.videoPath,
     this.founders = const [],
     this.externalMembers = const [],
     this.tags = const [],
   });
 
   factory StartupModel.fromMap(String id, Map<String, dynamic> rawMap) {
-    // Limpeza de chaves para evitar problemas com espaços do CSV
     final map = rawMap.map((key, value) => MapEntry(key.trim(), value));
 
     // Mapeamento do Enum de estágio
@@ -69,25 +78,47 @@ class StartupModel {
       description: map['description'] ?? '',
       shortDescription: map['shortDescription'] ?? '',
       executiveSummary: map['executiveSummary'] ?? '',
-      // Conversão de cents para Real (decimal)
       tokenPrice: ((map['currentTokenPriceCents'] ?? 0) / 100).toDouble(),
       totalTokens: map['totalTokensIssued'] ?? 0,
       totalRaised: ((map['capitalRaisedCents'] ?? 0) / 100).toDouble(),
       stage: stageEnum,
-      type: map['type'] ?? 'Start-up',
-      // Pega o primeiro vídeo da lista enviada pelo CSV
-      videoPath: (map['videos'] as List?)?.isNotEmpty == true
-          ? (map['videos'] as List).first.toString()
-          : null,
-      galleryPaths: List<String>.from(map['galleryPaths'] ?? []),
+
+      thumbnailPath: map["thumbnailPath"],
+      videoPath: map["videoPath"],
+
       tags: List<String>.from(map['tags'] ?? []),
+
       founders: (map['founders'] as List? ?? [])
           .map((f) => FounderModel.fromMap(Map<String, dynamic>.from(f)))
           .toList(),
+
       externalMembers: (map['externalMember'] as List? ?? [])
           .map((e) => ExternalMemberModel.fromMap(Map<String, dynamic>.from(e)))
           .toList(),
     );
+  }
+
+  Future<void> loadMedia() async {
+    if (_triedToLoadFiles) return;
+    _triedToLoadFiles = true;
+
+    try {
+      if (thumbnailPath != null) {
+        _thumbnailUrl = await FirebaseStorage.instance
+            .ref(thumbnailPath)
+            .getDownloadURL();
+      }
+
+      if (videoPath != null) {
+        _videoUrl = await FirebaseStorage.instance
+            .ref(videoPath)
+            .getDownloadURL();
+      }
+    } catch (err) {
+      debugPrint("Erro ao tentar carregar mídias da startup $id: $err");
+    } finally {
+      _triedToLoadFiles = true;
+    }
   }
 
   static Future<StartupModel> getStartupDetails(String startupId) async {
@@ -96,10 +127,14 @@ class StartupModel {
           .httpsCallable('getStartupDetails')
           .call({'startupId': startupId});
 
-      return StartupModel.fromMap(
+      final startup = StartupModel.fromMap(
         startupId,
         Map<String, dynamic>.from(response.data),
       );
+
+      await startup.loadMedia();
+
+      return startup;
     } catch (e) {
       rethrow;
     }
@@ -115,13 +150,11 @@ class StartupModel {
       final response = await FirebaseFunctions.instance
           .httpsCallable('getStartups')
           .call({
-            // Garante que offset e limit sejam tratados como números puros
             'offset': offset.toInt(),
             'limit': limit.toInt(),
             'filter': {'stage': stageFilter.name, 'name': nameFilter},
           });
 
-      // Verifique se a estrutura de retorno coincide com o que o backend envia { startups: [...] }
       final data = response.data as Map<dynamic, dynamic>;
       final List rawList = data['startups'] ?? [];
 
@@ -133,11 +166,6 @@ class StartupModel {
     } catch (e) {
       rethrow;
     }
-  }
-
-  Future<String> getDownloadUrl(String path) async {
-    if (path.startsWith('http')) return path;
-    return await FirebaseStorage.instance.ref(path).getDownloadURL();
   }
 }
 

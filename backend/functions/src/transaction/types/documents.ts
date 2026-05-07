@@ -1,6 +1,6 @@
 import { Timestamp } from "firebase-admin/firestore";
 
-export type TransactionType = "investment" | "credits";
+export type TransactionType = "investment" | "funds";
 
 export interface TransactionDocument {
   userUId: string;

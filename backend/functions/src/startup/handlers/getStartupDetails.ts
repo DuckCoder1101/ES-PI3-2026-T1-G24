@@ -1,9 +1,17 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { HttpsError, onCall } from "firebase-functions/https";
 import { GetStartupDetailsBodyDTO } from "../types/dtos";
 import { normalizeString } from "../../shared/utils";
 import { getFullStartup } from "../repositories/startupsRepository";
 import { getUserProfile } from "../../shared/auth";
 
+/*
+ * Busca todos os dados de uma startup com base no id
+ */
 export const getStartupDetails = onCall(async (req) => {
   const { startupId } = req.data as GetStartupDetailsBodyDTO;
   const normalizedStartupId = normalizeString(startupId);
@@ -14,11 +22,5 @@ export const getStartupDetails = onCall(async (req) => {
     throw new HttpsError("invalid-argument", "Invalid or null startup id!");
   }
 
-  const startup = await getFullStartup(startupId);
-
-  if (!startup) {
-    throw new HttpsError("not-found", "Startup não encontrada!");
-  }
-
-  return startup;
+  return await getFullStartup(startupId);
 });
