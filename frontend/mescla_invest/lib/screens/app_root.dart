@@ -9,11 +9,8 @@ import 'package:flutter/material.dart';
 
 import 'package:mescla_invest/models/user.dart';
 import 'package:mescla_invest/screens/app/startups/catalog.dart';
-import 'package:mescla_invest/screens/public/auth/verify_2fa.dart';
 import 'package:mescla_invest/screens/public/welcome.dart';
 
-// Providers globais de sessão — importados por outras telas para reagir ao estado
-final auth2FaPassedProvider = ValueNotifier<bool>(false);
 final authUserDataProvider = ValueNotifier<UserModel?>(null);
 
 class AppRoot extends StatefulWidget {
@@ -24,59 +21,39 @@ class AppRoot extends StatefulWidget {
 }
 
 class _AppRootState extends State<AppRoot> {
-  // Cache do Future de carregamento para não re-executar a cada rebuild
   Future<UserModel?>? _userFuture;
-
-  // Controla troca de conta: recria _userFuture apenas quando o UID muda
   User? _lastFirebaseUser;
-
-  // Mensagem pendente a ser exibida via SnackBar após o próximo frame
-  // (usada quando o deslogin é forçado por erro, ex: sessão expirada)
   String? _pendingErrorMessage;
-  //
-  Future<UserModel?> _loadUser(User firebaseUser) async {
-    const maxRetries = 3;
-    const retryDelay = Duration(milliseconds: 1500);
 
-    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+  // app_root.dart - Ajuste no _loadUser
+  Future<UserModel?> _loadUser(User firebaseUser) async {
+    const maxRetries = 6;
+    const delays = [500, 1000, 2000, 4000, 6000, 8000];
+
+    for (int attempt = 0; attempt < maxRetries; attempt++) {
       try {
         final user = await UserModel.getFullUserData();
-
         authUserDataProvider.value = user;
-
-        // Usuários sem 2FA passam direto para o catálogo
-        if (!user.has2Fa) {
-          auth2FaPassedProvider.value = true;
-        }
-
         return user;
       } on FirebaseFunctionsException catch (err) {
-        if (err.code == 'not-found' && attempt < maxRetries) {
-          await Future.delayed(retryDelay);
+        if (err.code == 'not-found' && attempt < maxRetries - 1) {
+          await Future.delayed(Duration(milliseconds: delays[attempt]));
           continue;
         }
-
-        _pendingErrorMessage = switch (err.code) {
-          'unauthenticated' => 'Sessão expirada. Faça login novamente.',
-          'not-found' => 'Conta não encontrada. Tente novamente.',
-          _ => 'Erro ao carregar dados. Tente novamente.',
-        };
-
-        await UserModel.signout();
-        return null;
+        _pendingErrorMessage = 'Erro ao carregar dados da conta.';
+        break;
       } catch (_) {
-        _pendingErrorMessage = 'Erro inesperado. Tente novamente mais tarde.';
-        await UserModel.signout();
-        return null;
+        _pendingErrorMessage = 'Erro de conexão.';
+        break;
       }
     }
 
+    await UserModel.signout();
     return null;
   }
 
   void _flushPendingError() {
     if (_pendingErrorMessage == null) return;
-
     final message = _pendingErrorMessage!;
     _pendingErrorMessage = null;
 
@@ -101,20 +78,20 @@ class _AppRootState extends State<AppRoot> {
 
         final firebaseUser = authSnapshot.data;
 
-        // --- Não autenticado ---
         if (firebaseUser == null) {
           _lastFirebaseUser = null;
           _userFuture = null;
-          authUserDataProvider.value = null;
-          auth2FaPassedProvider.value = false;
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            authUserDataProvider.value = null;
+          });
+
           return const WelcomeScreen();
         }
 
-        // Só recria o Future quando o usuário muda (login com outra conta)
         if (_userFuture == null || firebaseUser.uid != _lastFirebaseUser?.uid) {
           _lastFirebaseUser = firebaseUser;
           _userFuture = _loadUser(firebaseUser);
-          auth2FaPassedProvider.value = false;
         }
 
         return FutureBuilder<UserModel?>(
@@ -125,21 +102,9 @@ class _AppRootState extends State<AppRoot> {
             }
 
             final user = userSnapshot.data;
+            if (user == null) return const WelcomeScreen();
 
-            if (user == null) {
-              return const WelcomeScreen();
-            }
-
-            // --- Dados carregados: decide qual tela exibir ---
-            return ValueListenableBuilder<bool>(
-              valueListenable: auth2FaPassedProvider,
-              builder: (context, passed2FA, _) {
-                if (user.has2Fa && !passed2FA) {
-                  return const Verify2FAScreen();
-                }
-                return const CatalogScreen();
-              },
-            );
+            return const CatalogScreen();
           },
         );
       },

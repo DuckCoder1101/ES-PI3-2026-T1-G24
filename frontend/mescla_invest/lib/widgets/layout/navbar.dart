@@ -43,10 +43,7 @@ class _MainNavigationState extends State<MainNavigation> {
             icon: Icon(Icons.swap_horiz),
             label: 'Balcão',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            label: 'Carteira',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.money), label: 'Carteira'),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             label: 'Perfil',

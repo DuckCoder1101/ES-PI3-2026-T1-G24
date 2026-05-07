@@ -7,6 +7,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { database } from "../../shared/firebase";
 import { QuestionDocument } from "../types/documents";
 import { QuestionListDTO, QuestionRegisterDTO } from "../types/dtos";
+import { HttpsError } from "firebase-functions/https";
 
 // Função auxiliar para obter a referência da sub-coleção de questões
 const getQuestionsCollection = (startupId: string) =>
@@ -23,12 +24,14 @@ export const saveQuestion = async (
   });
 };
 
-export const getQuestionsByVisibility = async (
+/*
+ * Procura todas as questões que o usuário tem acesso, em uma startup
+ */
+export const getStartupQuestions = async (
   startupId: string,
   visibility: string,
   currentUserId: string,
 ): Promise<QuestionListDTO[]> => {
-  // REMOVIDO: .orderBy("createdAt", "desc") para evitar a necessidade de índice composto
   const snapshot = await getQuestionsCollection(startupId)
     .where("visibility", "==", visibility)
     .get();
@@ -41,14 +44,17 @@ export const getQuestionsByVisibility = async (
     };
   });
 
-  // ORDENAÇÃO MANUAL: Ordenamos na memória antes de retornar ao Flutter
+  // Ordena as questões por mais recentes -> não era possível usar o .sort()
   return questions.sort((a, b) => {
     const timeA = a.createdAt?.toMillis() || 0;
     const timeB = b.createdAt?.toMillis() || 0;
-    return timeB - timeA; // Descendente (mais recentes primeiro)
+    return timeB - timeA;
   });
 };
 
+/*
+ * Deleta uma questão da
+ */
 export const deleteQuestionById = async (
   startupId: string,
   questionId: string,
@@ -57,13 +63,18 @@ export const deleteQuestionById = async (
   const docRef = getQuestionsCollection(startupId).doc(questionId);
   const doc = await docRef.get();
 
-  if (!doc.exists) return;
+  if (!doc.exists) {
+    throw new HttpsError("not-found", "Pergunta não encontrada!");
+  }
 
   const data = doc.data() as QuestionDocument;
 
   // Verificação de segurança: apenas o autor pode deletar
   if (data.authorUId !== userId) {
-    throw new Error("Permission denied: You are not the author.");
+    throw new HttpsError(
+      "permission-denied",
+      "Você não pode excluir uma pergunta feita por outro usuário!",
+    );
   }
 
   await docRef.delete();

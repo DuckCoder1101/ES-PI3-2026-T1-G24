@@ -27,10 +27,13 @@ export interface StartupDocument {
   currentTokenPriceCents: number;
   founders: Founder[];
   externalMember: ExternalMember[];
-  videos: string[];
-  pitchDeckUrl?: string;
-  coverImageUrl: string;
+
+  pitchDeckPath?: string;
+  thumbnailPath?: string;
+  videoPath?: string;
+
   tags: string[];
+
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 }

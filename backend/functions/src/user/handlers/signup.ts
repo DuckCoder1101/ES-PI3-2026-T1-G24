@@ -11,11 +11,10 @@ import { normalizeString } from "../../shared/utils";
 import { checkCPF, checkPhone } from "../shared/validations";
 
 import { UserSignupDTO } from "../types/dtos";
-import { createUserAccount, existsByCpf } from "../repositories/userRepository";
+import { createUserAccount } from "../repositories/userRepository";
 import { getUserProfile } from "../../shared/auth";
 
-/**
- * @name signup
+/*
  * Verifica se a autenticação já foi criada no FirebaseAuth
  * Verifica os dados da requisição
  * Se tudo estiver válido, chama a função de cadastro no repositório e salva a sessão
@@ -34,8 +33,6 @@ export const signup = onCall(async (request) => {
   if (!name) fieldErrors.name = "Nome não informado!";
   if (!checkCPF(cpf)) fieldErrors.cpf = "CPF inválido!";
   if (!checkPhone(phone)) fieldErrors.phone = "Celular inválido!";
-
-  if (await existsByCpf(cpf)) fieldErrors.cpf = "CPF já utilizado!";
 
   if (Object.keys(fieldErrors).length > 0) {
     await admin.auth().deleteUser(uid);

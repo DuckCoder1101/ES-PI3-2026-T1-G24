@@ -171,21 +171,27 @@ class _CatalogScreenState extends State<CatalogScreen> {
       itemBuilder: (context, index) {
         if (index < _startups.length) {
           final startup = _startups[index];
-          return GestureDetector(
-            onTap: () => Navigator.pushNamed(
-              context,
-              "/dashboard/startup-details",
-              arguments: startup.id,
-            ),
-            child: _buildStartupCard(
-              title: startup.name,
-              description: startup.shortDescription,
-              status: startup.stage.name.replaceAll('_', ' '),
-              tokens: "${startup.totalTokens} tokens",
-              imageUrl: startup.galleryPaths.isNotEmpty
-                  ? startup.galleryPaths[0]
-                  : null,
-            ),
+
+          return FutureBuilder(
+            future: startup.loadMedia(),
+            builder: (context, snapshot) {
+              return GestureDetector(
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  "/dashboard/startup-details",
+                  arguments: startup.id,
+                ),
+                child: _buildStartupCard(
+                  title: startup.name,
+                  description: startup.shortDescription,
+                  status: startup.stage.name.replaceAll('_', ' '),
+                  tokens: "${startup.totalTokens} tokens",
+                  imageUrl: snapshot.connectionState == ConnectionState.done
+                      ? startup.thumbnailUrl
+                      : null,
+                ),
+              );
+            },
           );
         } else {
           return const Padding(

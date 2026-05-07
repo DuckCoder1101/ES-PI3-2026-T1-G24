@@ -1,13 +1,16 @@
 import { Timestamp } from "firebase-admin/firestore";
 import {
-  ExternalMember,
-  Founder,
   QuestionAnwserDocument,
   QuestionVisibility,
+  StartupDocument,
   StartupStage,
 } from "./documents";
 
 export type StartupStageFilter = StartupStage | "all";
+
+export interface StartupDetailsDTO extends StartupDocument {
+  id: string;
+}
 
 export interface StartupListItemDTO {
   id: string;
@@ -17,27 +20,8 @@ export interface StartupListItemDTO {
   capitalRaisedCents: number;
   totalTokensIssued: number;
   currentTokenPriceCents: number;
-  coverImageUrl?: string;
+  thumbnailPath?: string;
   tags: string[];
-}
-
-export interface StartupFullDTO {
-  id: string;
-  name: string;
-  stage: StartupStage;
-  shortDescription: string;
-  description: string;
-  executiveSummary: string;
-  capitalRaisedCents: number;
-  totalTokensIssued: number;
-  currentTokenPriceCents: number;
-  founders: Founder[];
-  externalMember: ExternalMember[];
-  videos: string[];
-  pitchDeckUrl?: string;
-  coverImageUrl: string;
-  tags: string[];
-  createdAt?: Timestamp;
 }
 
 export interface GetStartupsRequestBodyDTO {

@@ -8,9 +8,8 @@ import { getById } from "../repositories/userRepository";
 import { getUserProfile } from "../../shared/auth";
 import { logger } from "firebase-functions";
 
-/**
- * @name getMe
- * Verifica se o usuário está autenticado, e retorna os dados.
+/*
+ * Retorna os dados completos do usuário
  */
 export const getMe = onCall(async (request) => {
   const { uid } = getUserProfile(request);
