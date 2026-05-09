@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 
 import 'package:mescla_invest/models/user.dart';
 import 'package:mescla_invest/screens/app/startups/catalog.dart';
-import 'package:mescla_invest/screens/public/auth/verify-email.dart';
+import 'package:mescla_invest/screens/public/auth/verify_email.dart';
 import 'package:mescla_invest/screens/public/welcome.dart';
 
 final authUserDataProvider = ValueNotifier<UserModel?>(null);
