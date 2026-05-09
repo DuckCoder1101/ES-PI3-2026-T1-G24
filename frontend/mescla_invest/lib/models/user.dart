@@ -3,8 +3,11 @@
  * RA: 25000636
  */
 
+import 'dart:io';
+
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 /// Dados retornados ao iniciar o TOTP.
 class TotpEnrollmentData {
@@ -20,7 +23,6 @@ class UserModel {
   final String email;
   final String cpf;
   final String phone;
-  final String? avatarUrl;
 
   UserModel({
     required this.uid,
@@ -28,13 +30,11 @@ class UserModel {
     required this.email,
     required this.cpf,
     required this.phone,
-    this.avatarUrl,
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
       uid: map['uid'],
-      avatarUrl: map['avatarUrl'],
       name: map['name'] ?? '',
       email: map['email'] ?? '',
       cpf: map['cpf'] ?? '',
@@ -42,13 +42,16 @@ class UserModel {
     );
   }
 
-  // Verifica se TOTP está ativo
-  static Future<bool> checkHas2Fa() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return false;
+  // Retorna o URL da foto de perfil
+  Future<String?> getAvatarUrl() async {
+    return await FirebaseStorage.instance
+        .ref("/users/$uid/avatar")
+        .getDownloadURL();
+  }
 
-    final factors = await user.multiFactor.getEnrolledFactors();
-    return factors.any((f) => f.factorId == 'totp');
+  // Salva uma nova foto de perfil
+  Future<void> uploadAvatarPicture(File file) async {
+    await FirebaseStorage.instance.ref("/users/$uid/avatar").putFile(file);
   }
 
   // Dados do usuário
@@ -65,7 +68,7 @@ class UserModel {
     }
   }
 
-  // Autenticação
+  // Cadastro
   static Future<void> register({
     required String email,
     required String password,
@@ -97,7 +100,21 @@ class UserModel {
     }
   }
 
-  /// Efetua o login
+  // Alteração de dados
+  static Future<void> updateProfile({
+    required String name,
+    required String phone,
+  }) async {
+    name = name.trim();
+    phone = phone.trim();
+
+    await FirebaseFunctions.instance.httpsCallable("updateProfile").call({
+      "name": name,
+      "phone": phone,
+    });
+  }
+
+  // Efetua o login
   static Future<void> signin(String email, String password) async {
     email = email.trim();
     password = password.trim();
@@ -112,7 +129,7 @@ class UserModel {
     await FirebaseAuth.instance.signOut();
   }
 
-  /// otpauth:// para o QR code e o secrete para finalizar o registro do TOTP.
+  // otpauth:// para o QR code e o secrete para finalizar o registro do TOTP.
   static Future<TotpEnrollmentData> beginTotpActivation(
     String accountName,
   ) async {
@@ -130,7 +147,7 @@ class UserModel {
     return TotpEnrollmentData(otpauthUrl: otpauthUrl, secret: secret);
   }
 
-  /// Finaliza o enrolamento com o código de 6 dígitos do app autenticador.
+  // Finaliza o enrolamento com o código de 6 dígitos do app autenticador.
   static Future<void> finalizeTotpActivation(
     TotpSecret secret,
     String totpCode, {
@@ -147,7 +164,7 @@ class UserModel {
     await user.multiFactor.enroll(assertion, displayName: displayName);
   }
 
-  /// Desativa o 2FA.
+  // Desativa o 2FA.
   static Future<void> disableTotp() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception('Usuário não autenticado.');
@@ -161,7 +178,7 @@ class UserModel {
     await user.multiFactor.unenroll(multiFactorInfo: totp);
   }
 
-  /// Conclui o login MFA com o código TOTP fornecido pelo usuário.
+  // Conclui o login MFA com o código TOTP fornecido pelo usuário.
   static Future<void> resolveTotp(
     FirebaseAuthMultiFactorException exception,
     String totpCode,
@@ -180,5 +197,14 @@ class UserModel {
     );
 
     await resolver.resolveSignIn(assertion);
+  }
+
+  // Verifica se TOTP está ativo
+  static Future<bool> checkHas2Fa() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
+
+    final factors = await user.multiFactor.getEnrolledFactors();
+    return factors.any((f) => f.factorId == 'totp');
   }
 }

@@ -18,13 +18,6 @@ enum NavDestination {
     NavDestination.account => 'Minha conta',
   };
 
-  String get route => switch (this) {
-    NavDestination.catalog => "/startups/catalog",
-    NavDestination.market => "/startups/market",
-    NavDestination.wallet => "/user/waller",
-    NavDestination.account => "/user/account",
-  };
-
   IconData get icon => switch (this) {
     NavDestination.catalog => Icons.grid_view_rounded,
     NavDestination.market => Icons.show_chart_rounded,
@@ -42,8 +35,9 @@ enum NavDestination {
 
 class NavBar extends StatelessWidget {
   final NavDestination current;
+  final ValueChanged<NavDestination> onChanged;
 
-  const NavBar({super.key, required this.current});
+  const NavBar({super.key, required this.current, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -63,7 +57,7 @@ class NavBar extends StatelessWidget {
                   destination: dest,
                   isSelected: dest == current,
                   onTap: () {
-                    Navigator.pushReplacementNamed(context, dest.route);
+                    onChanged(dest);
                   },
                 ),
               );
@@ -117,19 +111,20 @@ class _NavItemState extends State<_NavItem>
     super.dispose();
   }
 
-  Future<void> _handleTap() async {
-    await _controller.forward();
-    await _controller.reverse();
+  void _handleTap() {
     widget.onTap();
+
+    _controller.forward().then((_) {
+      _controller.reverse();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final isSelected = widget.isSelected;
 
-    return GestureDetector(
+    return InkWell(
       onTap: _handleTap,
-      behavior: HitTestBehavior.opaque,
       child: ScaleTransition(
         scale: _scaleAnim,
         child: Column(

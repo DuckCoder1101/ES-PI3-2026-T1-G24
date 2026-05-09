@@ -8,8 +8,6 @@ import 'package:mescla_invest/screens/app_root.dart';
 import 'package:mescla_invest/firebase_options.dart';
 import 'package:mescla_invest/screens/public/auth/signin.dart';
 import 'package:mescla_invest/screens/public/auth/signup.dart';
-import 'package:mescla_invest/screens/app/startups/catalog.dart';
-import 'package:mescla_invest/screens/app/startups/startup_details.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,12 +34,6 @@ class MesclaInvest extends StatelessWidget {
       home: AppRoot(),
       routes: {
         "/welcome": (ctx) => const WelcomeScreen(),
-
-        "/dashboard/home": (ctx) => const CatalogScreen(),
-        "/dashboard/startup-details": (ctx) {
-          final startupId = ModalRoute.of(ctx)!.settings.arguments as String?;
-          return StartupDetailsScreen(startupId: startupId);
-        },
 
         "/auth/activate-2fa": (ctx) => const Activate2FAScreen(),
 

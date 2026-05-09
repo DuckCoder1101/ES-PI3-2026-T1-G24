@@ -5,7 +5,6 @@
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart';
 
 enum StartupStage { nova, em_operacao, em_expansao }
 
@@ -114,8 +113,6 @@ class StartupModel {
             .ref(videoPath)
             .getDownloadURL();
       }
-    } catch (err) {
-      debugPrint("Erro ao tentar carregar mídias da startup $id: $err");
     } finally {
       _triedToLoadFiles = true;
     }

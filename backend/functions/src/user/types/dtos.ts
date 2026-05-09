@@ -16,6 +16,11 @@ export interface UserSignupDTO {
   phone: string;
 }
 
+export interface UpdateProfileDTO {
+  name: string;
+  phone: string;
+}
+
 export interface UserProfile {
   uid: string;
   email: string;

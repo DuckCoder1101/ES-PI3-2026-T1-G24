@@ -8,7 +8,6 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:mescla_invest/models/startup/startup.dart';
 import 'package:mescla_invest/widgets/layout/header.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/widgets/layout/navbar.dart';
 
 class CatalogScreen extends StatefulWidget {
   const CatalogScreen({super.key});
@@ -113,10 +112,9 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.fundoEscuro,
-      bottomNavigationBar: NavBar(current: NavDestination.catalog),
-      body: SafeArea(
+    return Container(
+      color: AppColors.fundoEscuro,
+      child: SafeArea(
         child: Column(
           children: [
             AppHeader(),
@@ -173,7 +171,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
               return GestureDetector(
                 onTap: () => Navigator.pushNamed(
                   context,
-                  "/dashboard/startup-details",
+                  "/startups/startup-details",
                   arguments: startup.id,
                 ),
                 child: _buildStartupCard(

@@ -6,11 +6,16 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mescla_invest/constants/colors.dart';
 
 import 'package:mescla_invest/models/user.dart';
 import 'package:mescla_invest/screens/app/startups/catalog.dart';
+import 'package:mescla_invest/screens/app/startups/market.dart';
+import 'package:mescla_invest/screens/app/user/account.dart';
+import 'package:mescla_invest/screens/app/user/wallet.dart';
 import 'package:mescla_invest/screens/public/auth/verify_email.dart';
 import 'package:mescla_invest/screens/public/welcome.dart';
+import 'package:mescla_invest/widgets/layout/navbar.dart';
 
 final authUserDataProvider = ValueNotifier<UserModel?>(null);
 
@@ -26,7 +31,17 @@ class _AppRootState extends State<AppRoot> {
   User? _lastFirebaseUser;
   String? _pendingErrorMessage;
 
-  // app_root.dart - Ajuste no _loadUser
+  // Estado da navbar fora dos builders — nunca recriado por streams
+  NavDestination _currentDestination = NavDestination.catalog;
+
+  // Telas instanciadas uma única vez — IndexedStack preserva o estado delas
+  final List<Widget> _screens = const [
+    CatalogScreen(),
+    MarketScreen(),
+    WalletScreen(),
+    UserAccountScreen(),
+  ];
+
   Future<UserModel?> _loadUser(User firebaseUser) async {
     const maxRetries = 6;
     const delays = [500, 1000, 2000, 4000, 6000, 8000];
@@ -87,12 +102,12 @@ class _AppRootState extends State<AppRoot> {
           return const WelcomeScreen();
         }
 
-        // Bloqueia o acesso ao app até a verificação ser concluída.
+        // -mail não verificado
         if (!firebaseUser.emailVerified) {
           return const VerifyEmailScreen();
         }
 
-        // ── E-mail verificado: carrega dados do Firestore ────────────────
+        // Carrega dados do Firestore apenas quando o UID muda
         if (_userFuture == null || firebaseUser.uid != _lastFirebaseUser?.uid) {
           _lastFirebaseUser = firebaseUser;
           _userFuture = _loadUser(firebaseUser);
@@ -105,17 +120,36 @@ class _AppRootState extends State<AppRoot> {
               return _buildLoading();
             }
 
-            final user = userSnapshot.data;
-            if (user == null) return const WelcomeScreen();
+            if (userSnapshot.data == null) return const WelcomeScreen();
 
-            return const CatalogScreen();
+            // _buildApp usa estado do próprio State — não recria nada
+            return _buildApp();
           },
         );
       },
     );
   }
 
+  Widget _buildApp() {
+    return Scaffold(
+      backgroundColor: AppColors.fundoEscuro,
+      body: IndexedStack(
+        index: NavDestination.values.indexOf(_currentDestination),
+        children: _screens,
+      ),
+      bottomNavigationBar: NavBar(
+        current: _currentDestination,
+        onChanged: (dest) => setState(() => _currentDestination = dest),
+      ),
+    );
+  }
+
   Widget _buildLoading() {
-    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    return const Scaffold(
+      backgroundColor: AppColors.fundoEscuro,
+      body: Center(
+        child: CircularProgressIndicator(color: AppColors.verdeMescla),
+      ),
+    );
   }
 }
