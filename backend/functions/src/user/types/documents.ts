@@ -10,9 +10,7 @@ export interface UserDocument {
   name: string;
   email: string;
   phone: string;
-  avatarUrl: string;
   funds: number;
   createdAt: Timestamp;
-
   investments: string[];
 }

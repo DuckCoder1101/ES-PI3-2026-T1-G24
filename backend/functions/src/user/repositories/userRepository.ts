@@ -5,7 +5,7 @@
 
 import { FieldValue } from "firebase-admin/firestore";
 import { database } from "../../shared/firebase";
-import { UserFullDTO, UserSignupDTO } from "../types/dtos";
+import { UpdateProfileDTO, UserFullDTO, UserSignupDTO } from "../types/dtos";
 import { HttpsError } from "firebase-functions/https";
 import { UserDocument } from "../types/documents";
 
@@ -34,6 +34,21 @@ export const createUserAccount = async (uid: string, data: UserSignupDTO) => {
       createdAt: FieldValue.serverTimestamp(),
     });
   });
+};
+
+/*
+ * Atualiza o nome e o telefone do usuário
+ */
+export const updateUserData = async (uid: string, data: UpdateProfileDTO) => {
+  await usersCollection.doc(uid).set(
+    {
+      name: data.name,
+      phone: data.phone,
+    },
+    {
+      merge: true,
+    },
+  );
 };
 
 /*
