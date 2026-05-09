@@ -19,7 +19,7 @@ class WelcomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const Spacer(flex: 2),
-              const Center(child: LogoMesclaInvest(fontSize: 38)),
+              const Center(child: LogoMesclaInvest(fontSize: 32)),
 
               const SizedBox(height: 20),
 

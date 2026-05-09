@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/screens/app/user/activate_2fa.dart';
 import 'package:mescla_invest/screens/public/auth/forgot_password.dart';
@@ -13,6 +14,10 @@ import 'package:mescla_invest/screens/app/startups/startup_details.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  if (kDebugMode) {
+    // FirebaseService.init();
+  }
 
   runApp(const MesclaInvest());
 }

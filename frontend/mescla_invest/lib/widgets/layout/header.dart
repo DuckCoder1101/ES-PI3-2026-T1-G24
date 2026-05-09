@@ -7,51 +7,52 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/user.dart';
-import 'package:mescla_invest/screens/app_root.dart'; // Import necessário para o provider
+import 'package:mescla_invest/screens/app_root.dart';
 
 class AppHeader extends StatefulWidget {
-  final UserModel? user;
-  const AppHeader({super.key, this.user});
+  const AppHeader({super.key});
 
   @override
   State<AppHeader> createState() => _AppHeaderState();
 }
 
 class _AppHeaderState extends State<AppHeader> {
+  String? _lastUid;
   String? _resolvedUrl;
   bool? _has2Fa;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadProfileData();
-  }
+  // Chamado sempre que o provider emite um novo valor
+  void _onUserChanged(UserModel? user) {
+    if (user == null) {
+      setState(() {
+        _resolvedUrl = null;
+        _has2Fa = null;
+        _lastUid = null;
+      });
+      return;
+    }
 
-  @override
-  void didUpdateWidget(AppHeader oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.user?.avatarUrl != oldWidget.user?.avatarUrl ||
-        widget.user?.uid != oldWidget.user?.uid) {
-      _loadProfilePicture();
+    // Só recarrega foto e 2FA quando o usuário muda de fato
+    if (user.uid != _lastUid) {
+      _lastUid = user.uid;
+      _loadProfilePicture(user);
+      _loadTotpStatus();
     }
   }
 
-  Future<void> _loadProfileData() async {
-    await Future.wait([_loadProfilePicture(), _loadTotpStatus()]);
-  }
+  Future<void> _loadProfilePicture(UserModel user) async {
+    if (user.avatarUrl == null || user.avatarUrl!.isEmpty) {
+      if (mounted) setState(() => _resolvedUrl = null);
+      return;
+    }
 
-  Future<void> _loadProfilePicture() async {
-    if (widget.user?.avatarUrl != null && widget.user!.avatarUrl!.isNotEmpty) {
-      try {
-        final url = await FirebaseStorage.instance
-            .ref(widget.user!.avatarUrl)
-            .getDownloadURL();
-        if (mounted) setState(() => _resolvedUrl = url);
-      } catch (e) {
-        debugPrint("Erro ao baixar foto: $e");
-        if (mounted) setState(() => _resolvedUrl = null);
-      }
-    } else {
+    try {
+      final url = await FirebaseStorage.instance
+          .ref(user.avatarUrl)
+          .getDownloadURL();
+      if (mounted) setState(() => _resolvedUrl = url);
+    } catch (e) {
+      debugPrint("Erro ao baixar foto: $e");
       if (mounted) setState(() => _resolvedUrl = null);
     }
   }
@@ -67,7 +68,6 @@ class _AppHeaderState extends State<AppHeader> {
   }
 
   Future<void> _disableTotp() async {
-    // TOTP ativo → confirma e desativa
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -77,7 +77,7 @@ class _AppHeaderState extends State<AppHeader> {
           style: TextStyle(color: Colors.white),
         ),
         content: const Text(
-          'Tem certeza que deseja remover a autenticação em duas etapas?',
+          'Deseja desabilitar a autenticação em duas etapas?',
           style: TextStyle(color: Colors.white70),
         ),
         actions: [
@@ -99,10 +99,11 @@ class _AppHeaderState extends State<AppHeader> {
       ),
     );
 
-    if (confirm == null || !confirm || !mounted) return;
+    if (confirm != true || !mounted) return;
 
     try {
       await UserModel.disableTotp();
+
       if (mounted) {
         setState(() => _has2Fa = false);
 
@@ -113,7 +114,7 @@ class _AppHeaderState extends State<AppHeader> {
           ),
         );
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -127,36 +128,78 @@ class _AppHeaderState extends State<AppHeader> {
 
   Future<void> _enableTotp() async {
     final enrolled = await Navigator.pushNamed(context, '/auth/activate-2fa');
-
-    if (enrolled == true && mounted) {
-      setState(() => _has2Fa = true);
-    }
+    if (enrolled == true && mounted) setState(() => _has2Fa = true);
   }
 
   Future<void> _logout() async {
     await UserModel.signout();
-    if (mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+  }
+
+  Future<void> _handleMenuSelection(String value) async {
+    switch (value) {
+      case 'photo':
+        debugPrint("Trocar foto acionado");
+      case 'info':
+        debugPrint("Editar perfil");
+      case '2fa':
+        if (_has2Fa == null) return;
+        if (_has2Fa!) {
+          await _disableTotp();
+        } else {
+          await _enableTotp();
+        }
+      case 'logout':
+        await _logout();
     }
+  }
+
+  PopupMenuItem<String> _buildMenuItem(
+    String value,
+    IconData icon,
+    String label, {
+    bool isDestructive = false,
+  }) {
+    return PopupMenuItem(
+      value: value,
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: isDestructive ? Colors.redAccent : AppColors.verdeMescla,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: TextStyle(
+              color: isDestructive ? Colors.redAccent : Colors.white,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<UserModel?>(
       valueListenable: authUserDataProvider,
-      builder: (context, currentUser, _) {
-        // Prioriza o usuário do provider global, fallback para o widget, fallback para string vazia
-        final user = currentUser ?? widget.user;
-        final String displayName = (user != null && user.name.isNotEmpty)
+      builder: (context, user, _) {
+        // Dispara efeitos colaterais (foto, 2FA) de forma segura dentro do build
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _onUserChanged(user),
+        );
+
+        final displayName = (user != null && user.name.isNotEmpty)
             ? user.name.split(' ')[0]
-            : "Investidor";
+            : 'Investidor';
 
         return Padding(
           padding: const EdgeInsets.all(20.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Nome do usuário com animação suave de troca de texto
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
                 child: Text(
@@ -186,18 +229,18 @@ class _AppHeaderState extends State<AppHeader> {
                       ? const Icon(Icons.person, color: Colors.white24)
                       : null,
                 ),
-                itemBuilder: (context) => [
-                  _buildHoverMenuItem(
+                itemBuilder: (_) => [
+                  _buildMenuItem(
                     'photo',
                     Icons.camera_alt_outlined,
                     'Alterar foto de perfil',
                   ),
-                  _buildHoverMenuItem(
+                  _buildMenuItem(
                     'info',
                     Icons.edit_outlined,
                     'Informações pessoais',
                   ),
-                  _buildHoverMenuItem(
+                  _buildMenuItem(
                     '2fa',
                     Icons.security_outlined,
                     _has2Fa == null
@@ -205,7 +248,7 @@ class _AppHeaderState extends State<AppHeader> {
                         : (_has2Fa! ? 'Desabilitar 2FA' : 'Habilitar 2FA'),
                   ),
                   const PopupMenuDivider(height: 1),
-                  _buildHoverMenuItem(
+                  _buildMenuItem(
                     'logout',
                     Icons.logout,
                     'Sair do app',
@@ -218,56 +261,5 @@ class _AppHeaderState extends State<AppHeader> {
         );
       },
     );
-  }
-
-  PopupMenuItem<String> _buildHoverMenuItem(
-    String value,
-    IconData icon,
-    String label, {
-    bool isDestructive = false,
-  }) {
-    return PopupMenuItem(
-      value: value,
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: isDestructive ? Colors.redAccent : AppColors.verdeMescla,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: TextStyle(
-              color: isDestructive ? Colors.redAccent : Colors.white,
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _handleMenuSelection(String value) async {
-    switch (value) {
-      case 'photo':
-        debugPrint("Trocar foto acionado");
-        break;
-      case 'info':
-        debugPrint("Editar perfil");
-        break;
-      case '2fa':
-        // Aguarda o status estar carregado antes de navegar
-        if (_has2Fa == null) return;
-
-        if (_has2Fa!) return await _disableTotp();
-        await _enableTotp();
-
-        break;
-
-      case 'logout':
-        await _logout();
-        break;
-    }
   }
 }

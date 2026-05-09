@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 
 import 'package:mescla_invest/models/user.dart';
 import 'package:mescla_invest/screens/app/startups/catalog.dart';
+import 'package:mescla_invest/screens/public/auth/verify-email.dart';
 import 'package:mescla_invest/screens/public/welcome.dart';
 
 final authUserDataProvider = ValueNotifier<UserModel?>(null);
@@ -70,7 +71,7 @@ class _AppRootState extends State<AppRoot> {
     _flushPendingError();
 
     return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
+      stream: FirebaseAuth.instance.userChanges(),
       builder: (context, authSnapshot) {
         if (authSnapshot.connectionState == ConnectionState.waiting) {
           return _buildLoading();
@@ -78,17 +79,20 @@ class _AppRootState extends State<AppRoot> {
 
         final firebaseUser = authSnapshot.data;
 
+        // Não autenticado
         if (firebaseUser == null) {
           _lastFirebaseUser = null;
           _userFuture = null;
-
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            authUserDataProvider.value = null;
-          });
-
+          authUserDataProvider.value = null;
           return const WelcomeScreen();
         }
 
+        // Bloqueia o acesso ao app até a verificação ser concluída.
+        if (!firebaseUser.emailVerified) {
+          return const VerifyEmailScreen();
+        }
+
+        // ── E-mail verificado: carrega dados do Firestore ────────────────
         if (_userFuture == null || firebaseUser.uid != _lastFirebaseUser?.uid) {
           _lastFirebaseUser = firebaseUser;
           _userFuture = _loadUser(firebaseUser);
