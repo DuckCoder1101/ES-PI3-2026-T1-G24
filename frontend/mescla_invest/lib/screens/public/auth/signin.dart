@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/models/user.dart';
 import 'package:mescla_invest/screens/public/auth/verify_2fa.dart';
+import 'package:mescla_invest/widgets/ui/back_button.dart';
 import 'package:mescla_invest/widgets/ui/icon.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/widgets/ui/input.dart';
@@ -32,6 +33,10 @@ class _SigninScreenState extends State<SigninScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  void _goToWelcome() {
+    Navigator.of(context).pushNamedAndRemoveUntil('/welcome', (route) => false);
   }
 
   Future<void> _loginUsuario() async {
@@ -127,9 +132,18 @@ class _SigninScreenState extends State<SigninScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Botão quadrado de voltar no topo esquerdo
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: AppBackButton(onTap: _goToWelcome),
+                ),
+              ),
+
               const Padding(
                 padding: EdgeInsets.only(top: 110),
-                child: LogoMesclaInvest(),
+                child: LogoMesclaInvest(fontSize: 32),
               ),
               const SizedBox(height: 55),
               const Text(

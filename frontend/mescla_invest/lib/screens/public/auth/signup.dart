@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mescla_invest/models/user.dart';
+import 'package:mescla_invest/widgets/ui/back_button.dart';
 import 'package:mescla_invest/widgets/ui/icon.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/widgets/ui/input.dart';
@@ -243,13 +244,13 @@ class _SignupScreenState extends State<SignupScreen> {
                   padding: const EdgeInsets.only(top: 16),
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: _BackButton(onTap: _goToWelcome),
+                    child: AppBackButton(onTap: _goToWelcome),
                   ),
                 ),
 
                 const Padding(
                   padding: EdgeInsets.only(top: 28),
-                  child: LogoMesclaInvest(),
+                  child: LogoMesclaInvest(fontSize: 32),
                 ),
                 const SizedBox(height: 45),
                 const Text(
@@ -356,31 +357,6 @@ class _SignupScreenState extends State<SignupScreen> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BackButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _BackButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: AppColors.campoEscuro,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: const Icon(
-          Icons.arrow_back_ios_new_rounded,
-          color: Colors.white,
-          size: 18,
         ),
       ),
     );

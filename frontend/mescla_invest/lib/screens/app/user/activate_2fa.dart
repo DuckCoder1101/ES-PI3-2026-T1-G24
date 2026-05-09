@@ -24,12 +24,12 @@ class _Activate2FAScreenState extends State<Activate2FAScreen> {
   final _pinController = TextEditingController();
 
   bool _loadingQr = true;
+  bool _isActivating = false;
+
   String? _otpauthUrl;
   TotpSecret? _secret;
-  String? _qrError;
 
-  bool _isActivating = false;
-  bool _emailNotVerified = false;
+  String? _qrError;
 
   @override
   void initState() {
@@ -47,7 +47,6 @@ class _Activate2FAScreenState extends State<Activate2FAScreen> {
     setState(() {
       _loadingQr = true;
       _qrError = null;
-      _emailNotVerified = false;
     });
 
     final user = FirebaseAuth.instance.currentUser!;
@@ -55,35 +54,18 @@ class _Activate2FAScreenState extends State<Activate2FAScreen> {
 
     try {
       final result = await UserModel.beginTotpActivation(accountName);
-
       if (!mounted) return;
 
       setState(() {
         _otpauthUrl = result.otpauthUrl;
         _secret = result.secret;
-        _loadingQr = false;
       });
     } on PlatformException catch (e) {
       final code = e.code.toUpperCase();
 
-      // EMAIL NÃO VERIFICADO
-      if (code == "ERROR_UNVERIFIED_EMAIL") {
-        await user.sendEmailVerification();
-
-        setState(() {
-          _emailNotVerified = true;
-          _qrError = "Seu email ainda não foi verificado.";
-        });
-
-        _showSnackBar(
-          "Enviamos um email de verificação para você.",
-          isError: false,
-        );
-      }
       // LOGIN RECENTE
-      else if (code.contains("REQUIRES_RECENT_LOGIN")) {
+      if (code.contains("REQUIRES_RECENT_LOGIN")) {
         final success = await _showReauthenticationDialog();
-
         if (success) {
           await _initActivation();
         }
@@ -393,20 +375,6 @@ class _Activate2FAScreenState extends State<Activate2FAScreen> {
               style: const TextStyle(color: Colors.redAccent),
               textAlign: TextAlign.center,
             ),
-
-            if (_emailNotVerified) ...[
-              const SizedBox(height: 16),
-
-              PrimaryButton(
-                text: 'Tentar novamente',
-                onPressed: () async {
-                  final user = FirebaseAuth.instance.currentUser!;
-                  await user.reload();
-
-                  await _initActivation();
-                },
-              ),
-            ],
           ],
         ),
       );

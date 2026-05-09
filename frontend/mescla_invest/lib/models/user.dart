@@ -90,6 +90,8 @@ class UserModel {
         'cpf': cpf,
         'phone': phone,
       });
+
+      await credential.user?.sendEmailVerification();
     } catch (e) {
       rethrow;
     }

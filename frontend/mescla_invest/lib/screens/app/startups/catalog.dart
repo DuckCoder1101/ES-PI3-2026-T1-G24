@@ -6,10 +6,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:mescla_invest/models/startup/startup.dart';
-import 'package:mescla_invest/models/user.dart';
 import 'package:mescla_invest/widgets/layout/header.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/screens/app_root.dart';
+import 'package:mescla_invest/widgets/layout/navbar.dart';
 
 class CatalogScreen extends StatefulWidget {
   const CatalogScreen({super.key});
@@ -116,15 +115,11 @@ class _CatalogScreenState extends State<CatalogScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.fundoEscuro,
+      bottomNavigationBar: NavBar(current: NavDestination.catalog),
       body: SafeArea(
         child: Column(
           children: [
-            ValueListenableBuilder<UserModel?>(
-              valueListenable: authUserDataProvider,
-              builder: (context, user, _) {
-                return AppHeader(user: user);
-              },
-            ),
+            AppHeader(),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -136,7 +131,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                     _buildFilterTags(),
                     const SizedBox(height: 24),
                     Text(
-                      '${_startups.length}${_hasMore ? "+" : ""} STARTUPS ENCONTRADAS',
+                      '${_startups.length} STARTUPS ENCONTRADAS',
                       style: const TextStyle(
                         color: AppColors.verdeMescla,
                         fontWeight: FontWeight.bold,

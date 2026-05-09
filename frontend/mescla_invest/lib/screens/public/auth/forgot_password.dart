@@ -3,6 +3,7 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mescla_invest/widgets/ui/back_button.dart';
 import 'package:mescla_invest/widgets/ui/icon.dart';
 import 'package:mescla_invest/widgets/ui/input.dart';
 import 'package:mescla_invest/widgets/ui/primary_button.dart';
@@ -23,6 +24,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   void dispose() {
     _emailController.dispose();
     super.dispose();
+  }
+
+  void _goToLogin() {
+    Navigator.of(context).pop();
   }
 
   Future<void> _resetPassword() async {
@@ -72,6 +77,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: AppBackButton(onTap: _goToLogin),
+                ),
+              ),
+
               const Padding(
                 padding: EdgeInsets.only(top: 100),
                 child: LogoMesclaInvest(),
