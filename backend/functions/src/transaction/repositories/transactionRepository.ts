@@ -1,27 +1,11 @@
-import { FieldValue } from "firebase-admin/firestore";
 import { database } from "../../shared/firebase";
-import {
-  SearchTransactionsFilter,
-  TransactionRegisterDTO,
-} from "../types/dtos";
 import { TransactionDocument } from "../types/documents";
 
 const transactionsCollection = database.collection("transactions");
 
-export const saveTransaction = async (transaction: TransactionRegisterDTO) => {
-  await transactionsCollection.add({
-    ...transaction,
-    createdAt: FieldValue.serverTimestamp(),
-  });
-};
-
-export const findUserTransactions = async (
-  userId: string,
-  filter: SearchTransactionsFilter,
-) => {
+export const findUserTransactions = async (userId: string) => {
   const snapshot = await transactionsCollection
-    .where("userId", "==", userId)
-    .where("type", "==", filter)
+    .where("userUIds", "array-contains", userId)
     .orderBy("createdAt")
     .get();
 

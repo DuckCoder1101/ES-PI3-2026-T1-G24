@@ -39,8 +39,9 @@ export const getStartupQuestions = async (
   const questions = snapshot.docs.map((doc) => {
     const data = doc.data() as QuestionDocument;
     return {
-      ...data,
+      id: doc.id,
       isAuthor: data.authorUId === currentUserId,
+      ...data,
     };
   });
 

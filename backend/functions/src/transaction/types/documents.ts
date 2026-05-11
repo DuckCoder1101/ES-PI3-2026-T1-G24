@@ -1,13 +1,37 @@
 import { Timestamp } from "firebase-admin/firestore";
 
-export type TransactionType = "investment" | "funds";
+export type TransactionType = "investment" | "funds" | "trade";
 
-export interface TransactionDocument {
-  userUId: string;
-  startupId: string;
+export interface BaseTransaction {
   type: TransactionType;
-  amount: number;
-  tokensPurchased?: number;
-  tokenPriceCents?: number;
+  amountCents: number;
   createdAt: Timestamp;
+  userUIds: string[];
 }
+
+export interface InvestmentTransaction extends BaseTransaction {
+  type: "investment";
+  investorUId: string;
+  startupId: string;
+  tokensPurchased: number;
+  tokenPriceCents: number;
+}
+
+export interface TradeTransaction extends BaseTransaction {
+  type: "trade";
+  purchaserUId: string;
+  sellerUId: string;
+  startupId: string;
+  tokensPurchased: number;
+  tokenPriceCents: number;
+}
+
+export interface FundsTransaction extends BaseTransaction {
+  type: "funds";
+  authorUId: string;
+}
+
+export type TransactionDocument =
+  | InvestmentTransaction
+  | TradeTransaction
+  | FundsTransaction;
