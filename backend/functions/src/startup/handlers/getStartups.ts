@@ -24,7 +24,6 @@ export const getStartups = onCall(async (req) => {
   }
 
   if (typeof offset != "number" || offset < 0) {
-    console.log("Offset: " + offset);
     throw new HttpsError(
       "invalid-argument",
       "Offset inválido! O offset deve ser um número >= 0.",
@@ -32,8 +31,6 @@ export const getStartups = onCall(async (req) => {
   }
 
   if (typeof limit != "number" || limit <= 0 || limit > 10) {
-    console.log("Limite: " + limit);
-
     throw new HttpsError(
       "invalid-argument",
       "Limite inválido! O limite deve ser um número entre 1 e 10.",

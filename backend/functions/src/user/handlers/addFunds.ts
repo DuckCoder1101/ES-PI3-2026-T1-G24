@@ -1,5 +1,5 @@
 import { HttpsError, onCall } from "firebase-functions/https";
-import { addUserFunds } from "../repositories/userRepository";
+import { addFunds } from "../repositories/userRepository";
 import { getUserProfile } from "../../shared/auth";
 
 export const addFunds = onCall(async (req) => {
@@ -13,7 +13,7 @@ export const addFunds = onCall(async (req) => {
     );
   }
 
-  await addUserFunds(uid, funds);
+  await addFunds(uid, funds);
 
   return {
     success: true,

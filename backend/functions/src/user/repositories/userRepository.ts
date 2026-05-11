@@ -40,7 +40,14 @@ export const createUserAccount = async (uid: string, data: UserSignupDTO) => {
  * Atualiza o nome e o telefone do usuário
  */
 export const updateUserData = async (uid: string, data: UpdateProfileDTO) => {
-  await usersCollection.doc(uid).set(
+  const ref = usersCollection.doc(uid);
+  const doc = await ref.get();
+
+  if (!doc.exists) {
+    throw new HttpsError("not-found", "Usuário não encontrado!");
+  }
+
+  await ref.set(
     {
       name: data.name,
       phone: data.phone,
@@ -67,31 +74,13 @@ export const getById = async (uid: string): Promise<UserFullDTO> => {
 /*
  * Adiciona um deternminado valor à carteira do usuário
  */
-export const addUserFunds = async (uid: string, funds: number) => {
-  const snapshot = await usersCollection.doc(uid).get();
+export const setUserFunds = async (uid: string, funds: number) => {
+  const ref = usersCollection.doc(uid);
+  const doc = await ref.get();
 
-  if (!snapshot) {
+  if (!doc.exists) {
     throw new HttpsError("not-found", "Usuário não encontrado!");
   }
 
-  const user = snapshot.data() as UserDocument;
-  await snapshot.ref.set({ funds: user.funds + funds }, { merge: true });
-};
-
-/*
- * Remove um deternminado valor da carteira do usuário se ele tem saldo sulficiente
- */
-export const subUserFunds = async (uid: string, funds: number) => {
-  const snapshot = await usersCollection.doc(uid).get();
-
-  if (!snapshot) {
-    throw new HttpsError("not-found", "Usuário não encontrado!");
-  }
-
-  const user = snapshot.data() as UserDocument;
-  if (user.funds - funds < 0) {
-    throw new HttpsError("out-of-range", "Fundos insuficientes!");
-  }
-
-  await snapshot.ref.set({ funds: user.funds - funds }, { merge: true });
+  await ref.set({ funds: funds }, { merge: true });
 };

@@ -39,7 +39,6 @@ export interface StartupDocument {
 }
 
 export interface QuestionDocument {
-  id: string;
   authorUId: string;
   content: string;
   visibility: QuestionVisibility;
