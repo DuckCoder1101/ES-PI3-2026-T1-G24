@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mescla_invest/screens/app/startups/startup_details.dart';
 import 'package:mescla_invest/screens/app/user/activate_2fa.dart';
 import 'package:mescla_invest/screens/public/auth/forgot_password.dart';
 import 'package:mescla_invest/screens/public/welcome.dart';
@@ -34,6 +35,12 @@ class MesclaInvest extends StatelessWidget {
       home: AppRoot(),
       routes: {
         "/welcome": (ctx) => const WelcomeScreen(),
+
+        "/startups/startup-details": (ctx) {
+          final startupId = ModalRoute.of(ctx)!.settings.arguments as String;
+
+          return StartupDetailsScreen(startupId: startupId);
+        },
 
         "/auth/activate-2fa": (ctx) => const Activate2FAScreen(),
 
