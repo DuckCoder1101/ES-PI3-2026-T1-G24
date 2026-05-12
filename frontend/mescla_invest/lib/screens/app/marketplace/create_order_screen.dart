@@ -1,47 +1,151 @@
 // Autor: Vinicius Santuci Virgolino
 // RA: 25000294
 
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:mescla_invest/constants/colors.dart';
+import 'package:mescla_invest/models/order/order.dart';
+import 'package:mescla_invest/models/startup/startup.dart';
 
 class CreateOrderScreen extends StatefulWidget {
-  final String? startupName;
+  final String? startupId;
   final String tipo;
 
-  const CreateOrderScreen({super.key, this.startupName, this.tipo = 'Comprar'});
+  const CreateOrderScreen({super.key, this.startupId, this.tipo = 'Comprar'});
 
   @override
   State<CreateOrderScreen> createState() => _CreateOrderScreenState();
 }
 
 class _CreateOrderScreenState extends State<CreateOrderScreen> {
-  static const Color verdeMescla = Color(0xFF7FDD3A);
-
   late String _tipo;
-  late String? _startupSelecionada;
-  final double _preco = 1.45;
-  final double _saldo = 3450.00;
-  int _quantidade = 1;
 
-  final List<String> _startups = [
-    'EcoTech PUC',
-    'MedConnect',
-    'AgriSmart',
-    'BioGrid Solutions',
-  ];
+  // Startup selecionada no dropdown
+  StartupModel? _startupSelecionada;
+  List<StartupModel> _startups = [];
+  bool _isLoadingStartups = true;
+
+  // Quantidade e preço por token (em centavos internamente)
+  final _quantidadeController = TextEditingController(text: '1');
+  final _precoController = TextEditingController();
+
+  bool _isSubmitting = false;
+
+  int get _tokenAmount => int.tryParse(_quantidadeController.text) ?? 0;
+
+  // Preço digitado convertido para centavos
+  int get _pricePerTokenCents {
+    final raw = _precoController.text.replaceAll(',', '.');
+    final parsed = double.tryParse(raw) ?? 0.0;
+    return (parsed * 100).round();
+  }
+
+  double get _total => (_pricePerTokenCents / 100) * _tokenAmount;
 
   @override
   void initState() {
     super.initState();
     _tipo = widget.tipo;
-    _startupSelecionada = widget.startupName;
+    _fetchStartups();
   }
 
-  double get _total => _quantidade * _preco;
+  @override
+  void dispose() {
+    _quantidadeController.dispose();
+    _precoController.dispose();
+    super.dispose();
+  }
+
+  // Carrega a lista de startups para o dropdown
+  Future<void> _fetchStartups() async {
+    setState(() => _isLoadingStartups = true);
+    try {
+      final startups = await StartupModel.getStartups(
+        offset: 0,
+        limit: 50,
+        stageFilter: StartupStageFilter.all,
+        nameFilter: '',
+      );
+
+      if (mounted) {
+        setState(() {
+          _startups = startups;
+          // Pré-seleciona a startup recebida via argumento
+          if (widget.startupId != null) {
+            try {
+              _startupSelecionada = startups.firstWhere(
+                (s) => s.id == widget.startupId,
+              );
+            } catch (_) {
+              _startupSelecionada = startups.isNotEmpty ? startups.first : null;
+            }
+          }
+        });
+      }
+    } catch (_) {
+      _showSnack('Erro ao carregar startups.', isError: true);
+    } finally {
+      if (mounted) setState(() => _isLoadingStartups = false);
+    }
+  }
+
+  // Registra a ordem no balcão
+  Future<void> _submitOrder() async {
+    if (_startupSelecionada == null) {
+      _showSnack('Selecione uma startup.', isError: true);
+      return;
+    }
+
+    if (_tokenAmount <= 0) {
+      _showSnack('A quantidade deve ser maior que zero.', isError: true);
+      return;
+    }
+
+    if (_pricePerTokenCents <= 0) {
+      _showSnack('Informe um preço válido por token.', isError: true);
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    try {
+      await OrderModel.registerOrder(
+        startupId: _startupSelecionada!.id,
+        type: _tipo == 'Vender' ? OrderType.sell : OrderType.buy,
+        pricePerTokenCents: _pricePerTokenCents,
+        tokenAmount: _tokenAmount,
+      );
+
+      _showSnack('Ordem publicada com sucesso!', isError: false);
+
+      // Retorna true para o MarketScreen recarregar a lista
+      if (mounted) Navigator.pop(context, true);
+    } on FirebaseFunctionsException catch (e) {
+      _showSnack(e.message ?? 'Erro ao publicar ordem.', isError: true);
+    } catch (_) {
+      _showSnack('Erro inesperado. Tente novamente.', isError: true);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  void _showSnack(String msg, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? Colors.redAccent : AppColors.verdeMescla,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: AppColors.fundoEscuro,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -82,7 +186,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E1E),
+                  color: AppColors.campoEscuro,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -103,7 +207,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                             t,
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: isSelected ? verdeMescla : Colors.white54,
+                              color: isSelected
+                                  ? AppColors.verdeMescla
+                                  : Colors.white54,
                               fontWeight: isSelected
                                   ? FontWeight.bold
                                   : FontWeight.normal,
@@ -118,46 +224,60 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
               const SizedBox(height: 24),
 
-              // Startup
+              // Dropdown de startup
               const Text('Startup', style: TextStyle(color: Colors.white70)),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E1E),
+                  color: AppColors.campoEscuro,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _startupSelecionada,
-                    hint: const Text(
-                      'Selecione uma startup',
-                      style: TextStyle(color: Colors.white38),
-                    ),
-                    dropdownColor: const Color(0xFF1E1E1E),
-                    icon: const Icon(Icons.arrow_drop_down, color: verdeMescla),
-                    isExpanded: true,
-                    items: _startups.map((s) {
-                      return DropdownMenuItem(
-                        value: s,
-                        child: Text(
-                          s,
-                          style: const TextStyle(color: Colors.white),
+                child: _isLoadingStartups
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 14),
+                        child: Center(
+                          child: SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: AppColors.verdeMescla,
+                              strokeWidth: 2,
+                            ),
+                          ),
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (value) =>
-                        setState(() => _startupSelecionada = value),
-                  ),
-                ),
+                      )
+                    : DropdownButtonHideUnderline(
+                        child: DropdownButton<StartupModel>(
+                          value: _startupSelecionada,
+                          hint: const Text(
+                            'Selecione uma startup',
+                            style: TextStyle(color: Colors.white38),
+                          ),
+                          dropdownColor: AppColors.campoEscuro,
+                          icon: const Icon(
+                            Icons.arrow_drop_down,
+                            color: AppColors.verdeMescla,
+                          ),
+                          isExpanded: true,
+                          items: _startups.map((s) {
+                            return DropdownMenuItem(
+                              value: s,
+                              child: Text(
+                                s.name,
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) =>
+                              setState(() => _startupSelecionada = value),
+                        ),
+                      ),
               ),
 
               const SizedBox(height: 24),
 
-              // Quantidade
+              // Quantidade de tokens
               const Text(
                 'Quantidade de tokens',
                 style: TextStyle(color: Colors.white70),
@@ -166,13 +286,18 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               Row(
                 children: [
                   GestureDetector(
-                    onTap: () => setState(() {
-                      if (_quantidade > 1) _quantidade--;
-                    }),
+                    onTap: () {
+                      final current =
+                          int.tryParse(_quantidadeController.text) ?? 1;
+                      if (current > 1) {
+                        _quantidadeController.text = '${current - 1}';
+                        setState(() {});
+                      }
+                    },
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E1E1E),
+                        color: AppColors.campoEscuro,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(Icons.remove, color: Colors.white),
@@ -181,29 +306,42 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   Expanded(
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 8),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E1E1E),
-                        border: Border.all(color: verdeMescla),
+                        color: AppColors.campoEscuro,
+                        border: Border.all(color: AppColors.verdeMescla),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Text(
-                        '$_quantidade',
+                      child: TextField(
+                        controller: _quantidadeController,
+                        keyboardType: TextInputType.number,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        onChanged: (_) => setState(() {}),
                       ),
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => setState(() => _quantidade++),
+                    onTap: () {
+                      final current =
+                          int.tryParse(_quantidadeController.text) ?? 0;
+                      _quantidadeController.text = '${current + 1}';
+                      setState(() {});
+                    },
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: verdeMescla,
+                        color: AppColors.verdeMescla,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(Icons.add, color: Colors.black),
@@ -221,47 +359,71 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               ),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E1E),
-                  border: Border.all(color: verdeMescla),
+                  color: AppColors.campoEscuro,
+                  border: Border.all(color: AppColors.verdeMescla),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  'R\$ ${_preco.toStringAsFixed(2).replaceAll('.', ',')}',
+                child: TextField(
+                  controller: _precoController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),
+                  decoration: const InputDecoration(
+                    prefixText: 'R\$ ',
+                    prefixStyle: TextStyle(
+                      color: Colors.white54,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    hintText: '0,00',
+                    hintStyle: TextStyle(color: Colors.white24),
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[\d,.]')),
+                  ],
+                  onChanged: (_) => setState(() {}),
                 ),
               ),
 
               const SizedBox(height: 24),
 
-              // Resumo
+              // Resumo da ordem
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF121212),
-                  border: Border.all(color: verdeMescla.withValues(alpha: 0.4)),
+                  color: AppColors.fundoEscuro,
+                  border: Border.all(
+                    color: AppColors.verdeMescla.withValues(alpha: 0.4),
+                  ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
                   children: [
-                    _buildResumoRow('Tokens', '$_quantidade'),
-                    const SizedBox(height: 8),
                     _buildResumoRow(
-                      'Preço/token',
-                      'R\$ ${_preco.toStringAsFixed(2).replaceAll('.', ',')}',
+                      'Tokens',
+                      '${_tokenAmount > 0 ? _tokenAmount : "—"}',
                     ),
                     const SizedBox(height: 8),
                     _buildResumoRow(
-                      'Saldo atual',
-                      'R\$ ${_saldo.toStringAsFixed(2).replaceAll('.', ',')}',
+                      'Preço/token',
+                      _pricePerTokenCents > 0
+                          ? 'R\$ ${(_pricePerTokenCents / 100).toStringAsFixed(2).replaceAll('.', ',')}'
+                          : '—',
+                    ),
+                    const SizedBox(height: 8),
+                    _buildResumoRow(
+                      'Tipo',
+                      _tipo == 'Comprar' ? 'Ordem de Compra' : 'Ordem de Venda',
                     ),
                     const Divider(color: Colors.white12, height: 20),
                     Row(
@@ -275,9 +437,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                           ),
                         ),
                         Text(
-                          'R\$ ${_total.toStringAsFixed(2).replaceAll('.', ',')}',
+                          _total > 0
+                              ? 'R\$ ${_total.toStringAsFixed(2).replaceAll('.', ',')}'
+                              : '—',
                           style: const TextStyle(
-                            color: verdeMescla,
+                            color: AppColors.verdeMescla,
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
@@ -292,26 +456,35 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
               // Botão publicar
               ElevatedButton(
-                onPressed: () {
-                  // TODO: chamar Cloud Function
-                },
+                onPressed: _isSubmitting ? null : _submitOrder,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: verdeMescla,
+                  backgroundColor: AppColors.verdeMescla,
                   foregroundColor: Colors.black,
+                  disabledBackgroundColor:
+                      AppColors.verdeMescla.withValues(alpha: 0.5),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: Text(
-                  _tipo == 'Comprar'
-                      ? 'Publicar oferta de compra'
-                      : 'Publicar oferta de venda',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.black,
+                        ),
+                      )
+                    : Text(
+                        _tipo == 'Comprar'
+                            ? 'Publicar oferta de compra'
+                            : 'Publicar oferta de venda',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
               ),
 
               const SizedBox(height: 12),
@@ -320,8 +493,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               OutlinedButton(
                 onPressed: () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: verdeMescla,
-                  side: const BorderSide(color: verdeMescla),
+                  foregroundColor: AppColors.verdeMescla,
+                  side: const BorderSide(color: AppColors.verdeMescla),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),

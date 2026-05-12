@@ -5,6 +5,8 @@
 
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:mescla_invest/models/investment/investment.dart';
 import 'package:mescla_invest/models/startup/question.dart';
 import 'package:mescla_invest/widgets/ui/primary_button.dart';
 import 'package:mescla_invest/constants/colors.dart';
@@ -45,7 +47,7 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
       }
     } catch (err) {
       debugPrint("Erro ao buscar dados de startup: $err");
-      errorMsg = "Erro inesperado ao buscar dados de starup!";
+      errorMsg = "Erro inesperado ao buscar dados de startup!";
     } finally {
       if (errorMsg != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -61,6 +63,34 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
         });
       }
     }
+  }
+
+  // Abre o modal de compra direta de tokens da startup
+  void _showBuyTokensModal(StartupModel startup) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.campoEscuro,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _BuyTokensSheet(
+        startup: startup,
+        onSuccess: () {
+          setState(() {
+            // Recarrega os detalhes para refletir os novos tokens disponíveis
+            _startupFuture =
+                StartupModel.getStartupDetails(widget.startupId!);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tokens comprados com sucesso!'),
+              backgroundColor: AppColors.verdeMescla,
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -98,7 +128,7 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
           return SingleChildScrollView(
             child: Column(
               children: [
-                // Header com Imagem de Capa
+                // Header com imagem de capa
                 Stack(
                   children: [
                     Container(
@@ -140,7 +170,7 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Nome e Tags
+                      // Nome e badge de estágio
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -155,31 +185,40 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
                             ),
                           ),
                           _buildTag(
-                            startup.stage.name.toUpperCase(),
+                            startup.stage.name
+                                .toUpperCase()
+                                .replaceAll('_', ' '),
                             AppColors.verdeMescla.withValues(alpha: 0.8),
                             AppColors.verdeMescla,
                           ),
                         ],
                       ),
 
+                      const SizedBox(height: 16),
+
+                      // Métricas rápidas da startup
+                      _buildMetricsRow(startup),
+
                       const SizedBox(height: 24),
 
-                      // Barra de Navegação de Abas
+                      // Barra de abas
                       _buildTabBar(),
 
                       const SizedBox(height: 24),
 
-                      // Conteúdo Dinâmico com base na aba
+                      // Conteúdo dinâmico conforme aba selecionada
                       _buildTabContent(startup),
 
                       const SizedBox(height: 30),
 
-                      // Botão de Investimento Fixo no final
+                      // Botão de compra direta de tokens
                       PrimaryButton(
-                        text: "Investir agora",
-                        onPressed: () {
-                          // Lógica de investimento
-                        },
+                        text: startup.totalTokensAvailable > 0
+                            ? "Investir agora"
+                            : "Tokens esgotados",
+                        onPressed: startup.totalTokensAvailable > 0
+                            ? () => _showBuyTokensModal(startup)
+                            : null,
                       ),
                     ],
                   ),
@@ -192,12 +231,77 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
     );
   }
 
+  // Linha de métricas: preço do token, tokens disponíveis e capital captado
+  Widget _buildMetricsRow(StartupModel startup) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildMetricChip(
+            icon: Icons.token_rounded,
+            label: 'Preço/token',
+            value:
+                'R\$ ${startup.tokenPrice.toStringAsFixed(2).replaceAll('.', ',')}',
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildMetricChip(
+            icon: Icons.inventory_2_rounded,
+            label: 'Disponíveis',
+            value: '${startup.totalTokensAvailable}',
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildMetricChip(
+            icon: Icons.trending_up_rounded,
+            label: 'Captado',
+            value:
+                'R\$ ${startup.totalRaised.toStringAsFixed(0).replaceAll('.', ',')}',
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMetricChip({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+      decoration: BoxDecoration(
+        color: AppColors.campoEscuro,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: AppColors.verdeMescla, size: 18),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white38, fontSize: 10),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTabBar() {
-    List<String> tabs = ['Sobre', 'Sócios', 'Q&A', 'Updates'];
+    final tabs = ['Sobre', 'Sócios', 'Q&A', 'Updates'];
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: tabs.map((tab) {
-        bool isSelected = _activeTab == tab;
+        final isSelected = _activeTab == tab;
         return GestureDetector(
           onTap: () => setState(() => _activeTab = tab),
           child: Container(
@@ -225,7 +329,10 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
       case 'Sócios':
         return TabPartners(startup: startup, startupId: widget.startupId!);
       case 'Q&A':
-        return TabQA(startupId: widget.startupId!, startupName: startup.name);
+        return TabQA(
+          startupId: widget.startupId!,
+          startupName: startup.name,
+        );
       case 'Updates':
         return const Center(
           child: Text(
@@ -258,9 +365,264 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
   }
 }
 
+// Sheet de compra direta de tokens na página da startup
+class _BuyTokensSheet extends StatefulWidget {
+  final StartupModel startup;
+  final VoidCallback onSuccess;
+
+  const _BuyTokensSheet({required this.startup, required this.onSuccess});
+
+  @override
+  State<_BuyTokensSheet> createState() => _BuyTokensSheetState();
+}
+
+class _BuyTokensSheetState extends State<_BuyTokensSheet> {
+  final _qtyController = TextEditingController(text: '1');
+  bool _isLoading = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _qtyController.dispose();
+    super.dispose();
+  }
+
+  int get _tokenAmount => int.tryParse(_qtyController.text) ?? 0;
+  double get _total => _tokenAmount * widget.startup.tokenPrice;
+
+  Future<void> _submit() async {
+    if (_tokenAmount <= 0) {
+      setState(() => _error = 'A quantidade deve ser maior que zero.');
+      return;
+    }
+
+    if (_tokenAmount > widget.startup.totalTokensAvailable) {
+      setState(() =>
+          _error = 'Quantidade maior que os tokens disponíveis (${widget.startup.totalTokensAvailable}).');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      await InvestmentModel.buyTokens(
+        startupId: widget.startup.id,
+        tokenAmount: _tokenAmount,
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onSuccess();
+      }
+    } on FirebaseFunctionsException catch (e) {
+      if (mounted) {
+        setState(() => _error = e.message ?? 'Erro ao comprar tokens.');
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'Erro inesperado. Tente novamente.');
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  widget.startup.name,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Text(
+                'R\$ ${widget.startup.tokenPrice.toStringAsFixed(2).replaceAll('.', ',')} / token',
+                style: const TextStyle(
+                  color: AppColors.verdeMescla,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 6),
+
+          Text(
+            '${widget.startup.totalTokensAvailable} tokens disponíveis',
+            style: const TextStyle(color: Colors.white38, fontSize: 13),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Seletor de quantidade
+          const Text(
+            'Quantidade de tokens',
+            style: TextStyle(color: Colors.white70),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  final v = int.tryParse(_qtyController.text) ?? 1;
+                  if (v > 1) {
+                    _qtyController.text = '${v - 1}';
+                    setState(() {});
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A1A),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.remove, color: Colors.white, size: 20),
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A1A),
+                    border: Border.all(color: AppColors.verdeMescla),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: TextField(
+                    controller: _qtyController,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  final v = int.tryParse(_qtyController.text) ?? 0;
+                  _qtyController.text = '${v + 1}';
+                  setState(() {});
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.verdeMescla,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.add, color: Colors.black, size: 20),
+                ),
+              ),
+            ],
+          ),
+
+          if (_error != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              _error!,
+              style: const TextStyle(color: Colors.redAccent, fontSize: 13),
+            ),
+          ],
+
+          const SizedBox(height: 20),
+
+          // Resumo do total
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1A1A1A),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Total a pagar',
+                  style: TextStyle(color: Colors.white54),
+                ),
+                Text(
+                  'R\$ ${_total.toStringAsFixed(2).replaceAll('.', ',')}',
+                  style: const TextStyle(
+                    color: AppColors.verdeMescla,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.verdeMescla,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: _isLoading ? null : _submit,
+            child: _isLoading
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.black,
+                    ),
+                  )
+                : const Text(
+                    'Confirmar compra',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Tabs reutilizadas da versão original ────────────────────────────────────
+
 class TabAbout extends StatelessWidget {
   final StartupModel startup;
-  final String startupId; // Parâmetro solicitado
+  final String startupId;
 
   const TabAbout({super.key, required this.startup, required this.startupId});
 
@@ -276,9 +638,7 @@ class TabAbout extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-
         const SizedBox(height: 12),
-
         Text(
           startup.description,
           style: const TextStyle(
@@ -287,7 +647,25 @@ class TabAbout extends StatelessWidget {
             height: 1.5,
           ),
         ),
-
+        if (startup.executiveSummary.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          const Text(
+            "SUMÁRIO EXECUTIVO",
+            style: TextStyle(
+              color: AppColors.verdeMescla,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            startup.executiveSummary,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+        ],
         if (startup.videoUrl != null) _buildVideoSection(),
       ],
     );
@@ -297,6 +675,7 @@ class TabAbout extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const SizedBox(height: 20),
         const Text(
           "VÍDEO",
           style: TextStyle(
@@ -326,7 +705,7 @@ class TabAbout extends StatelessWidget {
 
 class TabPartners extends StatelessWidget {
   final StartupModel startup;
-  final String startupId; // Parâmetro solicitado
+  final String startupId;
 
   const TabPartners({
     super.key,
@@ -361,6 +740,31 @@ class TabPartners extends StatelessWidget {
             ),
           ),
         ),
+        if (startup.externalMembers.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          const Text(
+            "CONSELHO / MENTORES",
+            style: TextStyle(
+              color: AppColors.verdeMescla,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...startup.externalMembers.map(
+            (m) => ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const CircleAvatar(
+                backgroundColor: AppColors.campoEscuro,
+                child: Icon(Icons.supervised_user_circle, color: Colors.white38),
+              ),
+              title: Text(m.name, style: const TextStyle(color: Colors.white)),
+              subtitle: Text(
+                m.role,
+                style: const TextStyle(color: Colors.white54),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -395,7 +799,6 @@ class _TabQAState extends State<TabQA> {
     super.dispose();
   }
 
-  // Helper para feedback padronizado (Igual ao Login)
   void _showFeedback(String message, {bool isError = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -440,7 +843,6 @@ class _TabQAState extends State<TabQA> {
         content: texto,
         visibility: _visibility,
       );
-
       _perguntaController.clear();
       await _refreshQuestions();
     } catch (e) {
@@ -475,7 +877,6 @@ class _TabQAState extends State<TabQA> {
         const SizedBox(height: 24),
         if (_visibility == QuestionVisibility.privada)
           _buildAvisoPrivado(corDestaque),
-
         if (_isLoading)
           const Center(
             child: Padding(
@@ -495,22 +896,18 @@ class _TabQAState extends State<TabQA> {
           )
         else
           ..._questions.map((q) => _buildDismissibleCard(q, corDestaque)),
-
         const SizedBox(height: 24),
         _buildInput(corDestaque),
       ],
     );
   }
 
-  // Implementação do Slider para exclusão
   Widget _buildDismissibleCard(QuestionModel q, Color accentColor) {
-    // Apenas o autor pode deslizar para excluir
     if (!q.isAuthor) return _buildQuestionCard(q, accentColor);
 
     return Dismissible(
       key: Key(q.id),
-      direction:
-          DismissDirection.endToStart, // Arrastar da direita para a esquerda
+      direction: DismissDirection.endToStart,
       confirmDismiss: (direction) async {
         return await showDialog(
           context: context,
@@ -593,11 +990,7 @@ class _TabQAState extends State<TabQA> {
               ),
               const Spacer(),
               if (q.isAuthor)
-                const Icon(
-                  Icons.chevron_left,
-                  color: Colors.white10,
-                  size: 16,
-                ), // Dica visual de slide
+                const Icon(Icons.chevron_left, color: Colors.white10, size: 16),
             ],
           ),
           const SizedBox(height: 12),
@@ -634,16 +1027,8 @@ class _TabQAState extends State<TabQA> {
       ),
       child: Row(
         children: [
-          _buildToggleOption(
-            "Público",
-            QuestionVisibility.publica,
-            activeColor,
-          ),
-          _buildToggleOption(
-            "Privado",
-            QuestionVisibility.privada,
-            activeColor,
-          ),
+          _buildToggleOption("Público", QuestionVisibility.publica, activeColor),
+          _buildToggleOption("Privado", QuestionVisibility.privada, activeColor),
         ],
       ),
     );
@@ -654,7 +1039,7 @@ class _TabQAState extends State<TabQA> {
     QuestionVisibility val,
     Color activeColor,
   ) {
-    bool isSelected = _visibility == val;
+    final isSelected = _visibility == val;
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -741,7 +1126,7 @@ class _TabQAState extends State<TabQA> {
   }
 }
 
-// Widget auxiliar simples para posicionar o botão de volta no Stack
+// Widget auxiliar para posicionar elementos em Stack
 class PositionRectangle extends StatelessWidget {
   final double? top, left;
   final Widget child;

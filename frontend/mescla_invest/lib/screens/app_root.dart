@@ -12,11 +12,11 @@ import 'package:mescla_invest/models/user.dart';
 import 'package:mescla_invest/screens/app/startups/catalog.dart';
 import 'package:mescla_invest/screens/app/marketplace/market.dart';
 import 'package:mescla_invest/screens/app/user/account.dart';
-import 'package:mescla_invest/screens/app/user/wallet.dart';
 import 'package:mescla_invest/screens/public/auth/verify_email.dart';
 import 'package:mescla_invest/screens/public/welcome.dart';
 import 'package:mescla_invest/widgets/layout/navbar.dart';
 
+// Provider global com os dados do usuário autenticado
 final authUserDataProvider = ValueNotifier<UserModel?>(null);
 
 class AppRoot extends StatefulWidget {
@@ -38,7 +38,6 @@ class _AppRootState extends State<AppRoot> {
   final List<Widget> _screens = const [
     CatalogScreen(),
     MarketScreen(),
-    WalletScreen(),
     UserAccountScreen(),
   ];
 
@@ -102,7 +101,7 @@ class _AppRootState extends State<AppRoot> {
           return const WelcomeScreen();
         }
 
-        // -mail não verificado
+        // E-mail não verificado
         if (!firebaseUser.emailVerified) {
           return const VerifyEmailScreen();
         }
