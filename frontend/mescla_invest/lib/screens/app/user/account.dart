@@ -5,6 +5,7 @@
 
 import 'dart:io';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mescla_invest/constants/colors.dart';
@@ -80,9 +81,17 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
       if (mounted) {
         setState(() => _resolvedAvatarUrl = url);
       }
-    } catch (_) {
+    } on FirebaseException catch (err) {
+      if (err.code != "object-not-found") {
+        _showSnack(
+          "Erro interno desconhecido ao baixar foto de perfil: ${err.code}",
+        );
+      }
+    } catch (err) {
+      debugPrint("Erro desconhecido ao baixar foto de perfil: $err");
+
       if (!mounted) return;
-      _showSnack("Erro ao baixar foto de perfil!");
+      _showSnack("Erro desconhecido ao baixar foto de perfil!");
     }
   }
 

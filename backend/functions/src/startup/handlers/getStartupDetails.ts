@@ -13,6 +13,8 @@ import { getUserProfile } from "../../shared/auth";
  * Busca todos os dados de uma startup com base no id
  */
 export const getStartupDetails = onCall(async (req) => {
+  getUserProfile(req);
+
   const { startupId } = req.data as GetStartupDetailsBodyDTO;
   const normalizedStartupId = normalizeString(startupId);
 

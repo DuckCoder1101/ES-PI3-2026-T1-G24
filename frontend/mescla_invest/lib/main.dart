@@ -38,7 +38,6 @@ class MesclaInvest extends StatelessWidget {
 
         "/startups/startup-details": (ctx) {
           final startupId = ModalRoute.of(ctx)!.settings.arguments as String;
-
           return StartupDetailsScreen(startupId: startupId);
         },
 

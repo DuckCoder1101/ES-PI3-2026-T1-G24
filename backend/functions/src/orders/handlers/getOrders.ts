@@ -1,3 +1,8 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { HttpsError, onCall } from "firebase-functions/https";
 import { GetOrdersRequestDTO } from "../types/dtos";
 import { normalizeString } from "../../shared/utils";
@@ -38,4 +43,4 @@ export const getOrders = onCall(async (req) => {
   return {
     orders,
   };
-});
+});

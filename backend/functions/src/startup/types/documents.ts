@@ -1,3 +1,8 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { Timestamp } from "firebase-admin/firestore";
 
 export type StartupStage = "nova" | "em_operacao" | "em_expansao";
@@ -24,6 +29,7 @@ export interface StartupDocument {
   executiveSummary: string;
   capitalRaisedCents: number;
   totalTokensIssued: number;
+  totalTokensAvailable: number;
   currentTokenPriceCents: number;
   founders: Founder[];
   externalMember: ExternalMember[];
@@ -50,4 +56,4 @@ export interface QuestionAnwserDocument {
   authorUId: string;
   content: string;
   createdAt: Timestamp;
-}
+}

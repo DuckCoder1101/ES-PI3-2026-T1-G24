@@ -4,12 +4,12 @@ class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
 
   @override
-  State<StatefulWidget> createState() => _WalletScreenState();
+  State<StatefulWidget> createState() => _WalletState();
 }
 
-class _WalletScreenState extends State<WalletScreen> {
+class _WalletState extends State<WalletScreen> {
   @override
   Widget build(BuildContext context) {
-    throw UnimplementedError();
+    return Text("a");
   }
 }

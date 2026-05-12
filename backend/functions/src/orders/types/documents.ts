@@ -1,7 +1,10 @@
-import { Timestamp } from "firebase-admin/firestore";
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
 
+import { Timestamp } from "firebase-admin/firestore";
 export type OrderType = "buy" | "sell";
-export type OrderStatus = "open" | "completed" | "cancelled";
 
 export interface OrderDocument {
   authorUId: string;
@@ -9,6 +12,5 @@ export interface OrderDocument {
   type: OrderType;
   pricePerTokenCents: number;
   tokenAmount: number;
-  status: OrderStatus;
   createdAt: Timestamp;
 }

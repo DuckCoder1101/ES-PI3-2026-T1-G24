@@ -1,3 +1,8 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { Timestamp } from "firebase-admin/firestore";
 import {
   QuestionAnwserDocument,
@@ -22,6 +27,11 @@ export interface StartupListItemDTO {
   currentTokenPriceCents: number;
   thumbnailPath?: string;
   tags: string[];
+}
+
+export interface StartupResumeDTO {
+  id: string;
+  name: string;
 }
 
 export interface GetStartupsRequestBodyDTO {

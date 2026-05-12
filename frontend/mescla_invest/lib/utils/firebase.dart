@@ -2,7 +2,6 @@
 // RA: 25000636
 
 import 'package:cloud_functions/cloud_functions.dart';
-
 import 'package:firebase_auth/firebase_auth.dart';
 
 class FirebaseService {

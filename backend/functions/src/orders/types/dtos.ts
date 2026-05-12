@@ -1,8 +1,21 @@
-import { OrderDocument, OrderType } from "./documents";
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
 
-export interface OrderListDTO extends OrderDocument {
+import { Timestamp } from "firebase-admin/firestore";
+import { StartupResumeDTO } from "../../startup/types/dtos";
+import { OrderType } from "./documents";
+
+export interface OrderListDTO {
   id: string;
   isAuthor: boolean;
+  authorUId: string;
+  startup: StartupResumeDTO;
+  type: OrderType;
+  pricePerTokenCents: number;
+  tokenAmount: number;
+  createdAt: Timestamp;
 }
 
 export interface OrderRegisterDTO {

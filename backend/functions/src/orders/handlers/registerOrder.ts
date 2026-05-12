@@ -1,22 +1,32 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { HttpsError, onCall } from "firebase-functions/https";
 
 import { getUserProfile } from "../../shared/auth";
 import { normalizeString } from "../../shared/utils";
 import { orderTypes } from "../shared/constants";
 
-import { startupExists } from "../repositories/startupRepository";
 import { saveOrder } from "../repositories/orderRepository";
 
 import { OrderType } from "../types/documents";
 import { OrderRegisterRequestDTO } from "../types/dtos";
+import { checkStartupExists } from "../../startup/repositories/startupsRepository";
 
+/*
+ * Registra uma nova ordem de compra ou de venda no balcão.
+ * Para ordem de compra: bloqueia o valor correspondente na carteira.
+ * Para ordem de venda: bloqueia os tokens correspondentes no investimento.
+ */
 export const registerOrder = onCall(async (req) => {
   const { uid } = getUserProfile(req);
 
   const order = req.data as OrderRegisterRequestDTO;
   const orderType = normalizeString(order.type) as OrderType;
 
-  if (!order.startupId || !startupExists(order.startupId)) {
+  if (!order.startupId || !checkStartupExists(order.startupId)) {
     throw new HttpsError("not-found", "Startup não encontrada!");
   }
 
@@ -24,7 +34,7 @@ export const registerOrder = onCall(async (req) => {
     throw new HttpsError("invalid-argument", "Tipo de ordem inválido!");
   }
 
-  if (typeof order.tokenAmount != "number" || order.tokenAmount <= 0) {
+  if (typeof order.tokenAmount !== "number" || order.tokenAmount <= 0) {
     throw new HttpsError(
       "invalid-argument",
       "A quantidade de tokens deve ser um número maior que 0.",
@@ -32,7 +42,7 @@ export const registerOrder = onCall(async (req) => {
   }
 
   if (
-    typeof order.pricePerTokenCents != "number" ||
+    typeof order.pricePerTokenCents !== "number" ||
     order.pricePerTokenCents <= 0
   ) {
     throw new HttpsError(

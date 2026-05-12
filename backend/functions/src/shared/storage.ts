@@ -1,3 +1,8 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { getStorage } from "firebase-admin/storage";
 import { logger } from "firebase-functions/v2";
 
@@ -41,4 +46,4 @@ export const getFileUrl = async (
 
     return null;
   }
-};
+};
