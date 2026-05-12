@@ -37,16 +37,8 @@ class _MarketScreenState extends State<MarketScreen> {
 
     try {
       final results = await Future.wait([
-        OrderModel.getOrders(
-          orderType: OrderType.buy,
-          offset: 0,
-          limit: 10,
-        ),
-        OrderModel.getOrders(
-          orderType: OrderType.sell,
-          offset: 0,
-          limit: 10,
-        ),
+        OrderModel.getOrders(orderType: OrderType.buy, offset: 0, limit: 10),
+        OrderModel.getOrders(orderType: OrderType.sell, offset: 0, limit: 10),
         OrderModel.getUserOrders(),
       ]);
 
@@ -57,10 +49,14 @@ class _MarketScreenState extends State<MarketScreen> {
           _myOrders = results[2];
         });
       }
-    } on FirebaseFunctionsException catch (e) {
-      _showSnack(e.message ?? 'Erro ao carregar ordens.', isError: true);
-    } catch (_) {
-      _showSnack('Erro ao carregar ordens. Verifique sua conexão.', isError: true);
+    } on FirebaseFunctionsException catch (err) {
+      _showSnack('Erro ao carregar ordens: ${err.message}', isError: true);
+    } catch (err) {
+      debugPrint("Erro: $err");
+      _showSnack(
+        'Erro ao carregar ordens. Verifique sua conexão.',
+        isError: true,
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -71,7 +67,7 @@ class _MarketScreenState extends State<MarketScreen> {
     final confirm = await _showConfirmDialog(
       title: 'Confirmar compra',
       message:
-          'Comprar ${order.tokenAmount} tokens de ${order.startupId} por R\$ ${order.totalValue.toStringAsFixed(2).replaceAll('.', ',')}?',
+          'Comprar ${order.tokenAmount} tokens de ${order.startup.name} por R\$ ${order.totalValue.toStringAsFixed(2).replaceAll('.', ',')}?',
     );
     if (!confirm || !mounted) return;
 
@@ -94,7 +90,7 @@ class _MarketScreenState extends State<MarketScreen> {
     final confirm = await _showConfirmDialog(
       title: 'Confirmar venda',
       message:
-          'Vender ${order.tokenAmount} tokens de ${order.startupId} por R\$ ${order.totalValue.toStringAsFixed(2).replaceAll('.', ',')}?',
+          'Vender ${order.tokenAmount} tokens de ${order.startup.name} por R\$ ${order.totalValue.toStringAsFixed(2).replaceAll('.', ',')}?',
     );
     if (!confirm || !mounted) return;
 
@@ -116,7 +112,8 @@ class _MarketScreenState extends State<MarketScreen> {
   Future<void> _cancelOrder(OrderModel order) async {
     final confirm = await _showConfirmDialog(
       title: 'Cancelar ordem',
-      message: 'Deseja cancelar esta ordem? Os fundos/tokens bloqueados serão devolvidos.',
+      message:
+          'Deseja cancelar esta ordem? Os fundos/tokens bloqueados serão devolvidos.',
     );
     if (!confirm || !mounted) return;
 
@@ -151,7 +148,10 @@ class _MarketScreenState extends State<MarketScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.white38)),
+            child: const Text(
+              'Cancelar',
+              style: TextStyle(color: Colors.white38),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -179,11 +179,11 @@ class _MarketScreenState extends State<MarketScreen> {
     );
   }
 
-  void _navegarParaCriarOferta({String tipo = 'Comprar'}) async {
+  void _goToNewOffer(OrderType orderType) async {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => CreateOrderScreen(tipo: tipo),
+        builder: (_) => CreateOrderScreen(orderType: orderType),
       ),
     );
 
@@ -217,7 +217,7 @@ class _MarketScreenState extends State<MarketScreen> {
                   Row(
                     children: [
                       GestureDetector(
-                        onTap: () => _navegarParaCriarOferta(),
+                        onTap: () => _goToNewOffer(OrderType.buy),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
@@ -305,8 +305,8 @@ class _MarketScreenState extends State<MarketScreen> {
                   _activeTab == 'Compra'
                       ? 'OFERTAS DE COMPRA ABERTAS'
                       : _activeTab == 'Venda'
-                          ? 'OFERTAS DE VENDA ABERTAS'
-                          : 'MINHAS ORDENS',
+                      ? 'OFERTAS DE VENDA ABERTAS'
+                      : 'MINHAS ORDENS',
                   style: const TextStyle(
                     color: AppColors.verdeMescla,
                     fontWeight: FontWeight.bold,
@@ -342,8 +342,8 @@ class _MarketScreenState extends State<MarketScreen> {
     final orders = _activeTab == 'Compra'
         ? _buyOrders
         : _activeTab == 'Venda'
-            ? _sellOrders
-            : _myOrders;
+        ? _sellOrders
+        : _myOrders;
 
     if (orders.isEmpty) {
       return const Center(
@@ -372,8 +372,8 @@ class _MarketScreenState extends State<MarketScreen> {
     final actionLabel = isMyOrders
         ? 'Cancelar'
         : isBuyTab
-            ? 'Vender'
-            : 'Comprar';
+        ? 'Vender'
+        : 'Comprar';
 
     // Cor do botão
     final actionColor = isMyOrders ? Colors.redAccent : AppColors.verdeMescla;
@@ -396,7 +396,7 @@ class _MarketScreenState extends State<MarketScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  order.startupId,
+                  order.startup.name,
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -411,7 +411,9 @@ class _MarketScreenState extends State<MarketScreen> {
                 ),
                 if (isMyOrders)
                   Text(
-                    order.type == OrderType.buy ? 'Ordem de compra' : 'Ordem de venda',
+                    order.type == OrderType.buy
+                        ? 'Ordem de compra'
+                        : 'Ordem de venda',
                     style: TextStyle(
                       color: order.type == OrderType.buy
                           ? Colors.greenAccent.withValues(alpha: 0.8)
@@ -487,7 +489,10 @@ class _MarketScreenState extends State<MarketScreen> {
               else
                 // Badge "Sua ordem" para ordens próprias nas abas Compra/Venda
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.verdeMescla.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),

@@ -10,6 +10,7 @@ import { StartupDocument } from "../types/documents";
 import {
   StartupDetailsDTO,
   StartupListItemDTO,
+  StartupResumeDTO,
   StartupStageFilter,
 } from "../types/dtos";
 
@@ -18,7 +19,7 @@ const startupsCollection = database.collection("startups");
 /*
  * Busca as startups no banco de dados seguindo um offset, um limite e um filtro
  */
-export const searchStartups = async (
+export const findStartups = async (
   offset: number,
   limit: number,
   filter: StartupStageFilter,
@@ -53,6 +54,15 @@ export const searchStartups = async (
       thumbnailPath: startup.thumbnailPath,
     } satisfies StartupListItemDTO;
   });
+};
+
+export const findStartupsResumes = async (): Promise<StartupResumeDTO[]> => {
+  const snapshot = await startupsCollection.select("name").get();
+
+  return snapshot.docs.map((doc) => ({
+    ...(doc.data() as StartupResumeDTO),
+    id: doc.id,
+  })) satisfies StartupResumeDTO[];
 };
 
 /*

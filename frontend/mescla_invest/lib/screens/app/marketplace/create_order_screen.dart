@@ -10,33 +10,34 @@ import 'package:mescla_invest/models/startup/startup.dart';
 
 class CreateOrderScreen extends StatefulWidget {
   final String? startupId;
-  final String tipo;
+  final OrderType orderType;
 
-  const CreateOrderScreen({super.key, this.startupId, this.tipo = 'Comprar'});
+  const CreateOrderScreen({super.key, required this.orderType, this.startupId});
 
   @override
   State<CreateOrderScreen> createState() => _CreateOrderScreenState();
 }
 
 class _CreateOrderScreenState extends State<CreateOrderScreen> {
-  late String _tipo;
+  late OrderType _orderType;
 
   // Startup selecionada no dropdown
-  StartupModel? _startupSelecionada;
-  List<StartupModel> _startups = [];
+  List<StartupResumeDTO> _startups = [];
+  StartupResumeDTO? _selectedStartup;
+
   bool _isLoadingStartups = true;
 
   // Quantidade e preço por token (em centavos internamente)
-  final _quantidadeController = TextEditingController(text: '1');
-  final _precoController = TextEditingController();
+  final _ammountController = TextEditingController(text: '1');
+  final _priceController = TextEditingController();
 
   bool _isSubmitting = false;
 
-  int get _tokenAmount => int.tryParse(_quantidadeController.text) ?? 0;
+  int get _tokenAmount => int.tryParse(_ammountController.text) ?? 0;
 
   // Preço digitado convertido para centavos
   int get _pricePerTokenCents {
-    final raw = _precoController.text.replaceAll(',', '.');
+    final raw = _priceController.text.replaceAll(',', '.');
     final parsed = double.tryParse(raw) ?? 0.0;
     return (parsed * 100).round();
   }
@@ -46,14 +47,14 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   @override
   void initState() {
     super.initState();
-    _tipo = widget.tipo;
+    _orderType = widget.orderType;
     _fetchStartups();
   }
 
   @override
   void dispose() {
-    _quantidadeController.dispose();
-    _precoController.dispose();
+    _ammountController.dispose();
+    _priceController.dispose();
     super.dispose();
   }
 
@@ -61,30 +62,26 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   Future<void> _fetchStartups() async {
     setState(() => _isLoadingStartups = true);
     try {
-      final startups = await StartupModel.getStartups(
-        offset: 0,
-        limit: 50,
-        stageFilter: StartupStageFilter.all,
-        nameFilter: '',
-      );
+      final startups = await StartupModel.getAllStartupsResumes();
 
-      if (mounted) {
-        setState(() {
-          _startups = startups;
-          // Pré-seleciona a startup recebida via argumento
-          if (widget.startupId != null) {
-            try {
-              _startupSelecionada = startups.firstWhere(
-                (s) => s.id == widget.startupId,
-              );
-            } catch (_) {
-              _startupSelecionada = startups.isNotEmpty ? startups.first : null;
-            }
-          }
-        });
-      }
+      if (!mounted) return;
+
+      setState(() {
+        // Pré-seleciona a startup recebida via argumento
+
+        _startups = startups;
+
+        if (widget.startupId != null) {
+          _selectedStartup = startups.firstWhere(
+            (s) => s.id == widget.startupId,
+            orElse: () => startups.first,
+          );
+        }
+      });
+    } on FirebaseFunctionsException catch (err) {
+      _showSnack("Erro ao carregar startups: ${err.message}", isError: true);
     } catch (_) {
-      _showSnack('Erro ao carregar startups.', isError: true);
+      _showSnack('Erro desconhecido ao carregar startups.', isError: true);
     } finally {
       if (mounted) setState(() => _isLoadingStartups = false);
     }
@@ -92,7 +89,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   // Registra a ordem no balcão
   Future<void> _submitOrder() async {
-    if (_startupSelecionada == null) {
+    if (_selectedStartup == null) {
       _showSnack('Selecione uma startup.', isError: true);
       return;
     }
@@ -110,8 +107,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     setState(() => _isSubmitting = true);
     try {
       await OrderModel.registerOrder(
-        startupId: _startupSelecionada!.id,
-        type: _tipo == 'Vender' ? OrderType.sell : OrderType.buy,
+        startupId: _selectedStartup!.id,
+        type: _orderType,
         pricePerTokenCents: _pricePerTokenCents,
         tokenAmount: _tokenAmount,
       );
@@ -190,11 +187,12 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
-                  children: ['Comprar', 'Vender'].map((t) {
-                    final isSelected = _tipo == t;
+                  children: OrderType.values.map((t) {
+                    final isSelected = _orderType == t;
+
                     return Expanded(
                       child: GestureDetector(
-                        onTap: () => setState(() => _tipo = t),
+                        onTap: () => setState(() => _orderType = t),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
@@ -204,7 +202,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            t,
+                            t.label,
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: isSelected
@@ -228,7 +226,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
               const Text('Startup', style: TextStyle(color: Colors.white70)),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.campoEscuro,
                   borderRadius: BorderRadius.circular(8),
@@ -248,8 +249,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                         ),
                       )
                     : DropdownButtonHideUnderline(
-                        child: DropdownButton<StartupModel>(
-                          value: _startupSelecionada,
+                        child: DropdownButton<StartupResumeDTO>(
+                          value: _selectedStartup,
                           hint: const Text(
                             'Selecione uma startup',
                             style: TextStyle(color: Colors.white38),
@@ -270,7 +271,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                             );
                           }).toList(),
                           onChanged: (value) =>
-                              setState(() => _startupSelecionada = value),
+                              setState(() => _selectedStartup = value),
                         ),
                       ),
               ),
@@ -288,9 +289,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   GestureDetector(
                     onTap: () {
                       final current =
-                          int.tryParse(_quantidadeController.text) ?? 1;
+                          int.tryParse(_ammountController.text) ?? 1;
                       if (current > 1) {
-                        _quantidadeController.text = '${current - 1}';
+                        _ammountController.text = '${current - 1}';
                         setState(() {});
                       }
                     },
@@ -312,7 +313,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: TextField(
-                        controller: _quantidadeController,
+                        controller: _ammountController,
                         keyboardType: TextInputType.number,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
@@ -334,8 +335,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   GestureDetector(
                     onTap: () {
                       final current =
-                          int.tryParse(_quantidadeController.text) ?? 0;
-                      _quantidadeController.text = '${current + 1}';
+                          int.tryParse(_ammountController.text) ?? 0;
+                      _ammountController.text = '${current + 1}';
                       setState(() {});
                     },
                     child: Container(
@@ -365,7 +366,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: TextField(
-                  controller: _precoController,
+                  controller: _priceController,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
@@ -421,10 +422,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                           : '—',
                     ),
                     const SizedBox(height: 8),
-                    _buildResumoRow(
-                      'Tipo',
-                      _tipo == 'Comprar' ? 'Ordem de Compra' : 'Ordem de Venda',
-                    ),
+                    _buildResumoRow('Tipo', _orderType.label),
                     const Divider(color: Colors.white12, height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -460,8 +458,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.verdeMescla,
                   foregroundColor: Colors.black,
-                  disabledBackgroundColor:
-                      AppColors.verdeMescla.withValues(alpha: 0.5),
+                  disabledBackgroundColor: AppColors.verdeMescla.withValues(
+                    alpha: 0.5,
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -477,9 +476,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                         ),
                       )
                     : Text(
-                        _tipo == 'Comprar'
-                            ? 'Publicar oferta de compra'
-                            : 'Publicar oferta de venda',
+                        _orderType.label,
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,

@@ -132,8 +132,6 @@ class StartupModel {
         Map<String, dynamic>.from(response.data),
       );
 
-      await startup.loadMedia();
-
       return startup;
     } catch (e) {
       rethrow;
@@ -166,6 +164,34 @@ class StartupModel {
     } catch (e) {
       rethrow;
     }
+  }
+
+  static Future<List<StartupResumeDTO>> getAllStartupsResumes() async {
+    try {
+      final response = await FirebaseFunctions.instance
+          .httpsCallable('getStartupResumes')
+          .call();
+
+      final data = response.data as Map<dynamic, dynamic>;
+      final List rawList = data['startups'] ?? [];
+
+      return rawList
+          .map((s) => StartupResumeDTO(id: s["id"], name: s["name"]))
+          .toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+}
+
+class StartupResumeDTO {
+  final String id;
+  final String name;
+
+  const StartupResumeDTO({required this.id, required this.name});
+
+  factory StartupResumeDTO.fromMap(Map<String, dynamic> rawMap) {
+    return StartupResumeDTO(id: rawMap["id"], name: rawMap["name"]);
   }
 }
 

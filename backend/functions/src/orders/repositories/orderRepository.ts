@@ -3,12 +3,14 @@
  * RA: 25000636
  */
 
+import admin from "firebase-admin";
 import { HttpsError } from "firebase-functions/https";
 import { FieldValue } from "firebase-admin/firestore";
 import { database } from "../../shared/firebase";
 import { OrderDocument, OrderType } from "../types/documents";
 import { OrderListDTO, OrderRegisterDTO } from "../types/dtos";
 import { InvestmentDocument, WalletDocument } from "../../user/types/documents";
+import { StartupResumeDTO } from "../../startup/types/dtos";
 
 const getInvestmentsCollection = (uid: string) =>
   database.collection("investments").doc(uid).collection("startups");
@@ -16,6 +18,7 @@ const getInvestmentsCollection = (uid: string) =>
 const walletsCollection = database.collection("wallets");
 const ordersCollection = database.collection("orders");
 const transactionsCollection = database.collection("transactions");
+const startupsCollection = database.collection("startups");
 
 /*
  * Pesquisa todas as ordens de compra ou de venda, de acordo com o filtro
@@ -33,14 +36,38 @@ export const findAllOrders = async (
     .limit(limit)
     .get();
 
-  return snapshot.docs.map((doc) => {
-    const order = doc.data() as OrderDocument;
-    return {
+  const orders = snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...(doc.data() as OrderDocument),
+  }));
+
+  // IDs únicos das startups
+  const startupIds = [...new Set(orders.map((order) => order.startupId))];
+
+  // Busca apenas startups necessárias
+  const startupsSnapshot = startupIds.length
+    ? await startupsCollection
+        .where(admin.firestore.FieldPath.documentId(), "in", startupIds)
+        .select("name")
+        .get()
+    : null;
+
+  const startups: Record<string, StartupResumeDTO> = {};
+
+  startupsSnapshot?.docs.forEach((doc) => {
+    startups[doc.id] = {
+      ...(doc.data() as StartupResumeDTO),
       id: doc.id,
-      isAuthor: order.authorUId === userUId,
-      ...order,
     };
-  }) satisfies OrderListDTO[];
+  });
+
+  const fullOrders = orders.map((order) => ({
+    ...order,
+    isAuthor: order.authorUId === userUId,
+    startup: startups[order.startupId],
+  }));
+
+  return fullOrders;
 };
 
 /*
@@ -54,14 +81,34 @@ export const findUserOrders = async (
     .orderBy("createdAt", "desc")
     .get();
 
-  return snapshot.docs.map((doc) => {
-    const order = doc.data() as OrderDocument;
-    return {
+  const orders = snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...(doc.data() as OrderDocument),
+  }));
+
+  const startupIds = [...new Set(orders.map((order) => order.startupId))];
+
+  const startupsSnapshot = startupIds.length
+    ? await startupsCollection
+        .where(admin.firestore.FieldPath.documentId(), "in", startupIds)
+        .select("name")
+        .get()
+    : null;
+
+  const startups: Record<string, StartupResumeDTO> = {};
+
+  startupsSnapshot?.docs.forEach((doc) => {
+    startups[doc.id] = {
+      ...(doc.data() as StartupResumeDTO),
       id: doc.id,
-      isAuthor: true,
-      ...order,
     };
-  }) satisfies OrderListDTO[];
+  });
+
+  return orders.map((order) => ({
+    ...order,
+    isAuthor: true,
+    startup: startups[order.startupId],
+  }));
 };
 
 /*

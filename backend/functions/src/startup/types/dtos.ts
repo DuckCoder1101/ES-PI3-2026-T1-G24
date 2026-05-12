@@ -29,6 +29,11 @@ export interface StartupListItemDTO {
   tags: string[];
 }
 
+export interface StartupResumeDTO {
+  id: string;
+  name: string;
+}
+
 export interface GetStartupsRequestBodyDTO {
   offset: number;
   limit: number;
@@ -56,4 +61,4 @@ export interface QuestionListDTO {
   visibility: QuestionVisibility;
   answers: QuestionAnwserDocument[];
   createdAt: Timestamp;
-}
+}

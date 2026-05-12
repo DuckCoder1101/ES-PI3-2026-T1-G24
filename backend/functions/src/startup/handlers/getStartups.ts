@@ -7,13 +7,16 @@ import { HttpsError, onCall } from "firebase-functions/https";
 import { normalizeString } from "../../shared/utils";
 import { GetStartupsRequestBodyDTO, StartupStageFilter } from "../types/dtos";
 import { StartupsSearchFilters } from "../shared/constants";
-import { searchStartups } from "../repositories/startupsRepository";
+import { findStartups } from "../repositories/startupsRepository";
+import { getUserProfile } from "../../shared/auth";
 
 /*
  * Busca todas as startups de um determinado intervalo e quantidade no banco
  * Este método usa infity scroll. É necessário informar um offset, um filtro e um limite!
  */
 export const getStartups = onCall(async (req) => {
+  getUserProfile(req);
+
   const { filter, offset, limit } = req.data as GetStartupsRequestBodyDTO;
 
   const stage = normalizeString(filter.stage) as StartupStageFilter;
@@ -37,7 +40,7 @@ export const getStartups = onCall(async (req) => {
     );
   }
 
-  const startups = await searchStartups(offset, limit, stage, name);
+  const startups = await findStartups(offset, limit, stage, name);
 
   return {
     startups,

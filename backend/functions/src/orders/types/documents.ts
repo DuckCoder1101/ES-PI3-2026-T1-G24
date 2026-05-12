@@ -4,7 +4,6 @@
  */
 
 import { Timestamp } from "firebase-admin/firestore";
-
 export type OrderType = "buy" | "sell";
 
 export interface OrderDocument {
@@ -14,4 +13,4 @@ export interface OrderDocument {
   pricePerTokenCents: number;
   tokenAmount: number;
   createdAt: Timestamp;
-}
+}

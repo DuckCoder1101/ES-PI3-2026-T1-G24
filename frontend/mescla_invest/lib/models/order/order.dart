@@ -4,13 +4,24 @@
  */
 
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:mescla_invest/models/startup/startup.dart';
 
-enum OrderType { buy, sell }
+enum OrderType {
+  buy,
+  sell;
+
+  String get label {
+    return switch (this) {
+      OrderType.buy => "Comprar",
+      OrderType.sell => "Vender",
+    };
+  }
+}
 
 class OrderModel {
   final String id;
   final String authorUId;
-  final String startupId;
+  final StartupResumeDTO startup;
   final OrderType type;
 
   // Preço por token em centavos (backend armazena em centavos)
@@ -26,7 +37,7 @@ class OrderModel {
   OrderModel({
     required this.id,
     required this.authorUId,
-    required this.startupId,
+    required this.startup,
     required this.type,
     required this.pricePerTokenCents,
     required this.tokenAmount,
@@ -43,19 +54,21 @@ class OrderModel {
     return OrderModel(
       id: map['id'] ?? '',
       authorUId: map['authorUId'] ?? '',
-      startupId: map['startupId'] ?? '',
+      startup: StartupResumeDTO.fromMap(
+        Map<String, dynamic>.from(map["startup"]),
+      ),
       type: map['type'] == 'sell' ? OrderType.sell : OrderType.buy,
       pricePerTokenCents: (map['pricePerTokenCents'] ?? 0) as int,
       tokenAmount: (map['tokenAmount'] ?? 0) as int,
       isAuthor: map['isAuthor'] ?? false,
       createdAt: map['createdAt'] != null
           ? (map['createdAt'] is int
-              ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'])
-              : (map['createdAt'] as Map)['seconds'] != null
-                  ? DateTime.fromMillisecondsSinceEpoch(
-                      (map['createdAt']['seconds'] as int) * 1000,
-                    )
-                  : null)
+                ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'])
+                : (map['createdAt'] as Map)['seconds'] != null
+                ? DateTime.fromMillisecondsSinceEpoch(
+                    (map['createdAt']['seconds'] as int) * 1000,
+                  )
+                : null)
           : null,
     );
   }

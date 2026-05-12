@@ -5,6 +5,7 @@
 
 export * from "./handlers/getStartups";
 export * from "./handlers/getStartupDetails";
+export * from "./handlers/getStartupsResumes";
 export * from "./handlers/buyTokens";
 export * from "./handlers/qa/getQuestions";
 export * from "./handlers/qa/registerQuestion";
