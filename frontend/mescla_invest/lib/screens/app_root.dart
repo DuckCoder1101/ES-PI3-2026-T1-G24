@@ -10,7 +10,7 @@ import 'package:mescla_invest/constants/colors.dart';
 
 import 'package:mescla_invest/models/user.dart';
 import 'package:mescla_invest/screens/app/startups/catalog.dart';
-import 'package:mescla_invest/screens/app/startups/market.dart';
+import 'package:mescla_invest/screens/app/marketplace/market.dart';
 import 'package:mescla_invest/screens/app/user/account.dart';
 import 'package:mescla_invest/screens/app/user/wallet.dart';
 import 'package:mescla_invest/screens/public/auth/verify_email.dart';

@@ -1,3 +1,8 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { HttpsError, onCall } from "firebase-functions/https";
 import { saveQuestion } from "../../repositories/questionsRepository";
 import { getUserProfile } from "../../../shared/auth";
@@ -17,4 +22,4 @@ export const registerQuestion = onCall(async (req) => {
   });
 
   return { success: true };
-});
+});

@@ -9,16 +9,21 @@ import { UpdateProfileDTO, UserFullDTO, UserSignupDTO } from "../types/dtos";
 import { HttpsError } from "firebase-functions/https";
 import { UserDocument } from "../types/documents";
 
+const cpfsCollection = database.collection("cpf_index");
 const usersCollection = database.collection("users");
+const walletsCollection = database.collection("wallets");
+const transactionsCollection = database.collection("transactions");
 
 /*
- * Cadastra um novo usuário na coleção users do firestore
- * Lança um erro caso já exista um usuário com o mesmo CPF
+ * Cadastra um novo usuário na coleção users do Firestore.
+ * Cria também a carteira inicial com saldo zero.
+ * Lança um erro caso já exista um usuário com o mesmo CPF.
  */
 export const createUserAccount = async (uid: string, data: UserSignupDTO) => {
   await database.runTransaction(async (tx) => {
-    const cpfRef = database.collection("cpf_index").doc(data.cpf);
-    const userRef = database.collection("users").doc(uid);
+    const cpfRef = cpfsCollection.doc(data.cpf);
+    const walletRef = walletsCollection.doc(uid);
+    const userRef = usersCollection.doc(uid);
 
     const cpfDoc = await tx.get(cpfRef);
 
@@ -27,10 +32,17 @@ export const createUserAccount = async (uid: string, data: UserSignupDTO) => {
     }
 
     tx.set(cpfRef, { uid });
+
+    // Carteira iniciada com saldo zero (em centavos)
+    tx.set(walletRef, {
+      fundsCents: 0,
+      lockedFundsCents: 0,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
     tx.set(userRef, {
       ...data,
       has2Fa: false,
-      funds: 1000,
       createdAt: FieldValue.serverTimestamp(),
     });
   });
@@ -72,15 +84,35 @@ export const getById = async (uid: string): Promise<UserFullDTO> => {
 };
 
 /*
- * Adiciona um deternminado valor à carteira do usuário
+ * Adiciona fundos fictícios à carteira do usuário.
+ * Registra uma transação do tipo "funds" na coleção de transações.
  */
-export const setUserFunds = async (uid: string, funds: number) => {
-  const ref = usersCollection.doc(uid);
-  const doc = await ref.get();
+export const addFundsToWallet = async (
+  uid: string,
+  fundsCents: number,
+): Promise<void> => {
+  await database.runTransaction(async (tx) => {
+    const walletRef = walletsCollection.doc(uid);
+    const walletDoc = await tx.get(walletRef);
 
-  if (!doc.exists) {
-    throw new HttpsError("not-found", "Usuário não encontrado!");
-  }
+    if (!walletDoc.exists) {
+      throw new HttpsError("not-found", "Carteira não encontrada!");
+    }
 
-  await ref.set({ funds: funds }, { merge: true });
+    // Incrementa o saldo disponível da carteira
+    tx.update(walletRef, {
+      fundsCents: FieldValue.increment(fundsCents),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    // Registra a transação de depósito de fundos
+    const transactionRef = transactionsCollection.doc();
+    tx.set(transactionRef, {
+      type: "funds",
+      authorUId: uid,
+      amountCents: fundsCents,
+      userUIds: [uid],
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  });
 };

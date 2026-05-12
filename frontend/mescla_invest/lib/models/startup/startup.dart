@@ -17,7 +17,8 @@ class StartupModel {
   final String shortDescription;
   final String executiveSummary;
   final double tokenPrice;
-  final int totalTokens;
+  final int totalTokensIssued;
+  final int totalTokensAvailable;
   final double totalRaised;
   final StartupStage stage;
 
@@ -44,7 +45,8 @@ class StartupModel {
     required this.shortDescription,
     required this.executiveSummary,
     required this.tokenPrice,
-    required this.totalTokens,
+    required this.totalTokensIssued,
+    required this.totalTokensAvailable,
     required this.totalRaised,
     required this.stage,
     required this.thumbnailPath,
@@ -78,7 +80,8 @@ class StartupModel {
       shortDescription: map['shortDescription'] ?? '',
       executiveSummary: map['executiveSummary'] ?? '',
       tokenPrice: ((map['currentTokenPriceCents'] ?? 0) / 100).toDouble(),
-      totalTokens: map['totalTokensIssued'] ?? 0,
+      totalTokensIssued: map['totalTokensIssued'] ?? 0,
+      totalTokensAvailable: map['totalTokensAvailable'] ?? 0,
       totalRaised: ((map['capitalRaisedCents'] ?? 0) / 100).toDouble(),
       stage: stageEnum,
 

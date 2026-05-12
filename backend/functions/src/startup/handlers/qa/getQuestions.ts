@@ -1,3 +1,8 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { HttpsError, onCall } from "firebase-functions/https";
 import { getStartupQuestions } from "../../repositories/questionsRepository";
 import { getUserProfile } from "../../../shared/auth";
@@ -15,4 +20,4 @@ export const getQuestions = onCall(async (req) => {
 
   const questions = await getStartupQuestions(startupId, visibility, uid);
   return { questions };
-});
+});

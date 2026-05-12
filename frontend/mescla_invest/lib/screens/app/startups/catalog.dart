@@ -178,7 +178,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                   title: startup.name,
                   description: startup.shortDescription,
                   status: startup.stage.name.replaceAll('_', ' '),
-                  tokens: "${startup.totalTokens} tokens",
+                  tokens: "${startup.totalTokensIssued} tokens",
                   imageUrl: snapshot.connectionState == ConnectionState.done
                       ? startup.thumbnailUrl
                       : null,

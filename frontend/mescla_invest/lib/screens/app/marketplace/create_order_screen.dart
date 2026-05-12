@@ -18,9 +18,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   late String _tipo;
   late String? _startupSelecionada;
-  int _quantidade = 1;
-  double _preco = 1.45;
+  final double _preco = 1.45;
   final double _saldo = 3450.00;
+  int _quantidade = 1;
 
   final List<String> _startups = [
     'EcoTech PUC',
@@ -304,7 +304,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   ),
                 ),
                 child: Text(
-                  _tipo == 'Comprar' ? 'Publicar oferta de compra' : 'Publicar oferta de venda',
+                  _tipo == 'Comprar'
+                      ? 'Publicar oferta de compra'
+                      : 'Publicar oferta de venda',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,

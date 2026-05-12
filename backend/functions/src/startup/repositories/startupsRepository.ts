@@ -74,3 +74,11 @@ export const getFullStartup = async (
     ...startup,
   } satisfies StartupDetailsDTO;
 };
+
+/*
+ * Verifica se uma startup existe
+ */
+export const checkStartupExists = async (startupId: string) => {
+  const doc = await startupsCollection.doc(startupId).get();
+  return doc.exists;
+};

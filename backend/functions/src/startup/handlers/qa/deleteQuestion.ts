@@ -1,3 +1,8 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { HttpsError, onCall } from "firebase-functions/https";
 import { deleteQuestionById } from "../../repositories/questionsRepository";
 import { getUserProfile } from "../../../shared/auth";
@@ -18,4 +23,4 @@ export const deleteQuestion = onCall(async (req) => {
       "Permission denied: You are not the author.",
     );
   }
-});
+});

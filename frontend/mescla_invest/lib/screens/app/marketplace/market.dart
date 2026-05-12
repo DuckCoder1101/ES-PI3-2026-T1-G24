@@ -2,7 +2,7 @@
 // RA: 25000294
 
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/screens/app/startups/create_order_screen.dart';
+import 'package:mescla_invest/screens/app/marketplace/create_order_screen.dart';
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
@@ -28,18 +28,25 @@ class _MarketScreenState extends State<MarketScreen> {
   ];
 
   final List<Map<String, dynamic>> _minhasOrdens = [
-    {'startup': 'MedConnect', 'quantidade': 15, 'preco': 0.80, 'tipo': 'Compra'},
-    {'startup': 'EcoTech PUC', 'quantidade': 10, 'preco': 1.50, 'tipo': 'Venda'},
+    {
+      'startup': 'MedConnect',
+      'quantidade': 15,
+      'preco': 0.80,
+      'tipo': 'Compra',
+    },
+    {
+      'startup': 'EcoTech PUC',
+      'quantidade': 10,
+      'preco': 1.50,
+      'tipo': 'Venda',
+    },
   ];
 
   void _navegarParaCriarOferta({String? startupName, String tipo = 'Comprar'}) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => CreateOrderScreen(
-          startupName: startupName,
-          tipo: tipo,
-        ),
+        builder: (_) => CreateOrderScreen(startupName: startupName, tipo: tipo),
       ),
     );
   }
@@ -71,7 +78,9 @@ class _MarketScreenState extends State<MarketScreen> {
                         onTap: () => _navegarParaCriarOferta(),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             color: verdeMescla,
                             borderRadius: BorderRadius.circular(8),
@@ -86,8 +95,10 @@ class _MarketScreenState extends State<MarketScreen> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Icon(Icons.notifications_outlined,
-                          color: Colors.white),
+                      const Icon(
+                        Icons.notifications_outlined,
+                        color: Colors.white,
+                      ),
                     ],
                   ),
                 ],
@@ -147,8 +158,8 @@ class _MarketScreenState extends State<MarketScreen> {
                   _activeTab == 'Compra'
                       ? 'OFERTAS DE COMPRA ABERTAS'
                       : _activeTab == 'Venda'
-                          ? 'OFERTAS DE VENDA ABERTAS'
-                          : 'MINHAS ORDENS',
+                      ? 'OFERTAS DE VENDA ABERTAS'
+                      : 'MINHAS ORDENS',
                   style: const TextStyle(
                     color: verdeMescla,
                     fontWeight: FontWeight.bold,
@@ -167,14 +178,14 @@ class _MarketScreenState extends State<MarketScreen> {
                 itemCount: _activeTab == 'Compra'
                     ? _ofertasCompra.length
                     : _activeTab == 'Venda'
-                        ? _ofertasVenda.length
-                        : _minhasOrdens.length,
+                    ? _ofertasVenda.length
+                    : _minhasOrdens.length,
                 itemBuilder: (context, index) {
                   final oferta = _activeTab == 'Compra'
                       ? _ofertasCompra[index]
                       : _activeTab == 'Venda'
-                          ? _ofertasVenda[index]
-                          : _minhasOrdens[index];
+                      ? _ofertasVenda[index]
+                      : _minhasOrdens[index];
 
                   return GestureDetector(
                     onTap: () => _navegarParaCriarOferta(

@@ -10,7 +10,18 @@ export interface UserDocument {
   name: string;
   email: string;
   phone: string;
-  funds: number;
   createdAt: Timestamp;
-  investments: string[];
+}
+
+export interface WalletDocument {
+  fundsCents: number;
+  lockedFundsCents: number;
+  updatedAt: Timestamp;
+}
+
+export interface InvestmentDocument {
+  startupId: string;
+  tokenAmount: number;
+  lockedTokenAmount: number;
+  updatedAt: Timestamp;
 }

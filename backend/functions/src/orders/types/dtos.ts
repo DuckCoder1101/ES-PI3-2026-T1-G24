@@ -1,3 +1,8 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { OrderDocument, OrderType } from "./documents";
 
 export interface OrderListDTO extends OrderDocument {
@@ -19,4 +24,4 @@ export interface GetOrdersRequestDTO {
   orderType: OrderType;
   offset: number;
   limit: number;
-}
+}

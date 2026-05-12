@@ -1,3 +1,8 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { Timestamp } from "firebase-admin/firestore";
 import {
   QuestionAnwserDocument,
@@ -51,4 +56,4 @@ export interface QuestionListDTO {
   visibility: QuestionVisibility;
   answers: QuestionAnwserDocument[];
   createdAt: Timestamp;
-}
+}
