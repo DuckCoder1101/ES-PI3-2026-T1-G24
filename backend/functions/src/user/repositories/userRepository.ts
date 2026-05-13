@@ -84,6 +84,19 @@ export const getById = async (uid: string): Promise<UserFullDTO> => {
 };
 
 /*
+ * Retorna a carteira do usuário
+ */
+export const getWallet = async (uid: string): Promise<WalletDocument> => {
+  const snapshot = await walletsCollection.doc(uid).get();
+
+  if (!snapshot.exists) {
+    throw new HttpsError("not-found", "Carteira não encontrada!");
+  }
+
+  return snapshot.data() as WalletDocument;
+};
+
+/*
  * Adiciona fundos fictícios à carteira do usuário.
  * Registra uma transação do tipo "funds" na coleção de transações.
  */

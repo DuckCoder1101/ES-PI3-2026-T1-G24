@@ -95,4 +95,21 @@ class WalletModel {
       rethrow;
     }
   }
+
+  /*
+   * Busca a carteira do usuário autenticado
+   */
+  static Future<WalletModel> getWallet() async {
+    try {
+      final response = await FirebaseFunctions.instance
+          .httpsCallable('getWallet')
+          .call();
+
+      final data = Map<String, dynamic>.from(response.data);
+
+      return WalletModel.fromMap(data);
+    } catch (e) {
+      rethrow;
+    }
+  }
 }
