@@ -10,7 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
 
-import 'package:mescla_invest/models/user.dart';
+import 'package:mescla_invest/models/user/user.dart';
 import 'package:mescla_invest/screens/app/marketplace/market.dart';
 import 'package:mescla_invest/screens/app/startups/catalog.dart';
 import 'package:mescla_invest/screens/app/user/account.dart';

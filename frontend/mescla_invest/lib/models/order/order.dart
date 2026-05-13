@@ -1,10 +1,9 @@
 /*
- * Autor: Cristian Fava
+ * Autor: Cristian Eduardo Fava
  * RA: 25000636
  */
 
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:mescla_invest/models/startup/startup.dart';
 
 enum OrderType {
   buy,
@@ -18,10 +17,25 @@ enum OrderType {
   }
 }
 
+/*
+ * Resumo de startup retornado junto com cada ordem no balcão.
+ * O backend enriquece a ordem com nome e ID da startup para exibição.
+ */
+class StartupResume {
+  final String id;
+  final String name;
+
+  StartupResume({required this.id, required this.name});
+
+  factory StartupResume.fromMap(Map<String, dynamic> map) {
+    return StartupResume(id: map['id'] ?? '', name: map['name'] ?? '');
+  }
+}
+
 class OrderModel {
   final String id;
   final String authorUId;
-  final StartupResumeDTO startup;
+  final StartupResume startup;
   final OrderType type;
 
   // Preço por token em centavos (backend armazena em centavos)
@@ -33,6 +47,10 @@ class OrderModel {
   final int tokenAmount;
   final bool isAuthor;
   final DateTime? createdAt;
+
+  // Atalhos de conveniência
+  String get startupId => startup.id;
+  String get startupName => startup.name;
 
   OrderModel({
     required this.id,
@@ -51,26 +69,40 @@ class OrderModel {
   factory OrderModel.fromMap(Map<String, dynamic> rawMap) {
     final map = rawMap.map((key, value) => MapEntry(key.trim(), value));
 
+    // Suporte ao formato antigo (startupId string) e novo (startup: {id, name})
+    final StartupResume startup;
+    if (map['startup'] != null) {
+      startup = StartupResume.fromMap(
+        Map<String, dynamic>.from(map['startup']),
+      );
+    } else {
+      startup = StartupResume(
+        id: map['startupId'] ?? '',
+        name: map['startupId'] ?? '',
+      );
+    }
+
     return OrderModel(
       id: map['id'] ?? '',
       authorUId: map['authorUId'] ?? '',
-      startup: StartupResumeDTO.fromMap(
-        Map<String, dynamic>.from(map["startup"]),
-      ),
+      startup: startup,
       type: map['type'] == 'sell' ? OrderType.sell : OrderType.buy,
       pricePerTokenCents: (map['pricePerTokenCents'] ?? 0) as int,
       tokenAmount: (map['tokenAmount'] ?? 0) as int,
       isAuthor: map['isAuthor'] ?? false,
-      createdAt: map['createdAt'] != null
-          ? (map['createdAt'] is int
-                ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'])
-                : (map['createdAt'] as Map)['seconds'] != null
-                ? DateTime.fromMillisecondsSinceEpoch(
-                    (map['createdAt']['seconds'] as int) * 1000,
-                  )
-                : null)
-          : null,
+      createdAt: _parseTimestamp(map['createdAt']),
     );
+  }
+
+  static DateTime? _parseTimestamp(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is int) return DateTime.fromMillisecondsSinceEpoch(raw);
+    if (raw is Map && raw['seconds'] != null) {
+      return DateTime.fromMillisecondsSinceEpoch(
+        (raw['seconds'] as int) * 1000,
+      );
+    }
+    return null;
   }
 
   /*
@@ -81,44 +113,30 @@ class OrderModel {
     required int offset,
     required int limit,
   }) async {
-    try {
-      final response = await FirebaseFunctions.instance
-          .httpsCallable('getOrders')
-          .call({
-            'orderType': orderType.name,
-            'offset': offset,
-            'limit': limit,
-          });
+    final response = await FirebaseFunctions.instance
+        .httpsCallable('getOrders')
+        .call({'orderType': orderType.name, 'offset': offset, 'limit': limit});
 
-      final data = Map<String, dynamic>.from(response.data);
-      final List raw = data['orders'] ?? [];
-
-      return raw
-          .map((o) => OrderModel.fromMap(Map<String, dynamic>.from(o)))
-          .toList();
-    } catch (e) {
-      rethrow;
-    }
+    final data = Map<String, dynamic>.from(response.data);
+    final List raw = data['orders'] ?? [];
+    return raw
+        .map((o) => OrderModel.fromMap(Map<String, dynamic>.from(o)))
+        .toList();
   }
 
   /*
    * Busca todas as ordens criadas pelo usuário autenticado
    */
   static Future<List<OrderModel>> getUserOrders() async {
-    try {
-      final response = await FirebaseFunctions.instance
-          .httpsCallable('getUserOrders')
-          .call();
+    final response = await FirebaseFunctions.instance
+        .httpsCallable('getUserOrders')
+        .call();
 
-      final data = Map<String, dynamic>.from(response.data);
-      final List raw = data['orders'] ?? [];
-
-      return raw
-          .map((o) => OrderModel.fromMap(Map<String, dynamic>.from(o)))
-          .toList();
-    } catch (e) {
-      rethrow;
-    }
+    final data = Map<String, dynamic>.from(response.data);
+    final List raw = data['orders'] ?? [];
+    return raw
+        .map((o) => OrderModel.fromMap(Map<String, dynamic>.from(o)))
+        .toList();
   }
 
   /*
@@ -132,56 +150,38 @@ class OrderModel {
     required int pricePerTokenCents,
     required int tokenAmount,
   }) async {
-    try {
-      await FirebaseFunctions.instance.httpsCallable('registerOrder').call({
-        'startupId': startupId,
-        'type': type.name,
-        'pricePerTokenCents': pricePerTokenCents,
-        'tokenAmount': tokenAmount,
-      });
-    } catch (e) {
-      rethrow;
-    }
+    await FirebaseFunctions.instance.httpsCallable('registerOrder').call({
+      'startupId': startupId,
+      'type': type.name,
+      'pricePerTokenCents': pricePerTokenCents,
+      'tokenAmount': tokenAmount,
+    });
   }
 
   /*
    * Cancela uma ordem do balcão e devolve os fundos ou tokens bloqueados
    */
   static Future<void> deleteOrder(String orderId) async {
-    try {
-      await FirebaseFunctions.instance.httpsCallable('deleteOrder').call({
-        'orderId': orderId,
-      });
-    } catch (e) {
-      rethrow;
-    }
+    await FirebaseFunctions.instance.httpsCallable('deleteOrder').call({
+      'orderId': orderId,
+    });
   }
 
   /*
-   * Executa a compra de tokens de uma ordem de venda existente no balcão.
-   * Debita os fundos da carteira do comprador e credita os tokens.
+   * Executa a compra de tokens de uma ordem de venda existente no balcão
    */
   static Future<void> buyOrder(String orderId) async {
-    try {
-      await FirebaseFunctions.instance.httpsCallable('buyOrder').call({
-        'orderId': orderId,
-      });
-    } catch (e) {
-      rethrow;
-    }
+    await FirebaseFunctions.instance.httpsCallable('buyOrder').call({
+      'orderId': orderId,
+    });
   }
 
   /*
-   * Executa a venda de tokens para uma ordem de compra existente no balcão.
-   * Debita os tokens do vendedor e credita os fundos bloqueados pelo comprador.
+   * Executa a venda de tokens para uma ordem de compra existente no balcão
    */
   static Future<void> sellOrder(String orderId) async {
-    try {
-      await FirebaseFunctions.instance.httpsCallable('sellOrder').call({
-        'orderId': orderId,
-      });
-    } catch (e) {
-      rethrow;
-    }
+    await FirebaseFunctions.instance.httpsCallable('sellOrder').call({
+      'orderId': orderId,
+    });
   }
 }

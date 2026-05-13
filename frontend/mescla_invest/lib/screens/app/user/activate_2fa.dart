@@ -8,7 +8,7 @@ import 'package:pinput/pinput.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/models/user.dart';
+import 'package:mescla_invest/models/user/user.dart';
 import 'package:mescla_invest/widgets/ui/primary_button.dart';
 import 'package:url_launcher/url_launcher.dart';
 

@@ -3,7 +3,7 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/models/user.dart';
+import 'package:mescla_invest/models/user/user.dart';
 import 'package:mescla_invest/screens/public/auth/verify_2fa.dart';
 import 'package:mescla_invest/widgets/ui/back_button.dart';
 import 'package:mescla_invest/widgets/ui/icon.dart';

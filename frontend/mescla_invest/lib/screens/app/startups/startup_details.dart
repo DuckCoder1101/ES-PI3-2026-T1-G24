@@ -79,8 +79,7 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
         onSuccess: () {
           setState(() {
             // Recarrega os detalhes para refletir os novos tokens disponíveis
-            _startupFuture =
-                StartupModel.getStartupDetails(widget.startupId!);
+            _startupFuture = StartupModel.getStartupDetails(widget.startupId!);
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -134,15 +133,15 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
                     Container(
                       height: 250,
                       width: double.infinity,
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: NetworkImage(
-                            startup.thumbnailUrl ??
-                                "https://placehold.co/600x400/png",
-                          ),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
+                      color: AppColors.campoEscuro,
+                      child: startup.thumbnailUrl != null
+                          ? Image.network(
+                              startup.thumbnailUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) =>
+                                  const _ThumbPlaceholder(),
+                            )
+                          : const _ThumbPlaceholder(),
                     ),
                     Container(
                       height: 250,
@@ -185,9 +184,10 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
                             ),
                           ),
                           _buildTag(
-                            startup.stage.name
-                                .toUpperCase()
-                                .replaceAll('_', ' '),
+                            startup.stage.name.toUpperCase().replaceAll(
+                              '_',
+                              ' ',
+                            ),
                             AppColors.verdeMescla.withValues(alpha: 0.8),
                             AppColors.verdeMescla,
                           ),
@@ -332,6 +332,7 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
         return TabQA(
           startupId: widget.startupId!,
           startupName: startup.name,
+          isInvestor: startup.isInvestor,
         );
       case 'Updates':
         return const Center(
@@ -397,8 +398,10 @@ class _BuyTokensSheetState extends State<_BuyTokensSheet> {
     }
 
     if (_tokenAmount > widget.startup.totalTokensAvailable) {
-      setState(() =>
-          _error = 'Quantidade maior que os tokens disponíveis (${widget.startup.totalTokensAvailable}).');
+      setState(
+        () => _error =
+            'Quantidade maior que os tokens disponíveis (${widget.startup.totalTokensAvailable}).',
+      );
       return;
     }
 
@@ -498,7 +501,11 @@ class _BuyTokensSheetState extends State<_BuyTokensSheet> {
                     color: const Color(0xFF1A1A1A),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.remove, color: Colors.white, size: 20),
+                  child: const Icon(
+                    Icons.remove,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
               ),
               Expanded(
@@ -522,9 +529,7 @@ class _BuyTokensSheetState extends State<_BuyTokensSheet> {
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(vertical: 12),
                     ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                    ],
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     onChanged: (_) => setState(() {}),
                   ),
                 ),
@@ -606,10 +611,7 @@ class _BuyTokensSheetState extends State<_BuyTokensSheet> {
                   )
                 : const Text(
                     'Confirmar compra',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
           ),
         ],
@@ -755,7 +757,10 @@ class TabPartners extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
               leading: const CircleAvatar(
                 backgroundColor: AppColors.campoEscuro,
-                child: Icon(Icons.supervised_user_circle, color: Colors.white38),
+                child: Icon(
+                  Icons.supervised_user_circle,
+                  color: Colors.white38,
+                ),
               ),
               title: Text(m.name, style: const TextStyle(color: Colors.white)),
               subtitle: Text(
@@ -774,7 +779,15 @@ class TabQA extends StatefulWidget {
   final String startupId;
   final String startupName;
 
-  const TabQA({super.key, required this.startupId, required this.startupName});
+  // Controla se o usuário pode acessar a aba privada do Q&A
+  final bool isInvestor;
+
+  const TabQA({
+    super.key,
+    required this.startupId,
+    required this.startupName,
+    this.isInvestor = false,
+  });
 
   @override
   State<TabQA> createState() => _TabQAState();
@@ -870,35 +883,103 @@ class _TabQAState extends State<TabQA> {
         ? AppColors.verdeMescla
         : const Color(0xFFFFB300);
 
+    // Aba privada selecionada mas usuário não é investidor: exibe gate
+    final bool showInvestorGate =
+        _visibility == QuestionVisibility.privada && !widget.isInvestor;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildToggle(corDestaque),
         const SizedBox(height: 24),
-        if (_visibility == QuestionVisibility.privada)
-          _buildAvisoPrivado(corDestaque),
-        if (_isLoading)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(32.0),
-              child: CircularProgressIndicator(color: AppColors.verdeMescla),
+        if (showInvestorGate)
+          _buildInvestorGate()
+        else ...[
+          if (_visibility == QuestionVisibility.privada)
+            _buildAvisoPrivado(corDestaque),
+          if (_isLoading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32.0),
+                child: CircularProgressIndicator(color: AppColors.verdeMescla),
+              ),
+            )
+          else if (_questions.isEmpty)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32.0),
+                child: Text(
+                  "Nenhuma pergunta por aqui.",
+                  style: TextStyle(color: Colors.white38),
+                ),
+              ),
+            )
+          else
+            ..._questions.map((q) => _buildDismissibleCard(q, corDestaque)),
+          const SizedBox(height: 24),
+          _buildInput(corDestaque),
+        ],
+      ],
+    );
+  }
+
+  // Gate exibido quando o usuário tenta acessar o Q&A privado sem ser investidor
+  Widget _buildInvestorGate() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFFFB300).withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFB300).withValues(alpha: 0.1),
+              shape: BoxShape.circle,
             ),
-          )
-        else if (_questions.isEmpty)
-          const Center(
-            child: Padding(
-              padding: EdgeInsets.all(32.0),
-              child: Text(
-                "Nenhuma pergunta por aqui.",
-                style: TextStyle(color: Colors.white38),
+            child: const Icon(
+              Icons.lock_rounded,
+              color: Color(0xFFFFB300),
+              size: 40,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Área exclusiva para investidores',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Adquira tokens desta startup para acessar o canal privado de comunicação com os fundadores.',
+            style: TextStyle(color: Colors.white54, fontSize: 13, height: 1.5),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          OutlinedButton.icon(
+            onPressed: () =>
+                setState(() => _visibility = QuestionVisibility.publica),
+            icon: const Icon(Icons.public_rounded, size: 16),
+            label: const Text('Ver perguntas públicas'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.verdeMescla,
+              side: const BorderSide(color: AppColors.verdeMescla),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
-          )
-        else
-          ..._questions.map((q) => _buildDismissibleCard(q, corDestaque)),
-        const SizedBox(height: 24),
-        _buildInput(corDestaque),
-      ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -1027,8 +1108,16 @@ class _TabQAState extends State<TabQA> {
       ),
       child: Row(
         children: [
-          _buildToggleOption("Público", QuestionVisibility.publica, activeColor),
-          _buildToggleOption("Privado", QuestionVisibility.privada, activeColor),
+          _buildToggleOption(
+            "Público",
+            QuestionVisibility.publica,
+            activeColor,
+          ),
+          _buildToggleOption(
+            "Privado",
+            QuestionVisibility.privada,
+            activeColor,
+          ),
         ],
       ),
     );
@@ -1140,5 +1229,24 @@ class PositionRectangle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Positioned(top: top, left: left, child: child);
+  }
+}
+
+// Placeholder exibido quando a imagem da startup não está disponível no Storage
+class _ThumbPlaceholder extends StatelessWidget {
+  const _ThumbPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: AppColors.campoEscuro,
+      child: const Center(
+        child: Icon(
+          Icons.rocket_launch_rounded,
+          color: AppColors.verdeMescla,
+          size: 64,
+        ),
+      ),
+    );
   }
 }

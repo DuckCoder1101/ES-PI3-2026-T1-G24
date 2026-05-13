@@ -236,8 +236,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
     final Map<String, StartupStageFilter> filters = {
       'Todas': StartupStageFilter.all,
       'Nova': StartupStageFilter.nova,
-      'Em Operação': StartupStageFilter.emOperacao,
-      'Em expansão': StartupStageFilter.emExpansao,
+      'Em Operação': StartupStageFilter.em_operacao,
+      'Em expansão': StartupStageFilter.em_expansao,
     };
 
     return SingleChildScrollView(

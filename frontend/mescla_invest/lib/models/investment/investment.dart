@@ -4,22 +4,18 @@
  */
 
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:mescla_invest/models/startup/startup.dart';
 
-/*
- * Representa o investimento (posição) de um usuário em uma startup.
- * tokenAmount: tokens disponíveis para uso/venda.
- * lockedTokenAmount: tokens bloqueados em ordens de venda ativas.
- */
 class InvestmentModel {
-  final String startupId;
   final int tokenAmount;
   final int lockedTokenAmount;
+  final StartupResumeDTO startup;
 
   // Total de tokens do usuário nessa startup (disponíveis + bloqueados)
   int get totalTokens => tokenAmount + lockedTokenAmount;
 
   InvestmentModel({
-    required this.startupId,
+    required this.startup,
     required this.tokenAmount,
     required this.lockedTokenAmount,
   });
@@ -28,10 +24,32 @@ class InvestmentModel {
     final map = rawMap.map((key, value) => MapEntry(key.trim(), value));
 
     return InvestmentModel(
-      startupId: map['startupId'] ?? '',
+      startup: StartupResumeDTO.fromMap(
+        Map<String, dynamic>.from(map['startup']),
+      ),
       tokenAmount: (map['tokenAmount'] ?? 0) as int,
       lockedTokenAmount: (map['lockedTokenAmount'] ?? 0) as int,
     );
+  }
+
+  /*
+   * Busca todos os investimentos (posições em startups) do usuário autenticado.
+   */
+  static Future<List<InvestmentModel>> getUserInvestments() async {
+    try {
+      final response = await FirebaseFunctions.instance
+          .httpsCallable('getUserInvestments')
+          .call();
+
+      final data = Map<String, dynamic>.from(response.data);
+      final List raw = data['investments'] ?? [];
+
+      return raw
+          .map((i) => InvestmentModel.fromMap(Map<String, dynamic>.from(i)))
+          .toList();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   /*
@@ -47,67 +65,6 @@ class InvestmentModel {
         'startupId': startupId,
         'tokenAmount': tokenAmount,
       });
-    } catch (e) {
-      rethrow;
-    }
-  }
-}
-
-/*
- * Representa a carteira do usuário com saldo disponível e bloqueado.
- * fundsCents: saldo disponível em centavos.
- * lockedFundsCents: saldo reservado para ordens de compra ativas.
- */
-class WalletModel {
-  final int fundsCents;
-  final int lockedFundsCents;
-
-  // Saldo disponível em reais
-  double get funds => fundsCents / 100;
-
-  // Saldo bloqueado em reais
-  double get lockedFunds => lockedFundsCents / 100;
-
-  // Saldo total (disponível + bloqueado) em reais
-  double get totalFunds => (fundsCents + lockedFundsCents) / 100;
-
-  WalletModel({required this.fundsCents, required this.lockedFundsCents});
-
-  factory WalletModel.fromMap(Map<String, dynamic> rawMap) {
-    final map = rawMap.map((key, value) => MapEntry(key.trim(), value));
-
-    return WalletModel(
-      fundsCents: (map['fundsCents'] ?? 0) as int,
-      lockedFundsCents: (map['lockedFundsCents'] ?? 0) as int,
-    );
-  }
-
-  /*
-   * Adiciona saldo fictício à carteira do usuário (simulação de depósito).
-   * O valor mínimo é R$ 10,00. Registra uma transação do tipo "funds".
-   */
-  static Future<void> addFunds(double funds) async {
-    try {
-      await FirebaseFunctions.instance.httpsCallable('addFunds').call({
-        'funds': funds,
-      });
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /*
-   * Busca a carteira do usuário autenticado
-   */
-  static Future<WalletModel> getWallet() async {
-    try {
-      final response = await FirebaseFunctions.instance
-          .httpsCallable('getWallet')
-          .call();
-
-      final data = Map<String, dynamic>.from(response.data);
-
-      return WalletModel.fromMap(data);
     } catch (e) {
       rethrow;
     }

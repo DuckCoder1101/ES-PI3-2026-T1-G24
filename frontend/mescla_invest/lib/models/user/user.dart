@@ -43,7 +43,7 @@ class UserModel {
   }
 
   // Retorna o URL da foto de perfil
-  Future<String> getAvatarUrl() async {
+  Future<String?> getAvatarUrl() async {
     return await FirebaseStorage.instance
         .ref("/users/$uid/avatar")
         .getDownloadURL();

@@ -3,6 +3,8 @@
  * RA: 25000636
  */
 
+import { Timestamp } from "firebase-admin/firestore";
+import { StartupResumeDTO } from "../../startup/types/dtos";
 import { UserDocument } from "./documents";
 
 export interface UserFullDTO extends UserDocument {
@@ -24,4 +26,11 @@ export interface UpdateProfileDTO {
 export interface UserProfile {
   uid: string;
   email: string;
+}
+
+export interface InvestmentListDTO {
+  startup: StartupResumeDTO;
+  tokenAmount: number;
+  lockedTokenAmount: number;
+  updatedAt: Timestamp;
 }
