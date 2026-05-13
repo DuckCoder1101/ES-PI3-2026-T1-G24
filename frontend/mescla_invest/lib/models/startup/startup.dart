@@ -82,10 +82,11 @@ class StartupModel {
       description: map['description'] ?? '',
       shortDescription: map['shortDescription'] ?? '',
       executiveSummary: map['executiveSummary'] ?? '',
-      tokenPrice: ((map['currentTokenPriceCents'] ?? 0) / 100).toDouble(),
-      totalTokensIssued: map['totalTokensIssued'] ?? 0,
-      totalTokensAvailable: map['totalTokensAvailable'] ?? 0,
-      totalRaised: ((map['capitalRaisedCents'] ?? 0) / 100).toDouble(),
+      tokenPrice:
+          ((map['currentTokenPriceCents'] as num?)?.toDouble() ?? 0) / 100,
+      totalTokensIssued: (map['totalTokensIssued'] as num?)?.toInt() ?? 0,
+      totalTokensAvailable: (map['totalTokensAvailable'] as num?)?.toInt() ?? 0,
+      totalRaised: ((map['capitalRaisedCents'] as num?)?.toDouble() ?? 0) / 100,
       stage: stageEnum,
 
       thumbnailPath: map["thumbnailPath"],
@@ -135,6 +136,8 @@ class StartupModel {
         startupId,
         Map<String, dynamic>.from(response.data),
       );
+
+      await startup.loadMedia();
 
       return startup;
     } catch (e) {
