@@ -11,6 +11,7 @@ import 'package:mescla_invest/models/startup/question.dart';
 import 'package:mescla_invest/widgets/ui/primary_button.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/startup/startup.dart';
+import 'package:video_player/video_player.dart';
 
 class StartupDetailsScreen extends StatefulWidget {
   final String? startupId;
@@ -124,103 +125,117 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
 
           final startup = snapshot.data!;
 
-          return SingleChildScrollView(
-            child: Column(
+          return SafeArea(
+            child: Stack(
               children: [
-                // Header com imagem de capa
-                Stack(
-                  children: [
-                    Container(
-                      height: 250,
-                      width: double.infinity,
-                      color: AppColors.campoEscuro,
-                      child: startup.thumbnailUrl != null
-                          ? Image.network(
-                              startup.thumbnailUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) =>
-                                  const _ThumbPlaceholder(),
-                            )
-                          : const _ThumbPlaceholder(),
-                    ),
-                    Container(
-                      height: 250,
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Colors.transparent, Colors.black],
-                        ),
-                      ),
-                    ),
-                    PositionRectangle(
-                      top: 40,
-                      left: 10,
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ),
-                  ],
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Nome e badge de estágio
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              startup.name,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
+                Positioned.fill(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(bottom: 40),
+                    child: Column(
+                      children: [
+                        // Header com imagem de capa
+                        Stack(
+                          children: [
+                            Container(
+                              height: 250,
+                              width: double.infinity,
+                              color: AppColors.campoEscuro,
+                              child: startup.thumbnailUrl != null
+                                  ? Image.network(
+                                      startup.thumbnailUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) =>
+                                          const _ThumbPlaceholder(),
+                                    )
+                                  : const _ThumbPlaceholder(),
+                            ),
+                            Container(
+                              height: 250,
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [Colors.transparent, Colors.black],
+                                ),
                               ),
                             ),
-                          ),
-                          _buildTag(
-                            startup.stage.name.toUpperCase().replaceAll(
-                              '_',
-                              ' ',
+                            PositionRectangle(
+                              top: 40,
+                              left: 10,
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.arrow_back,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () => Navigator.pop(context),
+                              ),
                             ),
-                            AppColors.verdeMescla.withValues(alpha: 0.8),
-                            AppColors.verdeMescla,
+                          ],
+                        ),
+
+                        Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Nome e badge de estágio
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      startup.name,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  _buildTag(
+                                    startup.stage.name.toUpperCase().replaceAll(
+                                      '_',
+                                      ' ',
+                                    ),
+                                    AppColors.verdeMescla.withValues(
+                                      alpha: 0.8,
+                                    ),
+                                    AppColors.verdeMescla,
+                                  ),
+                                ],
+                              ),
+
+                              const SizedBox(height: 16),
+
+                              // Métricas rápidas da startup
+                              _buildMetricsRow(startup),
+
+                              const SizedBox(height: 24),
+
+                              // Barra de abas
+                              _buildTabBar(),
+
+                              const SizedBox(height: 24),
+
+                              // Conteúdo dinâmico conforme aba selecionada
+                              _buildTabContent(startup),
+
+                              const SizedBox(height: 30),
+
+                              PrimaryButton(
+                                text: startup.totalTokensAvailable > 0
+                                    ? "Investir agora"
+                                    : "Tokens esgotados",
+                                onPressed: startup.totalTokensAvailable > 0
+                                    ? () => _showBuyTokensModal(startup)
+                                    : null,
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Métricas rápidas da startup
-                      _buildMetricsRow(startup),
-
-                      const SizedBox(height: 24),
-
-                      // Barra de abas
-                      _buildTabBar(),
-
-                      const SizedBox(height: 24),
-
-                      // Conteúdo dinâmico conforme aba selecionada
-                      _buildTabContent(startup),
-
-                      const SizedBox(height: 30),
-
-                      // Botão de compra direta de tokens
-                      PrimaryButton(
-                        text: startup.totalTokensAvailable > 0
-                            ? "Investir agora"
-                            : "Tokens esgotados",
-                        onPressed: startup.totalTokensAvailable > 0
-                            ? () => _showBuyTokensModal(startup)
-                            : null,
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -620,7 +635,7 @@ class _BuyTokensSheetState extends State<_BuyTokensSheet> {
   }
 }
 
-// ─── Tabs reutilizadas da versão original ────────────────────────────────────
+// Tabs reutilizadas da versão original
 
 class TabAbout extends StatelessWidget {
   final StartupModel startup;
@@ -674,30 +689,32 @@ class TabAbout extends StatelessWidget {
   }
 
   Widget _buildVideoSection() {
+    final videoUrl = startup.videoUrl;
+
+    if (videoUrl == null || videoUrl.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
+
         const Text(
-          "VÍDEO",
+          'VÍDEO',
           style: TextStyle(
             color: AppColors.verdeMescla,
             fontWeight: FontWeight.bold,
           ),
         ),
+
         const SizedBox(height: 12),
-        Container(
-          height: 200,
-          width: double.infinity,
-          margin: const EdgeInsets.only(bottom: 24),
-          decoration: BoxDecoration(
-            color: AppColors.campoEscuro,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(
-            Icons.play_circle_fill,
-            size: 64,
-            color: AppColors.verdeMescla,
+
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: StartupVideoPlayer(videoUrl: videoUrl),
           ),
         ),
       ],
@@ -1247,6 +1264,82 @@ class _ThumbPlaceholder extends StatelessWidget {
           size: 64,
         ),
       ),
+    );
+  }
+}
+
+class StartupVideoPlayer extends StatefulWidget {
+  final String videoUrl;
+
+  const StartupVideoPlayer({super.key, required this.videoUrl});
+
+  @override
+  State<StartupVideoPlayer> createState() => _StartupVideoPlayerState();
+}
+
+class _StartupVideoPlayerState extends State<StartupVideoPlayer> {
+  late VideoPlayerController _controller;
+
+  bool _isReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoUrl))
+      ..initialize().then((_) {
+        if (!mounted) return;
+
+        setState(() {
+          _isReady = true;
+        });
+      });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isReady) {
+      return Container(
+        color: AppColors.campoEscuro,
+        child: const Center(
+          child: CircularProgressIndicator(color: AppColors.verdeMescla),
+        ),
+      );
+    }
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        VideoPlayer(_controller),
+
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              if (_controller.value.isPlaying) {
+                _controller.pause();
+              } else {
+                _controller.play();
+              }
+            });
+          },
+          child: Container(
+            color: Colors.transparent,
+            child: Icon(
+              _controller.value.isPlaying
+                  ? Icons.pause_circle_filled
+                  : Icons.play_circle_fill,
+              size: 72,
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

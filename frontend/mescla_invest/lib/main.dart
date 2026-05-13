@@ -9,14 +9,13 @@ import 'package:mescla_invest/screens/app_root.dart';
 import 'package:mescla_invest/firebase_options.dart';
 import 'package:mescla_invest/screens/public/auth/signin.dart';
 import 'package:mescla_invest/screens/public/auth/signup.dart';
-import 'package:mescla_invest/utils/firebase.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   if (kDebugMode) {
-    FirebaseService.init();
+    // FirebaseService.init();
   }
 
   runApp(const MesclaInvest());
