@@ -3,23 +3,79 @@
  * RA: 25000636
  */
 
+import admin from "firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
-import { database } from "../../shared/firebase";
-import { UpdateProfileDTO, UserFullDTO, UserSignupDTO } from "../types/dtos";
 import { HttpsError } from "firebase-functions/https";
-import { UserDocument } from "../types/documents";
+
+import { database } from "../../shared/firebase";
+
+import {
+  InvestmentListDTO,
+  UpdateProfileDTO,
+  UserFullDTO,
+  UserSignupDTO,
+} from "../types/dtos";
+
+import {
+  InvestmentDocument,
+  UserDocument,
+  WalletDocument,
+} from "../types/documents";
+
+import { StartupResumeDTO } from "../../startup/types/dtos";
+import { chunkArray } from "../../shared/dataArray";
 
 const cpfsCollection = database.collection("cpf_index");
 const usersCollection = database.collection("users");
 const walletsCollection = database.collection("wallets");
 const transactionsCollection = database.collection("transactions");
+const investmentsCollection = database.collection("investments");
+const startupsCollection = database.collection("startups");
 
 /*
- * Cadastra um novo usuário na coleção users do Firestore.
- * Cria também a carteira inicial com saldo zero.
- * Lança um erro caso já exista um usuário com o mesmo CPF.
+ * Busca startups resumidas
  */
-export const createUserAccount = async (uid: string, data: UserSignupDTO) => {
+const getStartupResumeMap = async (
+  ids: string[],
+): Promise<Record<string, StartupResumeDTO>> => {
+  const uniqueIds = [...new Set(ids)];
+
+  if (uniqueIds.length === 0) {
+    return {};
+  }
+
+  const chunks = chunkArray(uniqueIds, 10);
+
+  const snapshots = await Promise.all(
+    chunks.map((chunk) =>
+      startupsCollection
+        .where(admin.firestore.FieldPath.documentId(), "in", chunk)
+        .select("name")
+        .get(),
+    ),
+  );
+
+  const startups: Record<string, StartupResumeDTO> = {};
+
+  snapshots.forEach((snapshot) => {
+    snapshot.docs.forEach((doc) => {
+      startups[doc.id] = {
+        ...(doc.data() as StartupResumeDTO),
+        id: doc.id,
+      };
+    });
+  });
+
+  return startups;
+};
+
+/*
+ * Cadastra um novo usuário
+ */
+export const createUserAccount = async (
+  uid: string,
+  data: UserSignupDTO,
+): Promise<void> => {
   await database.runTransaction(async (tx) => {
     const cpfRef = cpfsCollection.doc(data.cpf);
     const walletRef = walletsCollection.doc(uid);
@@ -33,7 +89,6 @@ export const createUserAccount = async (uid: string, data: UserSignupDTO) => {
 
     tx.set(cpfRef, { uid });
 
-    // Carteira iniciada com saldo zero (em centavos)
     tx.set(walletRef, {
       fundsCents: 0,
       lockedFundsCents: 0,
@@ -49,42 +104,42 @@ export const createUserAccount = async (uid: string, data: UserSignupDTO) => {
 };
 
 /*
- * Atualiza o nome e o telefone do usuário
+ * Atualiza dados do usuário
  */
-export const updateUserData = async (uid: string, data: UpdateProfileDTO) => {
-  const ref = usersCollection.doc(uid);
-  const doc = await ref.get();
-
-  if (!doc.exists) {
-    throw new HttpsError("not-found", "Usuário não encontrado!");
-  }
-
-  await ref.set(
-    {
+export const updateUserData = async (
+  uid: string,
+  data: UpdateProfileDTO,
+): Promise<void> => {
+  try {
+    await usersCollection.doc(uid).update({
       name: data.name,
       phone: data.phone,
-    },
-    {
-      merge: true,
-    },
-  );
+    });
+  } catch {
+    throw new HttpsError("not-found", "Usuário não encontrado!");
+  }
 };
 
 /*
- * Retorna todos os dados do usuário com base no ID
+ * Busca usuário
  */
 export const getById = async (uid: string): Promise<UserFullDTO> => {
   const snapshot = await usersCollection.doc(uid).get();
+
+  if (!snapshot.exists) {
+    throw new HttpsError("not-found", "Usuário não encontrado!");
+  }
+
   const userData = snapshot.data() as UserDocument;
 
   return {
     uid,
     ...userData,
-  } satisfies UserFullDTO;
+  };
 };
 
 /*
- * Retorna a carteira do usuário
+ * Busca carteira
  */
 export const getWallet = async (uid: string): Promise<WalletDocument> => {
   const snapshot = await walletsCollection.doc(uid).get();
@@ -97,13 +152,16 @@ export const getWallet = async (uid: string): Promise<WalletDocument> => {
 };
 
 /*
- * Adiciona fundos fictícios à carteira do usuário.
- * Registra uma transação do tipo "funds" na coleção de transações.
+ * Adiciona fundos
  */
 export const addFundsToWallet = async (
   uid: string,
   fundsCents: number,
 ): Promise<void> => {
+  if (fundsCents <= 0) {
+    throw new HttpsError("invalid-argument", "Valor inválido!");
+  }
+
   await database.runTransaction(async (tx) => {
     const walletRef = walletsCollection.doc(uid);
     const walletDoc = await tx.get(walletRef);
@@ -112,14 +170,13 @@ export const addFundsToWallet = async (
       throw new HttpsError("not-found", "Carteira não encontrada!");
     }
 
-    // Incrementa o saldo disponível da carteira
     tx.update(walletRef, {
       fundsCents: FieldValue.increment(fundsCents),
       updatedAt: FieldValue.serverTimestamp(),
     });
 
-    // Registra a transação de depósito de fundos
     const transactionRef = transactionsCollection.doc();
+
     tx.set(transactionRef, {
       type: "funds",
       authorUId: uid,
@@ -127,5 +184,43 @@ export const addFundsToWallet = async (
       userUIds: [uid],
       createdAt: FieldValue.serverTimestamp(),
     });
+  });
+};
+
+/*
+ * Retorna investimentos do usuário
+ */
+export const getInvestments = async (
+  uid: string,
+): Promise<InvestmentListDTO[]> => {
+  const snapshot = await investmentsCollection
+    .doc(uid)
+    .collection("startups")
+    .get();
+
+  const startupIds = [...new Set(snapshot.docs.map((doc) => doc.id))];
+  const startups = await getStartupResumeMap(startupIds);
+
+  return snapshot.docs.flatMap((doc) => {
+    const data = doc.data() as InvestmentDocument;
+    const startup = startups[doc.id];
+
+    if (!startup) {
+      return [];
+    }
+
+    return [
+      {
+        ...data,
+        startup,
+        tokenAmount:
+          typeof data.tokenAmount === "number" ? data.tokenAmount : 0,
+
+        lockedTokenAmount:
+          typeof data.lockedTokenAmount === "number"
+            ? data.lockedTokenAmount
+            : 0,
+      } satisfies InvestmentListDTO,
+    ];
   });
 };

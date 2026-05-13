@@ -3,7 +3,7 @@
  * RA: 25000636
  */
 
-import { HttpsError, onCall } from "firebase-functions/https";
+import { onCall } from "firebase-functions/https";
 import { getWallet } from "../repositories/userRepository";
 import { getUserProfile } from "../../shared/auth";
 import { logger } from "firebase-functions";

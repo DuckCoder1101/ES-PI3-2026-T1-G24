@@ -8,3 +8,4 @@ export * from "./handlers/updateProfile";
 export * from "./handlers/getMe";
 export * from "./handlers/getWallet";
 export * from "./handlers/addFunds";
+export * from "./handlers/getUserInvestments";

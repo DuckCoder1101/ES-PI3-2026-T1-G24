@@ -4,7 +4,7 @@
  */
 
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/models/user.dart';
+import 'package:mescla_invest/models/user/user.dart';
 import 'package:mescla_invest/screens/app_root.dart';
 
 class AppHeader extends StatefulWidget {

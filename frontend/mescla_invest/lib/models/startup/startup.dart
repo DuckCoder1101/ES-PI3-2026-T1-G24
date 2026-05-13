@@ -6,9 +6,9 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
-enum StartupStage { nova, emOperacao, emExpansao }
+enum StartupStage { nova, em_operacao, em_expansao }
 
-enum StartupStageFilter { nova, emOperacao, emExpansao, all }
+enum StartupStageFilter { nova, em_operacao, em_expansao, all }
 
 class StartupModel {
   final String id;
@@ -38,6 +38,8 @@ class StartupModel {
   final List<FounderModel> founders;
   final List<ExternalMemberModel> externalMembers;
 
+  final bool isInvestor;
+
   StartupModel({
     required this.id,
     required this.name,
@@ -54,6 +56,7 @@ class StartupModel {
     this.founders = const [],
     this.externalMembers = const [],
     this.tags = const [],
+    this.isInvestor = false,
   });
 
   factory StartupModel.fromMap(String id, Map<String, dynamic> rawMap) {
@@ -63,10 +66,10 @@ class StartupModel {
     StartupStage stageEnum;
     switch (map['stage']) {
       case 'em_operacao':
-        stageEnum = StartupStage.emOperacao;
+        stageEnum = StartupStage.em_operacao;
         break;
       case 'em_expansao':
-        stageEnum = StartupStage.emExpansao;
+        stageEnum = StartupStage.em_expansao;
         break;
       case 'nova':
       default:
@@ -89,6 +92,7 @@ class StartupModel {
       videoPath: map["videoPath"],
 
       tags: List<String>.from(map['tags'] ?? []),
+      isInvestor: map["isInvestor"] == true,
 
       founders: (map['founders'] as List? ?? [])
           .map((f) => FounderModel.fromMap(Map<String, dynamic>.from(f)))

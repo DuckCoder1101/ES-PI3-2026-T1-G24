@@ -4,6 +4,7 @@
  */
 
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:mescla_invest/models/startup/startup.dart';
 
 enum TransactionType { investment, funds, trade }
 
@@ -86,7 +87,7 @@ abstract class TransactionModel {
  */
 class InvestmentTransactionModel extends TransactionModel {
   final String investorUId;
-  final String startupId;
+  final StartupResumeDTO startup;
   final int tokensPurchased;
   final int tokenPriceCents;
 
@@ -98,7 +99,7 @@ class InvestmentTransactionModel extends TransactionModel {
     required super.userUIds,
     super.createdAt,
     required this.investorUId,
-    required this.startupId,
+    required this.startup,
     required this.tokensPurchased,
     required this.tokenPriceCents,
   }) : super(type: TransactionType.investment);
@@ -110,7 +111,9 @@ class InvestmentTransactionModel extends TransactionModel {
       userUIds: List<String>.from(map['userUIds'] ?? []),
       createdAt: TransactionModel.parseTimestamp(map['createdAt']),
       investorUId: map['investorUId'] ?? '',
-      startupId: map['startupId'] ?? '',
+      startup: StartupResumeDTO.fromMap(
+        Map<String, dynamic>.from(map['startup']),
+      ),
       tokensPurchased: (map['tokensPurchased'] ?? 0) as int,
       tokenPriceCents: (map['tokenPriceCents'] ?? 0) as int,
     );
