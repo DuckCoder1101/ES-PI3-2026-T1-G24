@@ -34,7 +34,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _phoneFocus = FocusNode();
   final _passwordFocus = FocusNode();
 
-  bool _senhaVisivel = false;
+  bool _passwordVisible = false;
   bool _isLoading = false;
 
   bool get _hasUppercase => RegExp(r'[A-Z]').hasMatch(_passwordController.text);
@@ -307,7 +307,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 TextField(
                   controller: _passwordController,
                   focusNode: _passwordFocus,
-                  obscureText: !_senhaVisivel,
+                  obscureText: !_passwordVisible,
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _cadastrarUsuario(),
                   style: const TextStyle(color: Colors.white),
@@ -318,11 +318,11 @@ class _SignupScreenState extends State<SignupScreen> {
                     hintText: '• • • • • • •',
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _senhaVisivel ? Icons.visibility : Icons.visibility_off,
+                        _passwordVisible ? Icons.visibility : Icons.visibility_off,
                         color: AppColors.textoHint,
                       ),
                       onPressed: () =>
-                          setState(() => _senhaVisivel = !_senhaVisivel),
+                          setState(() => _passwordVisible = !_passwordVisible),
                     ),
                   ).copyWith(errorText: _fieldErrors['password']),
                 ),

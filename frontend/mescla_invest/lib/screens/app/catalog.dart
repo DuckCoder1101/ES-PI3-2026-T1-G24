@@ -157,44 +157,48 @@ class _CatalogScreenState extends State<CatalogScreen> {
   }
 
   Widget _buildListView() {
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.only(bottom: 20),
-      itemCount: _startups.length + (_hasMore ? 1 : 0),
-      itemBuilder: (context, index) {
-        if (index < _startups.length) {
-          final startup = _startups[index];
+    return RefreshIndicator(
+      onRefresh: () => _fetchStartups(reset: true),
+      color: AppColors.verdeMescla,
+      child: ListView.builder(
+        controller: _scrollController,
+        padding: const EdgeInsets.only(bottom: 20),
+        itemCount: _startups.length + (_hasMore ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index < _startups.length) {
+            final startup = _startups[index];
 
-          return FutureBuilder(
-            future: startup.loadMedia(),
-            builder: (context, snapshot) {
-              return GestureDetector(
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  "/startups/startup-details",
-                  arguments: startup.id,
-                ),
-                child: _buildStartupCard(
-                  title: startup.name,
-                  description: startup.shortDescription,
-                  status: startup.stage.name.replaceAll('_', ' '),
-                  tokens: "${startup.totalTokensIssued} tokens",
-                  imageUrl: snapshot.connectionState == ConnectionState.done
-                      ? startup.thumbnailUrl
-                      : null,
-                ),
-              );
-            },
-          );
-        } else {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 32),
-            child: Center(
-              child: CircularProgressIndicator(color: AppColors.verdeMescla),
-            ),
-          );
-        }
-      },
+            return FutureBuilder(
+              future: startup.loadMedia(),
+              builder: (context, snapshot) {
+                return GestureDetector(
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    "/startups/startup-details",
+                    arguments: startup.id,
+                  ),
+                  child: _buildStartupCard(
+                    title: startup.name,
+                    description: startup.shortDescription,
+                    status: startup.stage.name.replaceAll('_', ' '),
+                    tokens: "${startup.totalTokensIssued} tokens",
+                    imageUrl: snapshot.connectionState == ConnectionState.done
+                        ? startup.thumbnailUrl
+                        : null,
+                  ),
+                );
+              },
+            );
+          } else {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: Center(
+                child: CircularProgressIndicator(color: AppColors.verdeMescla),
+              ),
+            );
+          }
+        },
+      ),
     );
   }
 

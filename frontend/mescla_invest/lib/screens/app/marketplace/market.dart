@@ -193,151 +193,6 @@ class _MarketScreenState extends State<MarketScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.fundoEscuro,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Mercado',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => _goToNewOffer(OrderType.buy),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.verdeMescla,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            '+ Oferta',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: _isLoading ? null : _fetchOrders,
-                        child: const Icon(
-                          Icons.refresh_rounded,
-                          color: Colors.white54,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // Toggle abas
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: AppColors.campoEscuro,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: ['Compra', 'Venda', 'Minhas Ordens'].map((tab) {
-                    final isSelected = _activeTab == tab;
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _activeTab = tab),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? const Color(0xFF2A2A2A)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            tab,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: isSelected
-                                  ? AppColors.verdeMescla
-                                  : Colors.white54,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Label da aba
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  _activeTab == 'Compra'
-                      ? 'OFERTAS DE COMPRA ABERTAS'
-                      : _activeTab == 'Venda'
-                      ? 'OFERTAS DE VENDA ABERTAS'
-                      : 'MINHAS ORDENS',
-                  style: const TextStyle(
-                    color: AppColors.verdeMescla,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Lista de ordens
-            Expanded(
-              child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.verdeMescla,
-                      ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _fetchOrders,
-                      color: AppColors.verdeMescla,
-                      child: _buildOrderList(),
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildOrderList() {
     final orders = _activeTab == 'Compra'
         ? _buyOrders
@@ -361,6 +216,160 @@ class _MarketScreenState extends State<MarketScreen> {
         final order = orders[index];
         return _buildOrderCard(order);
       },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Stack(
+        children: [
+          Column(
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Mercado',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Toggle abas
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.campoEscuro,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: ['Compra', 'Venda', 'Minhas Ordens'].map((tab) {
+                      final isSelected = _activeTab == tab;
+
+                      return Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _activeTab = tab),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFF2A2A2A)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              tab,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? AppColors.verdeMescla
+                                    : Colors.white54,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Label da aba
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _activeTab == 'Compra'
+                        ? 'OFERTAS DE COMPRA ABERTAS'
+                        : _activeTab == 'Venda'
+                        ? 'OFERTAS DE VENDA ABERTAS'
+                        : 'MINHAS ORDENS',
+                    style: const TextStyle(
+                      color: AppColors.verdeMescla,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              Expanded(
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.verdeMescla,
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _fetchOrders,
+                        color: AppColors.verdeMescla,
+                        child: _buildOrderList(),
+                      ),
+              ),
+            ],
+          ),
+
+          // Floating Action Button
+          Positioned(
+            right: 20,
+            bottom: MediaQuery.of(context).padding.bottom + 50,
+            child: GestureDetector(
+              onTap: _isExecuting
+                  ? null
+                  : () {
+                      _goToNewOffer(
+                        _activeTab == 'Venda' ? OrderType.sell : OrderType.buy,
+                      );
+                    },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: AppColors.verdeMescla,
+                  shape: BoxShape.circle,
+                ),
+                child: _isExecuting
+                    ? const Padding(
+                        padding: EdgeInsets.all(18),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          color: Colors.black,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.add_rounded,
+                        color: Colors.black,
+                        size: 34,
+                      ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
