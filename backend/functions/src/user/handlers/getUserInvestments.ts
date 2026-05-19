@@ -5,7 +5,7 @@
 
 import { onCall } from "firebase-functions/https";
 import { getUserProfile } from "../../shared/auth";
-import { getInvestments } from "../repositories/userRepository";
+import { getInvestments } from "../repositories/usersRepository";
 
 /*
  * Retorna todos os investimentos (posições em startups) do usuário autenticado.

@@ -4,7 +4,7 @@
  */
 
 import { HttpsError, onCall } from "firebase-functions/https";
-import { addFundsToWallet } from "../repositories/userRepository";
+import { addFundsToWallet } from "../repositories/usersRepository";
 import { getUserProfile } from "../../shared/auth";
 
 /*

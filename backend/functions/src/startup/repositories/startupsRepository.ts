@@ -6,6 +6,7 @@
 import { HttpsError } from "firebase-functions/https";
 import { database } from "../../shared/firebase";
 import { StartupDocument } from "../types/documents";
+import { FieldValue, Transaction } from "firebase-admin/firestore";
 
 import {
   StartupDetailsDTO,
@@ -91,4 +92,52 @@ export const getFullStartup = async (
 export const checkStartupExists = async (startupId: string) => {
   const doc = await startupsCollection.doc(startupId).get();
   return doc.exists;
+};
+
+/*
+ * Lê os dados atuais de uma startup dentro de uma transaction do Firestore.
+ * Necessário para garantir leitura consistente antes de atualizar o preço.
+ */
+export const getStartupInTransaction = async (
+  tx: Transaction,
+  startupId: string,
+) => {
+  const ref = startupsCollection.doc(startupId);
+  const doc = await tx.get(ref);
+
+  if (!doc.exists) {
+    throw new HttpsError("not-found", "Startup não encontrada!");
+  }
+
+  return {
+    ref,
+    data: doc.data() as StartupDocument,
+  };
+};
+
+/*
+ * Atualiza o preço atual do token de uma startup dentro de uma transaction
+ * e registra o snapshot no histórico de preços.
+ */
+export const updateTokenPriceInTransaction = (
+  tx: Transaction,
+  startupId: string,
+  newPriceCents: number,
+  taxaOcupacao: number,
+  triggeredByTransactionId: string,
+) => {
+  const startupRef = startupsCollection.doc(startupId);
+  const priceHistoryRef = startupRef.collection("priceHistory").doc();
+
+  tx.update(startupRef, {
+    currentTokenPriceCents: newPriceCents,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  tx.set(priceHistoryRef, {
+    priceCents: newPriceCents,
+    taxaOcupacao,
+    triggeredBy: triggeredByTransactionId,
+    createdAt: FieldValue.serverTimestamp(),
+  });
 };

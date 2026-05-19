@@ -4,7 +4,7 @@
  */
 
 import { onCall } from "firebase-functions/https";
-import { getWallet } from "../repositories/userRepository";
+import { getWallet } from "../repositories/usersRepository";
 import { getUserProfile } from "../../shared/auth";
 import { logger } from "firebase-functions";
 
