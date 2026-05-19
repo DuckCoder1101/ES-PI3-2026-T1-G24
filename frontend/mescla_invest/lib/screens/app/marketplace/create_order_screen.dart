@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/order/order.dart';
 import 'package:mescla_invest/models/startup/startup.dart';
+import 'package:mescla_invest/widgets/layout/model_header.dart';
 
 class CreateOrderScreen extends StatefulWidget {
   final String? startupId;
@@ -150,33 +151,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.arrow_back, color: Colors.white),
-                        SizedBox(width: 8),
-                        Text(
-                          'MERCADO',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Text(
-                    'Nova Oferta',
-                    style: TextStyle(color: Colors.white54),
-                  ),
-                ],
-              ),
-
+              ModalHeader(title: "NOVA ORDEM"),
               const SizedBox(height: 24),
 
               // Toggle Comprar/Vender

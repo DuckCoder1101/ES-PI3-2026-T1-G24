@@ -2,6 +2,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mescla_invest/constants/colors.dart';
+import 'package:mescla_invest/formatters/str_formaters.dart';
 import 'package:mescla_invest/models/investment/investment.dart';
 import 'package:mescla_invest/models/transaction/transaction.dart';
 import 'package:mescla_invest/models/user/wallet.dart';
@@ -127,21 +128,22 @@ class _WalletScreenState extends State<WalletScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.fundoEscuro,
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _loadAll,
-          color: AppColors.verdeMescla,
-          child: Column(
-            children: [
-              // Card de saldo
-              _buildBalanceCard(),
+    return SafeArea(
+      child: NestedScrollView(
+        physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics(),
+        ),
 
-              // Abas: Investimentos | Histórico
-              Container(
-                color: AppColors.fundoEscuro,
-                child: TabBar(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            // Card de saldo
+            SliverToBoxAdapter(child: _buildBalanceCard()),
+
+            // TabBar fixa no topo
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _TabBarDelegate(
+                TabBar(
                   controller: _tabController,
                   indicatorColor: AppColors.verdeMescla,
                   indicatorWeight: 2,
@@ -157,16 +159,14 @@ class _WalletScreenState extends State<WalletScreen>
                   ],
                 ),
               ),
+            ),
+          ];
+        },
 
-              // Conteúdo das abas
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [_buildInvestmentsTab(), _buildHistoryTab()],
-                ),
-              ),
-            ],
-          ),
+        // Conteúdo das abas
+        body: TabBarView(
+          controller: _tabController,
+          children: [_buildInvestmentsTab(), _buildHistoryTab()],
         ),
       ),
     );
@@ -231,7 +231,7 @@ class _WalletScreenState extends State<WalletScreen>
                   duration: const Duration(milliseconds: 200),
                   child: Text(
                     _balanceVisible
-                        ? _formatCurrency(_wallet?.totalFunds ?? 0)
+                        ? formatCurrency(_wallet?.totalFunds ?? 0)
                         : 'R\$ ••••••',
                     key: ValueKey(_balanceVisible),
                     style: const TextStyle(
@@ -252,7 +252,7 @@ class _WalletScreenState extends State<WalletScreen>
                       child: _buildBalanceChip(
                         label: 'Disponível',
                         value: _balanceVisible
-                            ? _formatCurrency(_wallet?.funds ?? 0)
+                            ? formatCurrency(_wallet?.funds ?? 0)
                             : '••••',
                         color: AppColors.verdeMescla,
                       ),
@@ -262,7 +262,7 @@ class _WalletScreenState extends State<WalletScreen>
                       child: _buildBalanceChip(
                         label: 'Bloqueado',
                         value: _balanceVisible
-                            ? _formatCurrency(_wallet?.lockedFunds ?? 0)
+                            ? formatCurrency(_wallet?.lockedFunds ?? 0)
                             : '••••',
                         color: Colors.white54,
                       ),
@@ -342,10 +342,15 @@ class _WalletScreenState extends State<WalletScreen>
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      itemCount: _investments.length,
-      itemBuilder: (_, i) => _buildInvestmentCard(_investments[i]),
+    return RefreshIndicator(
+      onRefresh: _loadAll,
+      color: AppColors.verdeMescla,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        itemCount: _investments.length,
+        itemBuilder: (_, i) => _buildInvestmentCard(_investments[i]),
+      ),
     );
   }
 
@@ -460,7 +465,7 @@ class _WalletScreenState extends State<WalletScreen>
     );
   }
 
-  // ─── Aba: Histórico ───────────────────────────────────────────────────────
+  // Histórico
 
   Widget _buildHistoryTab() {
     if (_isLoadingTransactions) {
@@ -476,10 +481,15 @@ class _WalletScreenState extends State<WalletScreen>
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      itemCount: _transactions.length,
-      itemBuilder: (_, i) => _buildTransactionCard(_transactions[i]),
+    return RefreshIndicator(
+      onRefresh: _loadAll,
+      color: AppColors.verdeMescla,
+      child: ListView.builder(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        itemCount: _transactions.length,
+        itemBuilder: (_, i) => _buildTransactionCard(_transactions[i]),
+      ),
     );
   }
 
@@ -506,7 +516,7 @@ class _WalletScreenState extends State<WalletScreen>
         iconColor = AppColors.verdeMescla;
         title = 'Compra direta — ${t.startup.name}';
         subtitle =
-            '${t.tokensPurchased} tokens × ${_formatCurrency(t.tokenPrice)}';
+            '${t.tokensPurchased} tokens × ${formatCurrency(t.tokenPrice)}';
         isPositive = false;
 
       case TransactionType.trade:
@@ -522,11 +532,11 @@ class _WalletScreenState extends State<WalletScreen>
             ? 'Compra no balcão — ${t.startupId}'
             : 'Venda no balcão — ${t.startupId}';
         subtitle =
-            '${t.tokensPurchased} tokens × ${_formatCurrency(t.tokenPrice)}';
+            '${t.tokensPurchased} tokens × ${formatCurrency(t.tokenPrice)}';
         isPositive = !isBuyer;
     }
 
-    final formattedDate = _formatDate(tx.createdAt);
+    final formattedDate = formatDate(tx.createdAt);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -582,7 +592,7 @@ class _WalletScreenState extends State<WalletScreen>
 
           // Valor com sinal
           Text(
-            '${isPositive ? '+' : '-'} ${_formatCurrency(tx.amount)}',
+            '${isPositive ? '+' : '-'} ${formatCurrency(tx.amount)}',
             style: TextStyle(
               color: isPositive ? Colors.greenAccent : Colors.redAccent,
               fontWeight: FontWeight.bold,
@@ -594,7 +604,7 @@ class _WalletScreenState extends State<WalletScreen>
     );
   }
 
-  // ─── Helpers ──────────────────────────────────────────────────────────────
+  // Helpers
 
   Widget _buildEmpty({required IconData icon, required String message}) {
     return Center(
@@ -612,24 +622,9 @@ class _WalletScreenState extends State<WalletScreen>
       ),
     );
   }
-
-  String _formatCurrency(double value) =>
-      'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',')}';
-
-  String _formatDate(DateTime? dt) {
-    if (dt == null) return '—';
-    final now = DateTime.now();
-    final diff = now.difference(dt);
-    if (diff.inMinutes < 60) return 'há ${diff.inMinutes} min';
-    if (diff.inHours < 24) return 'há ${diff.inHours}h';
-    if (diff.inDays == 1) return 'ontem';
-    return '${dt.day.toString().padLeft(2, '0')}/'
-        '${dt.month.toString().padLeft(2, '0')}/'
-        '${dt.year}';
-  }
 }
 
-// ─── Sheet de adição de fundos ────────────────────────────────────────────────
+// Sheet de adição de fundos
 
 class _AddFundsSheet extends StatefulWidget {
   final VoidCallback onSuccess;
@@ -791,5 +786,31 @@ class _AddFundsSheetState extends State<_AddFundsSheet> {
         ],
       ),
     );
+  }
+}
+
+class _TabBarDelegate extends SliverPersistentHeaderDelegate {
+  final TabBar tabBar;
+
+  _TabBarDelegate(this.tabBar);
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(color: AppColors.fundoEscuro, child: tabBar);
+  }
+
+  @override
+  bool shouldRebuild(_TabBarDelegate oldDelegate) {
+    return false;
   }
 }

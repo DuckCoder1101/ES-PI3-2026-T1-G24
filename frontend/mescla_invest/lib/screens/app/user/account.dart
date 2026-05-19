@@ -306,44 +306,54 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
   );
 
+  Future<void> _loadAll() async {
+    final user = authUserDataProvider.value;
+    if (user != null) await _loadProfilePicture(user);
+    await _loadTotpStatus();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<UserModel?>(
       valueListenable: authUserDataProvider,
       builder: (context, user, _) {
-        return CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              expandedHeight: 200,
-              pinned: true,
-              backgroundColor: AppColors.fundoEscuro,
-              automaticallyImplyLeading: false,
-              flexibleSpace: FlexibleSpaceBar(background: _buildAvatar(user)),
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(0.5),
-                child: Container(height: 0.5, color: Colors.white10),
+        return RefreshIndicator(
+          onRefresh: _loadAll,
+          color: AppColors.verdeMescla,
+          child: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 200,
+                pinned: true,
+                backgroundColor: AppColors.fundoEscuro,
+                automaticallyImplyLeading: false,
+                flexibleSpace: FlexibleSpaceBar(background: _buildAvatar(user)),
+                bottom: PreferredSize(
+                  preferredSize: const Size.fromHeight(0.5),
+                  child: Container(height: 0.5, color: Colors.white10),
+                ),
               ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 28, 20, 40),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  _SectionHeader(label: 'Dados Pessoais'),
-                  const SizedBox(height: 14),
-                  _buildInfoCard(user),
-                  const SizedBox(height: 32),
-                  _SectionHeader(label: 'Segurança'),
-                  const SizedBox(height: 14),
-                  _build2FACard(),
-                  const SizedBox(height: 32),
-                  _SectionHeader(label: 'Conta'),
-                  const SizedBox(height: 14),
-                  _buildLogoutCard(),
-                  const SizedBox(height: 20),
-                ]),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 28, 20, 40),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    _SectionHeader(label: 'Dados Pessoais'),
+                    const SizedBox(height: 14),
+                    _buildInfoCard(user),
+                    const SizedBox(height: 32),
+                    _SectionHeader(label: 'Segurança'),
+                    const SizedBox(height: 14),
+                    _build2FACard(),
+                    const SizedBox(height: 32),
+                    _SectionHeader(label: 'Conta'),
+                    const SizedBox(height: 14),
+                    _buildLogoutCard(),
+                    const SizedBox(height: 20),
+                  ]),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
