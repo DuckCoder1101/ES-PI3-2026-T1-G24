@@ -4,7 +4,7 @@
  */
 
 import { HttpsError, onCall } from "firebase-functions/https";
-import { deleteQuestionById } from "../../repositories/questionsRepository";
+import { deleteQuestionById } from "../../repositories/qaRepository";
 import { getUserProfile } from "../../../shared/auth";
 
 export const deleteQuestion = onCall(async (req) => {
@@ -23,4 +23,4 @@ export const deleteQuestion = onCall(async (req) => {
       "Permission denied: You are not the author.",
     );
   }
-});
+});

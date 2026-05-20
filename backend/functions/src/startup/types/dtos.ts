@@ -5,6 +5,7 @@
 
 import { Timestamp } from "firebase-admin/firestore";
 import {
+  DateInterval,
   QuestionAnwserDocument,
   QuestionVisibility,
   StartupDocument,
@@ -61,4 +62,9 @@ export interface QuestionListDTO {
   visibility: QuestionVisibility;
   answers: QuestionAnwserDocument[];
   createdAt: Timestamp;
+}
+
+export interface GetTokenPriceHistoryRequestDTO {
+  startupId: string;
+  dateInterval: DateInterval;
 }

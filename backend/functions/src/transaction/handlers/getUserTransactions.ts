@@ -5,7 +5,7 @@
 
 import { onCall } from "firebase-functions/https";
 import { getUserProfile } from "../../shared/auth";
-import { findUserTransactions } from "../repositories/transactionRepository";
+import { findUserTransactions } from "../repositories/transactionsRepository";
 
 /*
  * Retorna o histórico completo de transações do usuário autenticado.

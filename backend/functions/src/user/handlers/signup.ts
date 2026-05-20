@@ -11,7 +11,7 @@ import { normalizeString } from "../../shared/utils";
 import { checkCPF, checkPhone } from "../shared/validations";
 
 import { UserSignupDTO } from "../types/dtos";
-import { createUserAccount } from "../repositories/userRepository";
+import { createUserAccount } from "../repositories/usersRepository";
 import { getUserProfile } from "../../shared/auth";
 
 /*

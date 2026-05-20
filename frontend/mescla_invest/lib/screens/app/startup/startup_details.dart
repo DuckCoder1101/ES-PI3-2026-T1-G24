@@ -9,6 +9,7 @@ import 'package:mescla_invest/formatters/str_formaters.dart';
 import 'package:mescla_invest/screens/app/startup/about_tab.dart';
 import 'package:mescla_invest/screens/app/startup/buy_tokens_sheet.dart';
 import 'package:mescla_invest/screens/app/startup/partners_tab.dart';
+import 'package:mescla_invest/screens/app/startup/price_history_tab.dart';
 import 'package:mescla_invest/screens/app/startup/qa_tab.dart';
 import 'package:mescla_invest/widgets/layout/model_header.dart';
 import 'package:mescla_invest/widgets/ui/primary_button.dart';
@@ -17,18 +18,28 @@ import 'package:mescla_invest/models/startup/startup.dart';
 
 enum _StartupDetailsTab {
   about,
+  price,
   partners,
   qa,
   updates;
 
-  String get label {
+  IconData get icon {
     return switch (this) {
-      about => "Sobre",
-      partners => "Parceiros",
-      qa => "Q&A",
-      updates => "Notícias",
+      about => Icons.text_snippet_outlined,
+      price => Icons.currency_bitcoin_outlined,
+      partners => Icons.people_outline,
+      qa => Icons.question_answer_outlined,
+      updates => Icons.newspaper_outlined,
     };
   }
+
+  IconData get iconSelected => switch (this) {
+    about => Icons.text_snippet_rounded,
+    price => Icons.currency_bitcoin_rounded,
+    partners => Icons.people_rounded,
+    qa => Icons.question_answer_rounded,
+    updates => Icons.newspaper_rounded,
+  };
 }
 
 class StartupDetailsScreen extends StatefulWidget {
@@ -308,20 +319,23 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
         return Expanded(
           child: GestureDetector(
             onTap: () => setState(() => _activeTab = tab),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutCubic,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected ? AppColors.campoEscuro : Colors.transparent,
-                borderRadius: BorderRadius.circular(8),
-                border: isSelected ? Border.all(color: Colors.white10) : null,
+                color: isSelected
+                    ? AppColors.verdeMescla.withValues(alpha: 0.14)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
               ),
-              child: Text(
-                tab.label,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: isSelected ? AppColors.verdeMescla : Colors.white38,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: Icon(
+                  isSelected ? tab.iconSelected : tab.icon,
+                  key: ValueKey(isSelected),
+                  color: isSelected ? AppColors.verdeMescla : Colors.white30,
+                  size: 22,
                 ),
               ),
             ),
@@ -333,6 +347,8 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
 
   Widget _buildTabContent(StartupModel startup) {
     switch (_activeTab) {
+      case _StartupDetailsTab.price: // ← novo case
+        return TabPriceHistory(startupId: widget.startupId!);
       case _StartupDetailsTab.partners:
         return TabPartners(startup: startup, startupId: widget.startupId!);
       case _StartupDetailsTab.qa:

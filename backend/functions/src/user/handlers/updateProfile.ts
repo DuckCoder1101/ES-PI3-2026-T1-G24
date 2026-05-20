@@ -4,7 +4,7 @@
  */
 import { logger } from "firebase-functions/v2";
 import { HttpsError, onCall } from "firebase-functions/https";
-import { updateUserData } from "../repositories/userRepository";
+import { updateUserData } from "../repositories/usersRepository";
 import { UpdateProfileDTO } from "../types/dtos";
 import { normalizeString } from "../../shared/utils";
 import { checkPhone } from "../shared/validations";

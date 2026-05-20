@@ -4,7 +4,7 @@
  */
 
 import { HttpsError, onCall } from "firebase-functions/https";
-import { getStartupQuestions } from "../../repositories/questionsRepository";
+import { getStartupQuestions } from "../../repositories/qaRepository";
 import { getUserProfile } from "../../../shared/auth";
 import { database } from "../../../shared/firebase";
 

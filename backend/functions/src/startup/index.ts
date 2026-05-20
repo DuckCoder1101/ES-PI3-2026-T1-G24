@@ -10,3 +10,6 @@ export * from "./handlers/buyTokens";
 export * from "./handlers/qa/getQuestions";
 export * from "./handlers/qa/registerQuestion";
 export * from "./handlers/qa/deleteQuestion";
+export * from "./handlers/getTokenPriceHistory";
+
+export * from "./triggers/onTransactionCreated";
