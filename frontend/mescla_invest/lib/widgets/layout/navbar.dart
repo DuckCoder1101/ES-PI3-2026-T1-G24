@@ -12,24 +12,24 @@ enum NavDestination {
   account;
 
   String get label => switch (this) {
-    NavDestination.catalog => 'Catálogo',
-    NavDestination.market => 'Mercado',
-    NavDestination.wallet => 'Carteira',
-    NavDestination.account => 'Minha conta',
+    catalog => 'Catálogo',
+    market => 'Mercado',
+    wallet => 'Carteira',
+    account => 'Minha conta',
   };
 
   IconData get icon => switch (this) {
-    NavDestination.catalog => Icons.grid_view_rounded,
-    NavDestination.market => Icons.show_chart_rounded,
-    NavDestination.wallet => Icons.account_balance_wallet_outlined,
-    NavDestination.account => Icons.person_outline_rounded,
+    catalog => Icons.grid_view_outlined,
+    market => Icons.show_chart_outlined,
+    wallet => Icons.account_balance_wallet_outlined,
+    account => Icons.person_outline_outlined,
   };
 
   IconData get iconSelected => switch (this) {
-    NavDestination.catalog => Icons.grid_view_rounded,
-    NavDestination.market => Icons.show_chart_rounded,
-    NavDestination.wallet => Icons.account_balance_wallet_rounded,
-    NavDestination.account => Icons.person_rounded,
+    catalog => Icons.grid_view_rounded,
+    market => Icons.show_chart_rounded,
+    wallet => Icons.account_balance_wallet_rounded,
+    account => Icons.person_rounded,
   };
 }
 

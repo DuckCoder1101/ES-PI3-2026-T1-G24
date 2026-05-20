@@ -4,11 +4,12 @@
  */
 
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { database } from "../../shared/firebase";
+import { logger } from "firebase-functions/v2";
+
 import { TransactionDocument } from "../../transaction/types/documents";
 import {
-  getStartupInTransaction,
-  updateTokenPriceInTransaction,
+  getFullStartup,
+  updateTokenPrice,
 } from "../repositories/startupsRepository";
 
 /*
@@ -19,40 +20,47 @@ import {
 export const onTransactionCreated = onDocumentCreated(
   "transactions/{transactionId}",
   async (event) => {
+    logger.info("EVENT:");
+    logger.info(JSON.stringify(event));
+
+    logger.info("DATA:");
+    logger.info(JSON.stringify(event.data));
+
     const transactionId = event.params.transactionId;
     const transaction = event.data?.data() as TransactionDocument;
 
-    if (!transaction?.id || transaction.type == "funds") {
+    logger.info("TRANSACTION:");
+    logger.info(JSON.stringify(transaction));
+
+    logger.log("Atualizando valorização: " + transaction.id);
+
+    if (!transaction) {
+      logger.log("Transação inválida para histórico: nula.");
       return;
     }
 
-    await database.runTransaction(async (tx) => {
-      const { data: startup } = await getStartupInTransaction(
-        tx,
-        transaction.startupId,
+    if (transaction?.id || transaction.type == "funds") {
+      logger.log(
+        `Transação inválida para histórico: ${transaction.id} - ${transaction.type}`,
       );
+      return;
+    }
 
-      // Preço sobe ou cai conforme a proporção de tokens vendidos.
-      // Abaixo de 30% de ocupação o preço cai; acima, sobe — máximo de +35% com 100% vendido.
-      // fatorDemanda = (tokensSoldidos/totalEmitidos - 0.3) × 0.5
+    const startup = await getFullStartup(transaction.startupId);
 
-      const tokensSold =
-        startup.totalTokensIssued - startup.totalTokensAvailable;
+    const tokensSold = startup.totalTokensIssued - startup.totalTokensAvailable;
+    const occupancyRate = tokensSold / startup.totalTokensIssued;
+    const fatorDemanda = (occupancyRate - 0.3) * 0.5;
 
-      const taxaOcupacao = tokensSold / startup.totalTokensIssued;
-      const fatorDemanda = (taxaOcupacao - 0.3) * 0.5;
+    const newPriceCents = Math.round(
+      startup.currentTokenPriceCents * (1 + fatorDemanda),
+    );
 
-      const newPriceCents = Math.round(
-        startup.currentTokenPriceCents * (1 + fatorDemanda),
-      );
-
-      updateTokenPriceInTransaction(
-        tx,
-        transaction.startupId,
-        newPriceCents,
-        taxaOcupacao,
-        transactionId,
-      );
-    });
+    updateTokenPrice(
+      transaction.startupId,
+      newPriceCents,
+      occupancyRate,
+      transactionId,
+    );
   },
 );

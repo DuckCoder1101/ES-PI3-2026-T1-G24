@@ -5,8 +5,13 @@
 
 import { HttpsError } from "firebase-functions/https";
 import { database } from "../../shared/firebase";
-import { StartupDocument } from "../types/documents";
-import { FieldValue, Transaction } from "firebase-admin/firestore";
+import {
+  DateInterval,
+  DateLimits,
+  PriceHistoryDocument as PriceHistoryPointDocument,
+  StartupDocument,
+} from "../types/documents";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
 import {
   StartupDetailsDTO,
@@ -16,6 +21,30 @@ import {
 } from "../types/dtos";
 
 const startupsCollection = database.collection("startups");
+const getPriceHistoryCollection = (startupId: string) =>
+  startupsCollection.doc(startupId).collection("priceHistory");
+
+const getLimitsFromDateInterval = (interval: DateInterval): DateLimits => {
+  const end = new Date();
+  const start = new Date();
+
+  switch (interval) {
+    case "1M":
+      start.setMonth(start.getMonth() - 1);
+      break;
+    case "6M":
+      start.setMonth(start.getMonth() - 6);
+      break;
+    case "1Y":
+      start.setFullYear(start.getFullYear() - 1);
+      break;
+    case "5Y":
+      start.setFullYear(start.getFullYear() - 5);
+      break;
+  }
+
+  return { start, end };
+};
 
 /*
  * Busca as startups no banco de dados seguindo um offset, um limite e um filtro
@@ -95,49 +124,50 @@ export const checkStartupExists = async (startupId: string) => {
 };
 
 /*
- * Lê os dados atuais de uma startup dentro de uma transaction do Firestore.
- * Necessário para garantir leitura consistente antes de atualizar o preço.
- */
-export const getStartupInTransaction = async (
-  tx: Transaction,
-  startupId: string,
-) => {
-  const ref = startupsCollection.doc(startupId);
-  const doc = await tx.get(ref);
-
-  if (!doc.exists) {
-    throw new HttpsError("not-found", "Startup não encontrada!");
-  }
-
-  return {
-    ref,
-    data: doc.data() as StartupDocument,
-  };
-};
-
-/*
  * Atualiza o preço atual do token de uma startup dentro de uma transaction
  * e registra o snapshot no histórico de preços.
  */
-export const updateTokenPriceInTransaction = (
-  tx: Transaction,
+export const updateTokenPrice = (
   startupId: string,
   newPriceCents: number,
   taxaOcupacao: number,
   triggeredByTransactionId: string,
 ) => {
-  const startupRef = startupsCollection.doc(startupId);
-  const priceHistoryRef = startupRef.collection("priceHistory").doc();
+  database.runTransaction(async (tx) => {
+    const startupRef = startupsCollection.doc(startupId);
+    const priceHistoryRef = getPriceHistoryCollection(startupId).doc();
 
-  tx.update(startupRef, {
-    currentTokenPriceCents: newPriceCents,
-    updatedAt: FieldValue.serverTimestamp(),
-  });
+    tx.update(startupRef, {
+      currentTokenPriceCents: newPriceCents,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
 
-  tx.set(priceHistoryRef, {
-    priceCents: newPriceCents,
-    taxaOcupacao,
-    triggeredBy: triggeredByTransactionId,
-    createdAt: FieldValue.serverTimestamp(),
+    tx.set(priceHistoryRef, {
+      priceCents: newPriceCents,
+      taxaOcupacao,
+      triggeredBy: triggeredByTransactionId,
+      createdAt: FieldValue.serverTimestamp(),
+    });
   });
+};
+
+/*
+ * Retorna os pontos de atualização da valorização da startup
+ */
+export const getStartupTokenPriceHistory = async (
+  startupId: string,
+  dateInterval: DateInterval,
+) => {
+  const { start, end } = getLimitsFromDateInterval(dateInterval);
+
+  const snapshot = await getPriceHistoryCollection(startupId)
+    .where("createdAt", ">=", Timestamp.fromDate(start))
+    .where("createdAt", "<=", Timestamp.fromDate(end))
+    .get();
+
+  const priceHistory = snapshot.docs.map(
+    (doc) => doc.data() as PriceHistoryPointDocument,
+  );
+
+  return priceHistory;
 };

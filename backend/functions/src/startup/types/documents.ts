@@ -3,10 +3,16 @@
  * RA: 25000636
  */
 
-import { Timestamp } from "firebase-admin/firestore";
+import { FieldValue, Timestamp } from "firebase-admin/firestore";
 
 export type StartupStage = "nova" | "em_operacao" | "em_expansao";
 export type QuestionVisibility = "privada" | "publica";
+export type DateInterval = "1M" | "6M" | "1Y" | "5Y";
+
+export interface DateLimits {
+  start: Date;
+  end: Date;
+}
 
 export interface Founder {
   name: string;
@@ -56,4 +62,11 @@ export interface QuestionAnwserDocument {
   authorUId: string;
   content: string;
   createdAt: Timestamp;
-}
+}
+
+export interface PriceHistoryDocument {
+  priceCents: number;
+  occupancyRate: number;
+  triggerId: string;
+  createdAt: FieldValue;
+}

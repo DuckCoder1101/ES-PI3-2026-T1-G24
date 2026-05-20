@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:mescla_invest/screens/app/startup/startup_details.dart';
 import 'package:mescla_invest/screens/app/user/activate_2fa.dart';
 import 'package:mescla_invest/screens/public/auth/forgot_password.dart';
@@ -11,6 +12,8 @@ import 'package:mescla_invest/screens/public/auth/signup.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  initializeDateFormatting("pt_BR", null);
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(const MesclaInvest());
