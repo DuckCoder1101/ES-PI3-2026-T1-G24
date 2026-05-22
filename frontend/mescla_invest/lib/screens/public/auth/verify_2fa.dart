@@ -3,10 +3,10 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mescla_invest/services/user_service.dart';
 import 'package:pinput/pinput.dart';
 
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/models/user/user.dart';
 import 'package:mescla_invest/widgets/ui/primary_button.dart';
 import 'package:mescla_invest/widgets/ui/icon.dart';
 
@@ -40,7 +40,7 @@ class _Verify2FAScreenState extends State<Verify2FAScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await UserModel.resolveTotp(widget.multiFactorException, token);
+      await UserService.resolveTotp(widget.multiFactorException, token);
 
       if (mounted) {
         Navigator.of(context).pop();

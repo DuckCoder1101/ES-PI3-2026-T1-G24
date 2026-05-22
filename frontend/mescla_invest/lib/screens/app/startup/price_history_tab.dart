@@ -8,7 +8,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/models/startup/price_history.dart';
+import 'package:mescla_invest/models/startup/price_point_model.dart';
+import 'package:mescla_invest/services/startup_service.dart';
 
 class TabPriceHistory extends StatefulWidget {
   final String startupId;
@@ -22,7 +23,7 @@ class TabPriceHistory extends StatefulWidget {
 class _TabPriceHistoryState extends State<TabPriceHistory> {
   DateInterval _selectedInterval = DateInterval.oneMonth;
 
-  List<PriceHistoryPoint> _points = [];
+  List<PricePoint> _points = [];
   bool _isLoading = true;
   String? _errorMsg;
 
@@ -40,7 +41,7 @@ class _TabPriceHistoryState extends State<TabPriceHistory> {
     });
 
     try {
-      final points = await PriceHistoryModel.getTokenPriceHistory(
+      final points = await StartupService.getTokenPriceHistory(
         startupId: widget.startupId,
         interval: _selectedInterval,
       );
@@ -135,23 +136,20 @@ class _TabPriceHistoryState extends State<TabPriceHistory> {
 
   // Gráfico
 
-  Widget _buildChart(List<PriceHistoryPoint> points) {
-    final sorted = [...points]
-      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
-
-    final spots = sorted
+  Widget _buildChart(List<PricePoint> points) {
+    final spots = points
         .asMap()
         .entries
         .map((e) => FlSpot(e.key.toDouble(), e.value.priceReais))
         .toList();
 
-    final prices = sorted.map((p) => p.priceReais).toList();
+    final prices = points.map((p) => p.priceReais).toList();
     final minY = prices.reduce((a, b) => a < b ? a : b);
     final maxY = prices.reduce((a, b) => a > b ? a : b);
     final padding = ((maxY - minY) * 0.15).clamp(0.5, double.infinity);
 
-    final firstPrice = sorted.first.priceReais;
-    final lastPrice = sorted.last.priceReais;
+    final firstPrice = points.first.priceReais;
+    final lastPrice = points.last.priceReais;
     final isPositive = lastPrice >= firstPrice;
     final lineColor = isPositive ? AppColors.verdeMescla : Colors.redAccent;
     final variation = firstPrice == 0
@@ -196,16 +194,16 @@ class _TabPriceHistoryState extends State<TabPriceHistory> {
                   sideTitles: SideTitles(
                     showTitles: true,
                     reservedSize: 28,
-                    interval: _bottomInterval(sorted.length),
+                    interval: _bottomInterval(points.length),
                     getTitlesWidget: (value, meta) {
                       final idx = value.toInt();
-                      if (idx < 0 || idx >= sorted.length) {
+                      if (idx < 0 || idx >= points.length) {
                         return const SizedBox.shrink();
                       }
                       return Padding(
                         padding: const EdgeInsets.only(top: 6),
                         child: Text(
-                          _formatDate(sorted[idx].createdAt),
+                          _formatDate(points[idx].createdAt),
                           style: const TextStyle(
                             color: Colors.white38,
                             fontSize: 10,
@@ -236,7 +234,7 @@ class _TabPriceHistoryState extends State<TabPriceHistory> {
                           ),
                           children: [
                             TextSpan(
-                              text: _formatDate(sorted[s.x.toInt()].createdAt),
+                              text: _formatDate(points[s.x.toInt()].createdAt),
                               style: const TextStyle(
                                 color: Colors.white54,
                                 fontSize: 11,

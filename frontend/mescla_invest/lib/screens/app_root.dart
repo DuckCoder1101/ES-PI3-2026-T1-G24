@@ -10,13 +10,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
 
-import 'package:mescla_invest/models/user/user.dart';
+import 'package:mescla_invest/models/user/user_model.dart';
 import 'package:mescla_invest/screens/app/marketplace/market.dart';
 import 'package:mescla_invest/screens/app/catalog.dart';
 import 'package:mescla_invest/screens/app/user/account.dart';
-import 'package:mescla_invest/screens/app/wallet.dart';
+import 'package:mescla_invest/screens/app/user/wallet.dart';
 import 'package:mescla_invest/screens/public/auth/verify_email.dart';
 import 'package:mescla_invest/screens/public/welcome.dart';
+import 'package:mescla_invest/services/user_service.dart';
 import 'package:mescla_invest/widgets/layout/navbar.dart';
 
 // Provider global com os dados do usuário autenticado
@@ -115,7 +116,7 @@ class _AppRootState extends State<AppRoot> {
 
     for (int attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        final user = await UserModel.getFullUserData();
+        final user = await UserService.getFullUserData();
 
         return user;
       } on FirebaseFunctionsException catch (err) {
@@ -134,7 +135,7 @@ class _AppRootState extends State<AppRoot> {
       }
     }
 
-    await UserModel.signout();
+    await UserService.signout();
 
     return null;
   }

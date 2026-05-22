@@ -7,8 +7,8 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/models/investment/investment.dart';
-import 'package:mescla_invest/models/startup/startup.dart';
+import 'package:mescla_invest/models/startup/startup_model.dart';
+import 'package:mescla_invest/services/user_service.dart';
 
 class BuyTokensSheet extends StatefulWidget {
   final StartupModel startup;
@@ -58,7 +58,7 @@ class _BuyTokensSheetState extends State<BuyTokensSheet> {
     });
 
     try {
-      await InvestmentModel.buyTokens(
+      await UserService.buyTokens(
         startupId: widget.startup.id,
         tokenAmount: _tokenAmount,
       );

@@ -3,8 +3,8 @@
  * RA: 25000636
  */
 
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:mescla_invest/models/startup/startup.dart';
+import 'package:mescla_invest/formatters/timestamp_to_date.dart';
+import 'package:mescla_invest/models/startup/startup_model.dart';
 
 enum TransactionType { investment, funds, trade }
 
@@ -30,21 +30,7 @@ abstract class TransactionModel {
     this.createdAt,
   });
 
-  // Converte o campo createdAt (Timestamp do Firestore) para DateTime
-  static DateTime? parseTimestamp(dynamic raw) {
-    if (raw == null) return null;
-    if (raw is int) return DateTime.fromMillisecondsSinceEpoch(raw);
-    if (raw is Map && raw['seconds'] != null) {
-      return DateTime.fromMillisecondsSinceEpoch(
-        (raw['seconds'] as int) * 1000,
-      );
-    }
-    return null;
-  }
-
-  /*
-   * Faz o parse do mapa genérico e retorna o subtipo correto de TransactionModel
-   */
+  // Faz o parse do mapa genérico e retorna o subtipo correto de TransactionModel
   static TransactionModel fromMap(Map<String, dynamic> rawMap) {
     final map = rawMap.map((key, value) => MapEntry(key.trim(), value));
     final typeStr = map['type'] as String? ?? '';
@@ -59,32 +45,9 @@ abstract class TransactionModel {
         return FundsTransactionModel.fromMap(map);
     }
   }
-
-  /*
-   * Busca o histórico completo de transações do usuário autenticado.
-   * Inclui depósitos de fundos, compras diretas e negociações no balcão.
-   */
-  static Future<List<TransactionModel>> getUserTransactions() async {
-    try {
-      final response = await FirebaseFunctions.instance
-          .httpsCallable('getUserTransactions')
-          .call();
-
-      final data = Map<String, dynamic>.from(response.data);
-      final List raw = data['transactions'] ?? [];
-
-      return raw
-          .map((t) => TransactionModel.fromMap(Map<String, dynamic>.from(t)))
-          .toList();
-    } catch (e) {
-      rethrow;
-    }
-  }
 }
 
-/*
- * Transação de compra direta de tokens na página de uma startup.
- */
+// Transação de compra direta de tokens na página de uma startup.
 class InvestmentTransactionModel extends TransactionModel {
   final String investorUId;
   final StartupResumeDTO startup;
@@ -109,7 +72,7 @@ class InvestmentTransactionModel extends TransactionModel {
       id: map['id'],
       amountCents: (map['amountCents'] ?? 0) as int,
       userUIds: List<String>.from(map['userUIds'] ?? []),
-      createdAt: TransactionModel.parseTimestamp(map['createdAt']),
+      createdAt: parseTimestamp(map['createdAt']),
       investorUId: map['investorUId'] ?? '',
       startup: StartupResumeDTO.fromMap(
         Map<String, dynamic>.from(map['startup']),
@@ -120,9 +83,7 @@ class InvestmentTransactionModel extends TransactionModel {
   }
 }
 
-/*
- * Transação de compra ou venda de tokens entre usuários via balcão.
- */
+// Transação de compra ou venda de tokens entre usuários via balcão.
 class TradeTransactionModel extends TransactionModel {
   final String purchaserUId;
   final String sellerUId;
@@ -149,7 +110,7 @@ class TradeTransactionModel extends TransactionModel {
       id: map['id'],
       amountCents: (map['amountCents'] ?? 0) as int,
       userUIds: List<String>.from(map['userUIds'] ?? []),
-      createdAt: TransactionModel.parseTimestamp(map['createdAt']),
+      createdAt: parseTimestamp(map['createdAt']),
       purchaserUId: map['purchaserUId'] ?? '',
       sellerUId: map['sellerUId'] ?? '',
       startupId: map['startupId'] ?? '',
@@ -159,9 +120,7 @@ class TradeTransactionModel extends TransactionModel {
   }
 }
 
-/*
- * Transação de adição de saldo fictício à carteira (simulação de depósito).
- */
+// Transação de adição de saldo fictício à carteira (simulação de depósito).
 class FundsTransactionModel extends TransactionModel {
   final String authorUId;
 
@@ -178,7 +137,7 @@ class FundsTransactionModel extends TransactionModel {
       id: map['id'],
       amountCents: (map['amountCents'] ?? 0) as int,
       userUIds: List<String>.from(map['userUIds'] ?? []),
-      createdAt: TransactionModel.parseTimestamp(map['createdAt']),
+      createdAt: parseTimestamp(map['createdAt']),
       authorUId: map['authorUId'] ?? '',
     );
   }

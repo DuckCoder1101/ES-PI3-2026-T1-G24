@@ -5,8 +5,10 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/models/order/order.dart';
-import 'package:mescla_invest/models/startup/startup.dart';
+import 'package:mescla_invest/models/order.dart';
+import 'package:mescla_invest/models/startup/startup_model.dart';
+import 'package:mescla_invest/services/order_service.dart';
+import 'package:mescla_invest/services/startup_service.dart';
 import 'package:mescla_invest/widgets/layout/model_header.dart';
 
 class CreateOrderScreen extends StatefulWidget {
@@ -63,13 +65,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   Future<void> _fetchStartups() async {
     setState(() => _isLoadingStartups = true);
     try {
-      final startups = await StartupModel.getAllStartupsResumes();
+      final startups = await StartupService.getAllStartupsResumes();
 
       if (!mounted) return;
 
       setState(() {
-        // Pré-seleciona a startup recebida via argumento
-
         _startups = startups;
 
         if (widget.startupId != null) {
@@ -107,7 +107,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
     setState(() => _isSubmitting = true);
     try {
-      await OrderModel.registerOrder(
+      await OrderService.registerOrder(
         startupId: _selectedStartup!.id,
         type: _orderType,
         pricePerTokenCents: _pricePerTokenCents,

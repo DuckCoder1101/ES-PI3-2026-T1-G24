@@ -11,10 +11,11 @@ import 'package:mescla_invest/screens/app/startup/buy_tokens_sheet.dart';
 import 'package:mescla_invest/screens/app/startup/partners_tab.dart';
 import 'package:mescla_invest/screens/app/startup/price_history_tab.dart';
 import 'package:mescla_invest/screens/app/startup/qa_tab.dart';
+import 'package:mescla_invest/services/startup_service.dart';
 import 'package:mescla_invest/widgets/layout/model_header.dart';
 import 'package:mescla_invest/widgets/ui/primary_button.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/models/startup/startup.dart';
+import 'package:mescla_invest/models/startup/startup_model.dart';
 
 enum _StartupDetailsTab {
   about,
@@ -52,6 +53,7 @@ class StartupDetailsScreen extends StatefulWidget {
 
 class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
   Future<StartupModel>? _startupFuture;
+
   _StartupDetailsTab _activeTab = _StartupDetailsTab.about;
 
   @override
@@ -66,7 +68,7 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
 
     String? errorMsg;
     try {
-      _startupFuture = StartupModel.getStartupDetails(widget.startupId!);
+      _startupFuture = StartupService.getFullStartup(widget.startupId!);
     } on FirebaseFunctionsException catch (err) {
       if (err.code == "not-found") {
         errorMsg = "Startup não encontrada!";
@@ -106,7 +108,7 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
         startup: startup,
         onSuccess: () {
           setState(() {
-            _startupFuture = StartupModel.getStartupDetails(widget.startupId!);
+            _startupFuture = StartupService.getFullStartup(widget.startupId!);
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -309,8 +311,6 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
     );
   }
 
-  // CORRIGIDO: cada aba recebe Expanded para dividir o espaço igualmente,
-  // evitando o overflow no Row.
   Widget _buildTabBar() {
     final tabs = _StartupDetailsTab.values.toList();
     return Row(
@@ -365,7 +365,7 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
           ),
         );
       case _StartupDetailsTab.about:
-        return TabAbout(startup: startup, startupId: widget.startupId!);
+        return TabAbout(startup: startup);
     }
   }
 

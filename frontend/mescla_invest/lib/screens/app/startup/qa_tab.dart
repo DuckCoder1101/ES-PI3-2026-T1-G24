@@ -5,7 +5,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/models/startup/question.dart';
+import 'package:mescla_invest/models/startup/question_model.dart';
+import 'package:mescla_invest/services/startup_service.dart';
 
 class TabQA extends StatefulWidget {
   final String startupId;
@@ -65,7 +66,7 @@ class _TabQAState extends State<TabQA> {
     if (!mounted) return;
     setState(() => _isLoading = true);
     try {
-      final data = await QuestionModel.getQuestions(
+      final data = await StartupService.getQuestions(
         startupId: widget.startupId,
         visibility: _visibility,
       );
@@ -83,7 +84,7 @@ class _TabQAState extends State<TabQA> {
 
     setState(() => _isEnviando = true);
     try {
-      await QuestionModel.registerQuestion(
+      await StartupService.registerQuestion(
         startupId: widget.startupId,
         content: texto,
         visibility: _visibility,
@@ -99,7 +100,7 @@ class _TabQAState extends State<TabQA> {
 
   Future<void> _handleDelete(String questionId) async {
     try {
-      await QuestionModel.deleteQuestion(
+      await StartupService.deleteQuestion(
         startupId: widget.startupId,
         questionId: questionId,
       );

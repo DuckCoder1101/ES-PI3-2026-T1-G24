@@ -3,16 +3,81 @@
  * RA: 25000636
  */
 
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/models/startup/startup.dart';
+import 'package:mescla_invest/models/startup/startup_model.dart';
 import 'package:mescla_invest/screens/app/startup/video_player.dart';
+import 'package:mescla_invest/services/startup_service.dart';
+import 'package:mescla_invest/widgets/ui/primary_button.dart';
 
-class TabAbout extends StatelessWidget {
+class TabAbout extends StatefulWidget {
   final StartupModel startup;
-  final String startupId;
 
-  const TabAbout({super.key, required this.startup, required this.startupId});
+  const TabAbout({super.key, required this.startup});
+
+  @override
+  State<StatefulWidget> createState() => _TabAboutState();
+}
+
+class _TabAboutState extends State<TabAbout> {
+  bool _isDownloading = false;
+
+  Future<void> downloadExecutiveSummary() async {
+    try {
+      String? selectedDirectory = await FilePicker.getDirectoryPath();
+
+      // Se o usuário fechar o seletor sem escolher nada, interrompe a função
+      if (selectedDirectory == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Download cancelado: nenhuma pasta selecionada.'),
+            ),
+          );
+        }
+
+        return;
+      }
+
+      setState(() => _isDownloading = true);
+
+      final String localPath =
+          '$selectedDirectory/${widget.startup.name}/sumario_executivo.pdf';
+
+      await StartupService.downloadExecutiveSummary(
+        widget.startup.executiveSumaryPath!,
+        localPath,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Download concluído com sucesso em: $localPath'),
+          ),
+        );
+      }
+    } on FirebaseException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao baixar sumário executivo: ${e.message}'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erro inesperado: $e')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isDownloading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,39 +93,29 @@ class TabAbout extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          startup.description,
+          widget.startup.description,
           style: const TextStyle(
             color: Colors.white70,
             fontSize: 16,
             height: 1.5,
           ),
         ),
-        if (startup.executiveSummary.isNotEmpty) ...[
+
+        if (widget.startup.executiveSumaryPath != null) ...[
           const SizedBox(height: 20),
-          const Text(
-            "SUMÁRIO EXECUTIVO",
-            style: TextStyle(
-              color: AppColors.verdeMescla,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            startup.executiveSummary,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-              height: 1.5,
-            ),
+          PrimaryButton(
+            text: "Baixar sumário executivo: ",
+            onPressed: _isDownloading ? null : downloadExecutiveSummary,
           ),
         ],
-        if (startup.videoUrl != null) _buildVideoSection(),
+
+        if (widget.startup.videoUrl != null) _buildVideoSection(),
       ],
     );
   }
 
   Widget _buildVideoSection() {
-    final videoUrl = startup.videoUrl;
+    final videoUrl = widget.startup.videoUrl;
 
     if (videoUrl == null || videoUrl.isEmpty) {
       return const SizedBox.shrink();

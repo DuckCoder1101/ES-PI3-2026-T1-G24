@@ -4,7 +4,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/models/user/user.dart';
+import 'package:mescla_invest/services/user_service.dart';
 import 'package:mescla_invest/widgets/ui/icon.dart';
 import 'package:mescla_invest/widgets/ui/primary_button.dart';
 
@@ -102,7 +102,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   }
 
   Future<void> _logout() async {
-    await UserModel.signout();
+    await UserService.signout();
     // AppRoot retorna para WelcomeScreen automaticamente
   }
 

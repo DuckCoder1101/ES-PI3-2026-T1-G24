@@ -8,8 +8,9 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/models/user/user.dart';
+import 'package:mescla_invest/models/user/user_model.dart';
 import 'package:mescla_invest/screens/app_root.dart';
+import 'package:mescla_invest/services/user_service.dart';
 
 class UserAccountScreen extends StatefulWidget {
   const UserAccountScreen({super.key});
@@ -75,7 +76,7 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
   // Download da foto de perfil
   Future<void> _loadProfilePicture(UserModel user) async {
     try {
-      final url = await user.getAvatarUrl();
+      final url = await UserService.getAvatarUrl();
 
       if (mounted) {
         setState(() => _resolvedAvatarUrl = url);
@@ -99,7 +100,7 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
     setState(() => _isUploadingPhoto = true);
 
     try {
-      await user.uploadAvatarPicture(File(picked.path));
+      await UserService.uploadAvatarPicture(File(picked.path));
       await _loadProfilePicture(user);
 
       _showSnack('Foto atualizada com sucesso!', isError: false);
@@ -126,9 +127,9 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
     setState(() => _isSavingData = true);
 
     try {
-      await UserModel.updateProfile(name: name, phone: phone);
+      await UserService.updateProfile(name: name, phone: phone);
 
-      final updated = await UserModel.getFullUserData();
+      final updated = await UserService.getFullUserData();
       authUserDataProvider.value = updated;
 
       if (mounted) setState(() => _dataChanged = false);
@@ -154,7 +155,7 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
   // 2FA
   Future<void> _loadTotpStatus() async {
     try {
-      final has2Fa = await UserModel.checkHas2Fa();
+      final has2Fa = await UserService.checkHas2Fa();
       if (mounted) setState(() => _has2Fa = has2Fa);
     } catch (_) {
       if (mounted) setState(() => _has2Fa = false);
@@ -202,7 +203,7 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
 
       setState(() => _isTogglingTotp = true);
       try {
-        await UserModel.disableTotp();
+        await UserService.disableTotp();
 
         if (mounted) {
           setState(() => _has2Fa = false);
@@ -261,7 +262,7 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
     setState(() => _isLoggingOut = true);
 
     try {
-      await UserModel.signout();
+      await UserService.signout();
     } catch (err) {
       debugPrint("Erro no logout: $err");
 
