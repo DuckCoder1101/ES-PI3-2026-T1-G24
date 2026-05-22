@@ -1,56 +1,29 @@
 /*
- * Autor: Cristian Fava
+ * Autor: Cristian Eduardo Fava
  * RA: 25000636
  */
 
 import 'dart:io';
-
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:mescla_invest/models/user/investment_model.dart';
+import 'package:mescla_invest/models/user/transaction_model.dart';
+import 'package:mescla_invest/models/user/user_model.dart';
+import 'package:mescla_invest/models/user/wallet_model.dart';
 
-/// Dados retornados ao iniciar o TOTP.
-class TotpEnrollmentData {
-  final String otpauthUrl;
-  final TotpSecret secret;
-
-  const TotpEnrollmentData({required this.otpauthUrl, required this.secret});
-}
-
-class UserModel {
-  final String uid;
-  final String name;
-  final String email;
-  final String cpf;
-  final String phone;
-
-  UserModel({
-    required this.uid,
-    required this.name,
-    required this.email,
-    required this.cpf,
-    required this.phone,
-  });
-
-  factory UserModel.fromMap(Map<String, dynamic> map) {
-    return UserModel(
-      uid: map['uid'],
-      name: map['name'] ?? '',
-      email: map['email'] ?? '',
-      cpf: map['cpf'] ?? '',
-      phone: map['phone'] ?? '',
-    );
-  }
-
+class UserService {
   // Retorna o URL da foto de perfil
-  Future<String?> getAvatarUrl() async {
+  static Future<String?> getAvatarUrl() async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
     return await FirebaseStorage.instance
         .ref("/users/$uid/avatar")
         .getDownloadURL();
   }
 
   // Salva uma nova foto de perfil
-  Future<void> uploadAvatarPicture(File file) async {
+  static Future<void> uploadAvatarPicture(File file) async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
     await FirebaseStorage.instance.ref("/users/$uid/avatar").putFile(file);
   }
 
@@ -61,8 +34,7 @@ class UserModel {
           .httpsCallable('getMe')
           .call();
 
-      final dataMap = Map<String, dynamic>.from(result.data);
-      return UserModel.fromMap(dataMap);
+      return UserModel.fromMap(Map<String, dynamic>.from(result.data));
     } catch (e) {
       rethrow;
     }
@@ -125,11 +97,12 @@ class UserModel {
     );
   }
 
+  // Efetua signout
   static Future<void> signout() async {
     await FirebaseAuth.instance.signOut();
   }
 
-  // otpauth:// para o QR code e o secrete para finalizar o registro do TOTP.
+  // Obtem o otpaughturl do servidor
   static Future<TotpEnrollmentData> beginTotpActivation(
     String accountName,
   ) async {
@@ -206,5 +179,80 @@ class UserModel {
 
     final factors = await user.multiFactor.getEnrolledFactors();
     return factors.any((f) => f.factorId == 'totp');
+  }
+
+  // Retorna saldo disponível e saldo bloqueado do usuário
+  static Future<WalletModel> getWallet() async {
+    try {
+      final response = await FirebaseFunctions.instance
+          .httpsCallable('getWalletHandler')
+          .call();
+
+      return WalletModel.fromMap(Map<String, dynamic>.from(response.data));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Adiciona saldo fictício à carteira do usuário
+  static Future<void> addFunds(double funds) async {
+    try {
+      await FirebaseFunctions.instance.httpsCallable('addFunds').call({
+        'funds': funds,
+      });
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Busca o histórico completo de transações do usuário
+  static Future<List<TransactionModel>> getUserTransactions() async {
+    try {
+      final response = await FirebaseFunctions.instance
+          .httpsCallable('getUserTransactions')
+          .call();
+
+      final data = Map<String, dynamic>.from(response.data);
+      final List raw = data['transactions'] ?? [];
+
+      return raw
+          .map((t) => TransactionModel.fromMap(Map<String, dynamic>.from(t)))
+          .toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Busca todos os investimentos do usuário
+  static Future<List<InvestmentModel>> getUserInvestments() async {
+    try {
+      final response = await FirebaseFunctions.instance
+          .httpsCallable('getUserInvestments')
+          .call();
+
+      final data = Map<String, dynamic>.from(response.data);
+      final List raw = data['investments'] ?? [];
+
+      return raw
+          .map((i) => InvestmentModel.fromMap(Map<String, dynamic>.from(i)))
+          .toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Compra tokens de uma startup para um usuário
+  static Future<void> buyTokens({
+    required String startupId,
+    required int tokenAmount,
+  }) async {
+    try {
+      await FirebaseFunctions.instance.httpsCallable('buyTokens').call({
+        'startupId': startupId,
+        'tokenAmount': tokenAmount,
+      });
+    } catch (e) {
+      rethrow;
+    }
   }
 }

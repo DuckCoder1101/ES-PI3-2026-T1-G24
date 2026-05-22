@@ -4,8 +4,9 @@
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/models/order/order.dart';
+import 'package:mescla_invest/models/order.dart';
 import 'package:mescla_invest/screens/app/marketplace/create_order_screen.dart';
+import 'package:mescla_invest/services/order_service.dart';
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
@@ -37,9 +38,9 @@ class _MarketScreenState extends State<MarketScreen> {
 
     try {
       final results = await Future.wait([
-        OrderModel.getOrders(orderType: OrderType.buy, offset: 0, limit: 10),
-        OrderModel.getOrders(orderType: OrderType.sell, offset: 0, limit: 10),
-        OrderModel.getUserOrders(),
+        OrderService.getOrders(orderType: OrderType.buy, offset: 0, limit: 10),
+        OrderService.getOrders(orderType: OrderType.sell, offset: 0, limit: 10),
+        OrderService.getUserOrders(),
       ]);
 
       if (mounted) {
@@ -73,7 +74,7 @@ class _MarketScreenState extends State<MarketScreen> {
 
     setState(() => _isExecuting = true);
     try {
-      await OrderModel.buyOrder(order.id);
+      await OrderService.buyOrder(order.id);
       _showSnack('Compra realizada com sucesso!', isError: false);
       await _fetchOrders();
     } on FirebaseFunctionsException catch (e) {
@@ -96,7 +97,7 @@ class _MarketScreenState extends State<MarketScreen> {
 
     setState(() => _isExecuting = true);
     try {
-      await OrderModel.sellOrder(order.id);
+      await OrderService.sellOrder(order.id);
       _showSnack('Venda realizada com sucesso!', isError: false);
       await _fetchOrders();
     } on FirebaseFunctionsException catch (e) {
@@ -119,7 +120,7 @@ class _MarketScreenState extends State<MarketScreen> {
 
     setState(() => _isExecuting = true);
     try {
-      await OrderModel.deleteOrder(order.id);
+      await OrderService.deleteOrder(order.id);
       _showSnack('Ordem cancelada.', isError: false);
       await _fetchOrders();
     } on FirebaseFunctionsException catch (e) {

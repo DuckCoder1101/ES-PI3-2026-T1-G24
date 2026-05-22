@@ -5,7 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/models/startup/startup.dart';
+import 'package:mescla_invest/models/startup/startup_model.dart';
 
 class TabPartners extends StatelessWidget {
   final StartupModel startup;

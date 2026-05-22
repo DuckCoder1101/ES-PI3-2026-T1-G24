@@ -3,8 +3,8 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:mescla_invest/models/user/user.dart';
 import 'package:mescla_invest/screens/public/auth/verify_2fa.dart';
+import 'package:mescla_invest/services/user_service.dart';
 import 'package:mescla_invest/widgets/ui/back_button.dart';
 import 'package:mescla_invest/widgets/ui/icon.dart';
 import 'package:mescla_invest/constants/colors.dart';
@@ -57,7 +57,7 @@ class _SigninScreenState extends State<SigninScreen> {
     });
 
     try {
-      await UserModel.signin(_emailController.text, _passwordController.text);
+      await UserService.signin(_emailController.text, _passwordController.text);
 
       // Login simples (sem MFA): AppRoot detecta via authStateChanges
       if (mounted) {

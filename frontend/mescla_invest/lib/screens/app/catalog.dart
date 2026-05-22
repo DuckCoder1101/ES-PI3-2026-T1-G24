@@ -5,7 +5,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:mescla_invest/models/startup/startup.dart';
+import 'package:mescla_invest/formatters/str_formaters.dart';
+import 'package:mescla_invest/models/startup/startup_model.dart';
+import 'package:mescla_invest/services/startup_service.dart';
 import 'package:mescla_invest/widgets/layout/header.dart';
 import 'package:mescla_invest/constants/colors.dart';
 
@@ -70,7 +72,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
     String? errorMsg;
     try {
-      final newStartups = await StartupModel.getStartups(
+      final newStartups = await StartupService.getStartupsList(
         offset: _offset,
         limit: _limit,
         stageFilter: _selectedStage,
@@ -166,29 +168,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
         itemCount: _startups.length + (_hasMore ? 1 : 0),
         itemBuilder: (context, index) {
           if (index < _startups.length) {
-            final startup = _startups[index];
-
-            return FutureBuilder(
-              future: startup.loadMedia(),
-              builder: (context, snapshot) {
-                return GestureDetector(
-                  onTap: () => Navigator.pushNamed(
-                    context,
-                    "/startups/startup-details",
-                    arguments: startup.id,
-                  ),
-                  child: _buildStartupCard(
-                    title: startup.name,
-                    description: startup.shortDescription,
-                    status: startup.stage.name.replaceAll('_', ' '),
-                    tokens: "${startup.totalTokensIssued} tokens",
-                    imageUrl: snapshot.connectionState == ConnectionState.done
-                        ? startup.thumbnailUrl
-                        : null,
-                  ),
-                );
-              },
-            );
+            return _buildStartupCard(_startups[index]);
           } else {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 32),
@@ -279,98 +259,117 @@ class _CatalogScreenState extends State<CatalogScreen> {
     );
   }
 
-  Widget _buildStartupCard({
-    required String title,
-    required String description,
-    required String status,
-    required String tokens,
-    String? imageUrl,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(20),
+  Widget _buildStartupCard(StartupModel startup) {
+    return GestureDetector(
+      onTap: () => Navigator.pushNamed(
+        context,
+        "/startups/startup-details",
+        arguments: startup.id,
       ),
-      child: Column(
-        children: [
-          Container(
-            height: 140,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E1E),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          children: [
+            Container(
+              height: 140,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
+                image: startup.thumbnailUrl != null
+                    ? DecorationImage(
+                        image: NetworkImage(startup.thumbnailUrl!),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF2D4F1E), Color(0xFF1E1E1E)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
               ),
-              image: imageUrl != null
-                  ? DecorationImage(
-                      image: NetworkImage(imageUrl),
-                      fit: BoxFit.cover,
-                    )
-                  : null,
-              gradient: imageUrl == null
-                  ? const LinearGradient(
-                      colors: [Color(0xFF2D4F1E), Color(0xFF1E1E1E)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    )
-                  : null,
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  description,
-                  style: const TextStyle(color: Colors.white60, fontSize: 14),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildBadge(status),
-                    Text(
-                      tokens,
-                      style: const TextStyle(
-                        color: Colors.white38,
-                        fontSize: 12,
-                      ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    startup.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    startup.shortDescription,
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        startup.stage.label,
+                        style: const TextStyle(
+                          color: AppColors.verdeMescla,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.token,
+                            size: 15,
+                            color: AppColors.verdeMescla,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            formatCurrency(startup.tokenPrice),
+                            style: const TextStyle(
+                              color: AppColors.verdeMescla,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Tokens disponíveis: ${startup.totalTokensAvailable}",
+                        style: const TextStyle(
+                          color: Colors.white38,
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        "Tokens possuídos: x",
+                        style: const TextStyle(
+                          color: Colors.white38,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBadge(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white10,
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Text(
-        label.toLowerCase(),
-        style: const TextStyle(
-          color: AppColors.verdeMescla,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
+          ],
         ),
       ),
     );

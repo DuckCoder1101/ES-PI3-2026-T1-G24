@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/formatters/str_formaters.dart';
-import 'package:mescla_invest/models/investment/investment.dart';
-import 'package:mescla_invest/models/transaction/transaction.dart';
-import 'package:mescla_invest/models/user/wallet.dart';
+import 'package:mescla_invest/models/user/investment_model.dart';
+import 'package:mescla_invest/models/user/transaction_model.dart';
+import 'package:mescla_invest/models/user/wallet_model.dart';
 import 'package:mescla_invest/screens/app_root.dart';
+import 'package:mescla_invest/services/user_service.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -47,11 +48,10 @@ class _WalletScreenState extends State<WalletScreen>
     await Future.wait([_loadWallet(), _loadInvestments(), _loadTransactions()]);
   }
 
-  // Busca a carteira via Cloud Function getWallet
   Future<void> _loadWallet() async {
     setState(() => _isLoadingWallet = true);
     try {
-      final wallet = await WalletModel.getWallet();
+      final wallet = await UserService.getWallet();
       if (mounted) setState(() => _wallet = wallet);
     } on FirebaseFunctionsException catch (e) {
       _showSnack(e.message ?? 'Erro ao carregar carteira.', isError: true);
@@ -62,11 +62,10 @@ class _WalletScreenState extends State<WalletScreen>
     }
   }
 
-  // Busca os investimentos do usuário via Cloud Function getUserInvestments
   Future<void> _loadInvestments() async {
     setState(() => _isLoadingInvestments = true);
     try {
-      final investments = await InvestmentModel.getUserInvestments();
+      final investments = await UserService.getUserInvestments();
       if (mounted) setState(() => _investments = investments);
     } on FirebaseFunctionsException catch (e) {
       _showSnack('Erro ao carregar investimentos ${e.message}.', isError: true);
@@ -78,11 +77,10 @@ class _WalletScreenState extends State<WalletScreen>
     }
   }
 
-  // Busca o histórico de transações via Cloud Function getUserTransactions
   Future<void> _loadTransactions() async {
     setState(() => _isLoadingTransactions = true);
     try {
-      final txs = await TransactionModel.getUserTransactions();
+      final txs = await UserService.getUserTransactions();
       if (mounted) setState(() => _transactions = txs);
     } on FirebaseFunctionsException catch (e) {
       _showSnack('Erro ao carregar transações: ${e.message}.', isError: true);
@@ -660,7 +658,7 @@ class _AddFundsSheetState extends State<_AddFundsSheet> {
     });
 
     try {
-      await WalletModel.addFunds(value);
+      await UserService.addFunds(value);
       if (mounted) {
         Navigator.pop(context);
         widget.onSuccess();
