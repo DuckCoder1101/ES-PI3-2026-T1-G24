@@ -3,6 +3,8 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mescla_invest/utils/handle_exception.dart';
+import 'package:mescla_invest/utils/show_snackbar.dart';
 import 'package:mescla_invest/widgets/ui/back_button.dart';
 import 'package:mescla_invest/widgets/ui/icon.dart';
 import 'package:mescla_invest/widgets/ui/input.dart';
@@ -34,7 +36,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     final email = _emailController.text.trim();
 
     if (email.isEmpty) {
-      _showSnackBar('Insira seu e-mail para continuar.');
+      showSnackbar(
+        msg: 'Insira seu e-mail para continuar.',
+        context: context,
+        isError: true,
+      );
       return;
     }
 
@@ -43,28 +49,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
 
-      if (!mounted) return;
-
-      _showSnackBar('Link de recuperação enviado!', isError: false);
-      Navigator.pop(context);
-    } on FirebaseAuthException catch (e) {
-      _showSnackBar(
-        e.code == 'user-not-found'
-            ? 'E-mail não cadastrado.'
-            : 'Erro ao processar pedido.',
-      );
+      if (mounted) {
+        showSnackbar(msg: 'Link de recuperação enviado!', context: context);
+        Navigator.pop(context);
+      }
+    } catch (err) {
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  void _showSnackBar(String message, {bool isError = true}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.redAccent : Colors.green,
-      ),
-    );
   }
 
   @override

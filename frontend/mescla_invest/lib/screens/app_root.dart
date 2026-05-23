@@ -1,15 +1,8 @@
-/*
- * Autor: Cristian Eduardo Fava
- * RA: 25000636
- */
-
 import 'dart:async';
 
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
-
 import 'package:mescla_invest/models/user/user_model.dart';
 import 'package:mescla_invest/screens/app/marketplace/market.dart';
 import 'package:mescla_invest/screens/app/catalog.dart';
@@ -18,10 +11,12 @@ import 'package:mescla_invest/screens/app/user/wallet.dart';
 import 'package:mescla_invest/screens/public/auth/verify_email.dart';
 import 'package:mescla_invest/screens/public/welcome.dart';
 import 'package:mescla_invest/services/user_service.dart';
+import 'package:mescla_invest/utils/handle_exception.dart';
 import 'package:mescla_invest/widgets/layout/navbar.dart';
 
-// Provider global com os dados do usuário autenticado
 final authUserDataProvider = ValueNotifier<UserModel?>(null);
+
+enum _AuthState { loading, unauthenticated, unverified, authenticated }
 
 class AppRoot extends StatefulWidget {
   const AppRoot({super.key});
@@ -31,21 +26,14 @@ class AppRoot extends StatefulWidget {
 }
 
 class _AppRootState extends State<AppRoot> {
-  final Map<NavDestination, Widget> _loadedScreens = {};
-
   StreamSubscription<User?>? _authSubscription;
 
-  bool _loading = true;
-  User? _firebaseUser;
-
-  String? _pendingErrorMessage;
-
+  _AuthState _authState = _AuthState.loading;
   NavDestination _currentDestination = NavDestination.catalog;
 
   @override
   void initState() {
     super.initState();
-
     _authSubscription = FirebaseAuth.instance.userChanges().listen(
       _handleAuthChanged,
     );
@@ -60,183 +48,88 @@ class _AppRootState extends State<AppRoot> {
   Future<void> _handleAuthChanged(User? user) async {
     if (!mounted) return;
 
-    setState(() {
-      _loading = true;
-    });
+    setState(() => _authState = _AuthState.loading);
 
-    // Usuário deslogado
     if (user == null) {
       authUserDataProvider.value = null;
-
-      _loadedScreens.clear();
-
-      setState(() {
-        _firebaseUser = null;
-        _loading = false;
+      return setState(() {
+        _authState = _AuthState.unauthenticated;
       });
-
-      return;
     }
 
-    // E-mail não verificado
     if (!user.emailVerified) {
-      setState(() {
-        _firebaseUser = user;
-        _loading = false;
+      return setState(() {
+        _authState = _AuthState.unverified;
       });
-
-      return;
     }
 
-    // Carrega usuário do Firestore
     final loadedUser = await _loadUser();
 
     if (!mounted) return;
 
     if (loadedUser == null) {
-      setState(() {
-        _firebaseUser = null;
-        _loading = false;
+      return setState(() {
+        _authState = _AuthState.unauthenticated;
       });
-
-      return;
     }
 
     authUserDataProvider.value = loadedUser;
 
     setState(() {
-      _firebaseUser = user;
-      _loading = false;
+      _authState = _AuthState.authenticated;
     });
   }
 
   Future<UserModel?> _loadUser() async {
-    const maxRetries = 6;
-    const delays = [500, 1000, 2000, 4000, 6000, 8000];
-
-    for (int attempt = 0; attempt < maxRetries; attempt++) {
-      try {
-        final user = await UserService.getFullUserData();
-
-        return user;
-      } on FirebaseFunctionsException catch (err) {
-        if (err.code == 'not-found' && attempt < maxRetries - 1) {
-          await Future.delayed(Duration(milliseconds: delays[attempt]));
-
-          continue;
-        }
-
-        _pendingErrorMessage = 'Erro ao carregar dados da conta.';
-
-        break;
-      } catch (_) {
-        _pendingErrorMessage = 'Erro de conexão.';
-        break;
-      }
+    try {
+      return await UserService.getFullUserData();
+    } catch (err) {
+      if (mounted) handleException(err: err, context: context);
     }
 
     await UserService.signout();
-
     return null;
   }
 
-  void _flushPendingError() {
-    if (_pendingErrorMessage == null) return;
-
-    final message = _pendingErrorMessage!;
-
-    _pendingErrorMessage = null;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
-      );
-    });
-  }
-
-  Widget _getScreen(NavDestination destination) {
-    return _loadedScreens.putIfAbsent(destination, () {
-      switch (destination) {
-        case NavDestination.catalog:
-          return const CatalogScreen();
-
-        case NavDestination.market:
-          return const MarketScreen();
-
-        case NavDestination.wallet:
-          return const WalletScreen();
-
-        case NavDestination.account:
-          return const UserAccountScreen();
-      }
-    });
-  }
+  Widget _buildScreen(NavDestination destination) => switch (destination) {
+    NavDestination.catalog => const CatalogScreen(),
+    NavDestination.market => const MarketScreen(),
+    NavDestination.wallet => const WalletScreen(),
+    NavDestination.account => const UserAccountScreen(),
+  };
 
   @override
-  Widget build(BuildContext context) {
-    _flushPendingError();
-
-    if (_loading) {
-      return _buildLoading();
-    }
-
-    // Não autenticado
-    if (_firebaseUser == null) {
-      return const WelcomeScreen();
-    }
-
-    // Email não verificado
-    if (!_firebaseUser!.emailVerified) {
-      return const VerifyEmailScreen();
-    }
-
-    return _buildApp();
-  }
+  Widget build(BuildContext context) => switch (_authState) {
+    _AuthState.loading => _buildLoading(),
+    _AuthState.unauthenticated => const WelcomeScreen(),
+    _AuthState.unverified => const VerifyEmailScreen(),
+    _AuthState.authenticated => _buildApp(),
+  };
 
   Widget _buildApp() {
     final currentIndex = NavDestination.values.indexOf(_currentDestination);
 
     return Scaffold(
       backgroundColor: AppColors.fundoEscuro,
-
       body: IndexedStack(
         index: currentIndex,
-
-        children: NavDestination.values.map((destination) {
-          // Só cria a tela quando ela é aberta pela primeira vez
-          if (_loadedScreens.containsKey(destination) ||
-              destination == _currentDestination) {
-            return _getScreen(destination);
-          }
-
-          // Placeholder vazio até abrir a tela
-          return const SizedBox.shrink();
-        }).toList(),
+        children: NavDestination.values.map(_buildScreen).toList(),
       ),
-
       bottomNavigationBar: NavBar(
         current: _currentDestination,
-
         onChanged: (destination) {
-          if (_currentDestination == destination) return;
-
-          setState(() {
-            _currentDestination = destination;
-          });
+          if (_currentDestination != destination) {
+            setState(() => _currentDestination = destination);
+          }
         },
       ),
     );
   }
 
-  Widget _buildLoading() {
-    return const Scaffold(
-      backgroundColor: AppColors.fundoEscuro,
-
-      body: Center(
-        child: CircularProgressIndicator(color: AppColors.verdeMescla),
-      ),
-    );
-  }
+  Widget _buildLoading() => const Scaffold(
+    backgroundColor: AppColors.fundoEscuro,
+    body: Center(
+      child: CircularProgressIndicator(color: AppColors.verdeMescla),
+    ),
+  );
 }

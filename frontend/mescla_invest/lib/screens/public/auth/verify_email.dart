@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/services/user_service.dart';
+import 'package:mescla_invest/utils/handle_exception.dart';
+import 'package:mescla_invest/utils/show_snackbar.dart';
 import 'package:mescla_invest/widgets/ui/icon.dart';
 import 'package:mescla_invest/widgets/ui/primary_button.dart';
 
@@ -22,40 +24,29 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
   String get _email => FirebaseAuth.instance.currentUser?.email ?? 'seu e-mail';
 
-  /// Recarrega o usuário do Firebase e verifica se o e-mail foi confirmado.
   Future<void> _checkVerification() async {
     setState(() => _isCheckingVerification = true);
 
     try {
-      // Força atualização do token — sem isso emailVerified fica em cache
       await FirebaseAuth.instance.currentUser?.reload();
       final verified =
           FirebaseAuth.instance.currentUser?.emailVerified ?? false;
 
       if (!mounted) return;
 
-      if (verified) {
-        // AppRoot vai detectar a mudança via authStateChanges e redirecionar
-        // automaticamente. Não precisamos navegar manualmente.
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'E-mail ainda não verificado. Confira sua caixa de entrada.',
-            ),
-            backgroundColor: Colors.orangeAccent,
-          ),
+      if (!verified) {
+        showSnackbar(
+          msg: "Email ainda não verificado. Confirme sua caixa de entrada.",
+          context: context,
+          isError: true,
         );
       }
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Erro ao verificar. Tente novamente.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-    } finally {
+    } catch (err) {
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
+    }
+    {
       if (mounted) setState(() => _isCheckingVerification = false);
     }
   }
@@ -75,35 +66,28 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
         _resentRecently = true;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('E-mail reenviado com sucesso!'),
-          backgroundColor: AppColors.verdeMescla,
-        ),
-      );
+      showSnackbar(msg: "Email enviado com sucesso!", context: context);
 
       // Cooldown de 30s antes de permitir reenvio novamente
       await Future.delayed(const Duration(seconds: 30));
       if (mounted) setState(() => _resentRecently = false);
     } catch (err) {
-      debugPrint("Erro ao enviar email: $err");
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Erro ao reenviar o e-mail. Tente novamente.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) setState(() => _isResending = false);
     }
   }
 
   Future<void> _logout() async {
-    await UserService.signout();
-    // AppRoot retorna para WelcomeScreen automaticamente
+    try {
+      await UserService.signout();
+    } catch (err) {
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
+    }
   }
 
   @override

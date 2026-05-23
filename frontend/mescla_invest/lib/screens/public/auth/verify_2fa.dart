@@ -4,6 +4,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/services/user_service.dart';
+import 'package:mescla_invest/utils/handle_exception.dart';
+import 'package:mescla_invest/utils/show_snackbar.dart';
 import 'package:pinput/pinput.dart';
 
 import 'package:mescla_invest/constants/colors.dart';
@@ -33,7 +35,11 @@ class _Verify2FAScreenState extends State<Verify2FAScreen> {
   Future<void> _verificarCodigo() async {
     final token = _pinController.text.trim();
     if (token.length != 6) {
-      _showSnackBar('Digite o código completo de 6 dígitos.');
+      showSnackbar(
+        msg: 'Digite o código completo de 6 dígitos.',
+        context: context,
+        isError: true,
+      );
       return;
     }
 
@@ -45,25 +51,13 @@ class _Verify2FAScreenState extends State<Verify2FAScreen> {
       if (mounted) {
         Navigator.of(context).pop();
       }
-    } on FirebaseAuthException catch (e) {
-      final message = e.code == 'invalid-verification-code'
-          ? 'Código inválido. Verifique e tente novamente.'
-          : 'Erro ao validar código: ${e.message}';
-      _showSnackBar(message);
-    } catch (_) {
-      _showSnackBar('Ocorreu um erro inesperado.');
+    } catch (err) {
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  void _showSnackBar(String message, {bool isError = true}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.redAccent : Colors.green,
-      ),
-    );
   }
 
   @override

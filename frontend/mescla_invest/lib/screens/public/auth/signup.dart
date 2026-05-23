@@ -1,11 +1,11 @@
 // Autor: Vinicius Santuci Virgolino
 // RA: 25000294
 
-import 'package:cloud_functions/cloud_functions.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mescla_invest/services/user_service.dart';
+import 'package:mescla_invest/utils/handle_exception.dart';
+import 'package:mescla_invest/utils/show_snackbar.dart';
 import 'package:mescla_invest/widgets/ui/back_button.dart';
 import 'package:mescla_invest/widgets/ui/icon.dart';
 import 'package:mescla_invest/constants/colors.dart';
@@ -44,7 +44,6 @@ class _SignupScreenState extends State<SignupScreen> {
       _passwordController.text.length >= 8 &&
       _passwordController.text.length <= 16;
 
-  String? _errorMessage;
   Map<String, String> _fieldErrors = {};
 
   @override
@@ -74,18 +73,12 @@ class _SignupScreenState extends State<SignupScreen> {
       _phoneController,
       _passwordController,
     ].any((c) => c.text.isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Preencha todos os campos!"),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      showSnackbar(msg: "Preencha todos os campos!", context: context);
       return;
     }
 
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
       _fieldErrors = {};
     });
 
@@ -101,52 +94,13 @@ class _SignupScreenState extends State<SignupScreen> {
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
-    } on FirebaseFunctionsException catch (e) {
-      debugPrint("Esse erro de merda: $e");
-
-      setState(() {
-        if (e.code == "invalid-argument" || e.code == "already-exists") {
-          _errorMessage = "Um ou mais campos inválidos!";
-
-          if (e.details is Map) {
-            _fieldErrors = Map<String, String>.from(e.details);
-          }
-        } else {
-          _errorMessage =
-              "Erro desconhecido no servidor! Tente novamente mais tarde!";
-        }
-      });
-    } on FirebaseAuthException catch (e) {
-      setState(() {
-        if (e.code == "email-already-in-use") {
-          _errorMessage =
-              "Este email já está sendo utilizado por outro usuário!";
-        } else if (e.code == "weak-password") {
-          _errorMessage =
-              "A senha precisa ter entre 8 a 16 dígitos, incluindo uma letra maiúscula, uma letra minúscula e um número!";
-        } else {
-          _errorMessage = "Erro de autenticação. Tente novamente.";
-        }
-      });
     } catch (err) {
-      debugPrint(err.toString());
-      if (!mounted) return;
-
-      setState(() {
-        _errorMessage = "Erro desconhecido. Tente novamente mais tarde!";
-      });
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
-
-        if (_errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(_errorMessage!),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
-        }
       }
     }
   }

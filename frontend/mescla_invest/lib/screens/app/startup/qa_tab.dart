@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/startup/question_model.dart';
 import 'package:mescla_invest/services/startup_service.dart';
+import 'package:mescla_invest/utils/handle_exception.dart';
 
 class TabQA extends StatefulWidget {
   final String startupId;
@@ -45,23 +46,6 @@ class _TabQAState extends State<TabQA> {
     super.dispose();
   }
 
-  void _showFeedback(String message, {bool isError = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: isError ? Colors.redAccent : AppColors.verdeMescla,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.all(20),
-      ),
-    );
-  }
-
   Future<void> _refreshQuestions() async {
     if (!mounted) return;
     setState(() => _isLoading = true);
@@ -71,8 +55,10 @@ class _TabQAState extends State<TabQA> {
         visibility: _visibility,
       );
       if (mounted) setState(() => _questions = data);
-    } catch (e) {
-      _showFeedback("Erro ao carregar perguntas.", isError: true);
+    } catch (err) {
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -91,8 +77,10 @@ class _TabQAState extends State<TabQA> {
       );
       _perguntaController.clear();
       await _refreshQuestions();
-    } catch (e) {
-      _showFeedback("Erro ao enviar. Tente novamente.", isError: true);
+    } catch (err) {
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) setState(() => _isEnviando = false);
     }
@@ -105,8 +93,10 @@ class _TabQAState extends State<TabQA> {
         questionId: questionId,
       );
       _refreshQuestions();
-    } catch (e) {
-      _showFeedback("Não foi possível excluir a pergunta.", isError: true);
+    } catch (err) {
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     }
   }
 
@@ -116,7 +106,6 @@ class _TabQAState extends State<TabQA> {
         ? AppColors.verdeMescla
         : const Color(0xFFFFB300);
 
-    // Aba privada selecionada mas usuário não é investidor: exibe gate
     final bool showInvestorGate =
         _visibility == QuestionVisibility.privada && !widget.isInvestor;
 

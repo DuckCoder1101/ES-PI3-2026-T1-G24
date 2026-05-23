@@ -4,12 +4,13 @@
  */
 
 import 'package:file_picker/file_picker.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/startup/startup_model.dart';
 import 'package:mescla_invest/screens/app/startup/video_player.dart';
 import 'package:mescla_invest/services/startup_service.dart';
+import 'package:mescla_invest/utils/handle_exception.dart';
+import 'package:mescla_invest/utils/show_snackbar.dart';
 import 'package:mescla_invest/widgets/ui/primary_button.dart';
 
 class TabAbout extends StatefulWidget {
@@ -27,19 +28,7 @@ class _TabAboutState extends State<TabAbout> {
   Future<void> downloadExecutiveSummary() async {
     try {
       String? selectedDirectory = await FilePicker.getDirectoryPath();
-
-      // Se o usuário fechar o seletor sem escolher nada, interrompe a função
-      if (selectedDirectory == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Download cancelado: nenhuma pasta selecionada.'),
-            ),
-          );
-        }
-
-        return;
-      }
+      if (selectedDirectory == null) return;
 
       setState(() => _isDownloading = true);
 
@@ -52,25 +41,11 @@ class _TabAboutState extends State<TabAbout> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Download concluído com sucesso em: $localPath'),
-          ),
-        );
+        showSnackbar(msg: "Download concluído com sucesso!", context: context);
       }
-    } on FirebaseException catch (e) {
+    } catch (err) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao baixar sumário executivo: ${e.message}'),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erro inesperado: $e')));
+        handleException(err: err, context: context);
       }
     } finally {
       if (mounted) {

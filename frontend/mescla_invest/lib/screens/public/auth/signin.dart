@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/screens/public/auth/verify_2fa.dart';
 import 'package:mescla_invest/services/user_service.dart';
+import 'package:mescla_invest/utils/handle_exception.dart';
+import 'package:mescla_invest/utils/show_snackbar.dart';
 import 'package:mescla_invest/widgets/ui/back_button.dart';
 import 'package:mescla_invest/widgets/ui/icon.dart';
 import 'package:mescla_invest/constants/colors.dart';
@@ -24,8 +26,6 @@ class _SigninScreenState extends State<SigninScreen> {
 
   bool _senhaVisivel = false;
   bool _isLoading = false;
-
-  String? _errorMessage;
   bool _invalidCredentials = false;
 
   @override
@@ -41,25 +41,18 @@ class _SigninScreenState extends State<SigninScreen> {
 
   Future<void> _loginUsuario() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Preencha todos os campos!"),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      showSnackbar(msg: "Preencha todos os campos!", context: context);
       return;
     }
 
     setState(() {
       _isLoading = true;
       _invalidCredentials = false;
-      _errorMessage = null;
     });
 
     try {
       await UserService.signin(_emailController.text, _passwordController.text);
 
-      // Login simples (sem MFA): AppRoot detecta via authStateChanges
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
@@ -74,44 +67,13 @@ class _SigninScreenState extends State<SigninScreen> {
         ),
       );
 
-      // Após resolver o MFA, volta à raiz (AppRoot assumirá o controle)
       if (mounted) {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
-    } on FirebaseAuthException catch (e) {
-      setState(() {
-        if (e.code == "user-not-found" ||
-            e.code == "invalid-credential" ||
-            e.code == "wrong-password") {
-          _invalidCredentials = true;
-          _errorMessage = "E-Mail ou senha inválidos!";
-        } else if (e.code == "network-request-failed") {
-          _errorMessage = "Falha ao conectar com a internet!";
-        } else {
-          _errorMessage = "Erro de autenticação. Tente novamente.";
-        }
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_errorMessage!),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
     } catch (err) {
-      debugPrint(err.toString());
-      if (!mounted) return;
-      setState(
-        () => _errorMessage = "Erro desconhecido. Tente novamente mais tarde!",
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_errorMessage!),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
