@@ -4,10 +4,10 @@
  */
 
 import 'package:flutter/material.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:mescla_invest/formatters/str_formaters.dart';
 import 'package:mescla_invest/models/startup/startup_model.dart';
 import 'package:mescla_invest/services/startup_service.dart';
+import 'package:mescla_invest/utils/handle_exception.dart';
 import 'package:mescla_invest/widgets/layout/header.dart';
 import 'package:mescla_invest/constants/colors.dart';
 
@@ -70,7 +70,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
       setState(() => _isMoreLoading = true);
     }
 
-    String? errorMsg;
     try {
       final newStartups = await StartupService.getStartupsList(
         offset: _offset,
@@ -89,25 +88,16 @@ class _CatalogScreenState extends State<CatalogScreen> {
           }
         });
       }
-    } on FirebaseFunctionsException catch (e) {
-      errorMsg = e.message ?? "Erro ao processar requisição.";
-    } catch (e) {
-      errorMsg = "Erro ao carregar startups. Verifique sua conexão.";
+    } catch (err) {
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
           _isMoreLoading = false;
         });
-
-        if (errorMsg != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMsg),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
-        }
       }
     }
   }

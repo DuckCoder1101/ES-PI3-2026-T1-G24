@@ -4,13 +4,14 @@
  */
 
 import 'dart:io';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/user/user_model.dart';
 import 'package:mescla_invest/screens/app_root.dart';
 import 'package:mescla_invest/services/user_service.dart';
+import 'package:mescla_invest/utils/handle_exception.dart';
+import 'package:mescla_invest/utils/show_snackbar.dart';
 
 class UserAccountScreen extends StatefulWidget {
   const UserAccountScreen({super.key});
@@ -81,9 +82,10 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
       if (mounted) {
         setState(() => _resolvedAvatarUrl = url);
       }
-    } catch (_) {
-      if (!mounted) return;
-      _showSnack("Erro ao baixar foto de perfil!");
+    } catch (err) {
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     }
   }
 
@@ -103,12 +105,13 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
       await UserService.uploadAvatarPicture(File(picked.path));
       await _loadProfilePicture(user);
 
-      _showSnack('Foto atualizada com sucesso!', isError: false);
+      if (mounted) {
+        showSnackbar(msg: 'Foto atualizada com sucesso!', context: context);
+      }
     } catch (err) {
-      debugPrint("Erro desconhecido interno ao enviar foto: $err");
-      _showSnack(
-        'Erro desconhecido interno ao enviar foto. Tente novamente mais tarde.',
-      );
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) setState(() => _isUploadingPhoto = false);
     }
@@ -120,7 +123,11 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
     final phone = _phoneController.text.trim();
 
     if (name.isEmpty || phone.isEmpty) {
-      _showSnack('Preencha todos os campos!');
+      showSnackbar(
+        msg: 'Preencha todos os campos!',
+        context: context,
+        isError: true,
+      );
       return;
     }
 
@@ -132,21 +139,14 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
       final updated = await UserService.getFullUserData();
       authUserDataProvider.value = updated;
 
-      if (mounted) setState(() => _dataChanged = false);
-      _showSnack('Dados salvos com sucesso!', isError: false);
-    } on FirebaseFunctionsException catch (err) {
       if (mounted) {
-        if (err.code == "invalid-argument") {
-          _showSnack("Número de telefone inválido!");
-        } else {
-          _showSnack(
-            "Erro desconhecido interno ao salvar dados! Tente novamente mais tarde!",
-          );
-        }
+        setState(() => _dataChanged = false);
+        showSnackbar(msg: 'Dados salvos com sucesso!', context: context);
       }
     } catch (err) {
-      debugPrint("Erro desconhecido ao salvar dados de usuário: $err");
-      _showSnack('Erro desconhecido ao salvar dados.');
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) setState(() => _isSavingData = false);
     }
@@ -207,11 +207,11 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
 
         if (mounted) {
           setState(() => _has2Fa = false);
-          _showSnack('2FA desabilitado.', isError: false);
+          showSnackbar(msg: '2FA desabilitado.', context: context);
         }
-      } catch (_) {
+      } catch (err) {
         if (mounted) {
-          _showSnack('Erro ao desabilitar 2FA.');
+          handleException(err: err, context: context);
         }
       } finally {
         if (mounted) {
@@ -264,10 +264,8 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
     try {
       await UserService.signout();
     } catch (err) {
-      debugPrint("Erro no logout: $err");
-
       if (mounted) {
-        _showSnack("Não foi possível fazer logout!");
+        handleException(err: err, context: context);
       }
     } finally {
       if (mounted) {
@@ -276,19 +274,6 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
         });
       }
     }
-  }
-
-  void _showSnack(String msg, {bool isError = true}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg, style: const TextStyle(fontWeight: FontWeight.w600)),
-        backgroundColor: isError ? Colors.redAccent : AppColors.verdeMescla,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
   }
 
   InputDecoration _inputDecoration(String label) => InputDecoration(

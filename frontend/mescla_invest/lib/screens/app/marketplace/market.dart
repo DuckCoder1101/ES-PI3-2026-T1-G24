@@ -1,12 +1,13 @@
 // Autor: Vinicius Santuci Virgolino
 // RA: 25000294
 
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/order.dart';
 import 'package:mescla_invest/screens/app/marketplace/create_order_screen.dart';
 import 'package:mescla_invest/services/order_service.dart';
+import 'package:mescla_invest/utils/handle_exception.dart';
+import 'package:mescla_invest/utils/show_snackbar.dart';
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
@@ -50,14 +51,10 @@ class _MarketScreenState extends State<MarketScreen> {
           _myOrders = results[2];
         });
       }
-    } on FirebaseFunctionsException catch (err) {
-      _showSnack('Erro ao carregar ordens: ${err.message}', isError: true);
     } catch (err) {
-      debugPrint("Erro: $err");
-      _showSnack(
-        'Erro ao carregar ordens. Verifique sua conexão.',
-        isError: true,
-      );
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -70,17 +67,22 @@ class _MarketScreenState extends State<MarketScreen> {
       message:
           'Comprar ${order.tokenAmount} tokens de ${order.startup.name} por R\$ ${order.totalValue.toStringAsFixed(2).replaceAll('.', ',')}?',
     );
-    if (!confirm || !mounted) return;
 
+    if (!confirm || !mounted) return;
     setState(() => _isExecuting = true);
+
     try {
       await OrderService.buyOrder(order.id);
-      _showSnack('Compra realizada com sucesso!', isError: false);
+
+      if (mounted) {
+        showSnackbar(msg: 'Compra realizada com sucesso!', context: context);
+      }
+
       await _fetchOrders();
-    } on FirebaseFunctionsException catch (e) {
-      _showSnack(e.message ?? 'Erro ao comprar tokens.', isError: true);
-    } catch (_) {
-      _showSnack('Erro ao realizar compra.', isError: true);
+    } catch (err) {
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) setState(() => _isExecuting = false);
     }
@@ -98,12 +100,16 @@ class _MarketScreenState extends State<MarketScreen> {
     setState(() => _isExecuting = true);
     try {
       await OrderService.sellOrder(order.id);
-      _showSnack('Venda realizada com sucesso!', isError: false);
+
+      if (mounted) {
+        showSnackbar(msg: 'Venda efetuada com sucesso!', context: context);
+      }
+
       await _fetchOrders();
-    } on FirebaseFunctionsException catch (e) {
-      _showSnack(e.message ?? 'Erro ao vender tokens.', isError: true);
-    } catch (_) {
-      _showSnack('Erro ao realizar venda.', isError: true);
+    } catch (err) {
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) setState(() => _isExecuting = false);
     }
@@ -121,12 +127,16 @@ class _MarketScreenState extends State<MarketScreen> {
     setState(() => _isExecuting = true);
     try {
       await OrderService.deleteOrder(order.id);
-      _showSnack('Ordem cancelada.', isError: false);
+
+      if (mounted) {
+        showSnackbar(msg: 'Ordem cancelada.', context: context);
+      }
+
       await _fetchOrders();
-    } on FirebaseFunctionsException catch (e) {
-      _showSnack(e.message ?? 'Erro ao cancelar ordem.', isError: true);
-    } catch (_) {
-      _showSnack('Erro ao cancelar ordem.', isError: true);
+    } catch (err) {
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) setState(() => _isExecuting = false);
     }
@@ -165,19 +175,6 @@ class _MarketScreenState extends State<MarketScreen> {
       ),
     );
     return result ?? false;
-  }
-
-  void _showSnack(String msg, {bool isError = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: isError ? Colors.redAccent : AppColors.verdeMescla,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
   }
 
   void _goToNewOffer(OrderType orderType) async {

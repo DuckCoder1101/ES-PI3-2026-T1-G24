@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mescla_invest/services/user_service.dart';
+import 'package:mescla_invest/utils/handle_exception.dart';
+import 'package:mescla_invest/utils/show_snackbar.dart';
 import 'package:pinput/pinput.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -188,12 +190,11 @@ class _Activate2FAScreenState extends State<Activate2FAScreen> {
     final code = _pinController.text.trim();
 
     if (code.length != 6) {
-      _showSnackBar('Digite o código completo de 6 dígitos.');
-      return;
-    }
-
-    if (_secret == null) {
-      _showSnackBar('QR code não gerado.');
+      showSnackbar(
+        msg: 'Digite o código completo de 6 dígitos.',
+        context: context,
+        isError: true,
+      );
       return;
     }
 
@@ -203,32 +204,18 @@ class _Activate2FAScreenState extends State<Activate2FAScreen> {
       await UserService.finalizeTotpActivation(_secret!, code);
 
       if (mounted) {
-        _showSnackBar('2FA ativado com sucesso!', isError: false);
-
+        showSnackbar(msg: '2FA ativado com sucesso!', context: context);
         Navigator.of(context).pop(true);
       }
-    } on FirebaseAuthException catch (e) {
-      final message = e.code == 'invalid-verification-code'
-          ? 'Código inválido. Verifique no autenticador.'
-          : 'Erro ao ativar 2FA: ${e.message}';
-
-      _showSnackBar(message);
-    } catch (_) {
-      _showSnackBar('Ocorreu um erro inesperado.');
+    } catch (err) {
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) {
         setState(() => _isActivating = false);
       }
     }
-  }
-
-  void _showSnackBar(String message, {bool isError = true}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? Colors.redAccent : Colors.green,
-      ),
-    );
   }
 
   @override
@@ -413,10 +400,9 @@ class _Activate2FAScreenState extends State<Activate2FAScreen> {
 
             if (await canLaunchUrl(uri)) {
               await launchUrl(uri);
-            } else {
+            } else if (mounted) {
               Clipboard.setData(ClipboardData(text: _otpauthUrl!));
-
-              _showSnackBar('URL copiada!', isError: false);
+              showSnackbar(msg: 'URL copiada!', context: context);
             }
           },
           child: const Text(

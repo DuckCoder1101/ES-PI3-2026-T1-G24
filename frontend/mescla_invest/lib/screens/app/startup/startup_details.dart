@@ -3,7 +3,6 @@
  * RA: 25000636
  */
 
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/formatters/str_formaters.dart';
 import 'package:mescla_invest/screens/app/startup/about_tab.dart';
@@ -12,6 +11,8 @@ import 'package:mescla_invest/screens/app/startup/partners_tab.dart';
 import 'package:mescla_invest/screens/app/startup/price_history_tab.dart';
 import 'package:mescla_invest/screens/app/startup/qa_tab.dart';
 import 'package:mescla_invest/services/startup_service.dart';
+import 'package:mescla_invest/utils/handle_exception.dart';
+import 'package:mescla_invest/utils/show_snackbar.dart';
 import 'package:mescla_invest/widgets/layout/model_header.dart';
 import 'package:mescla_invest/widgets/ui/primary_button.dart';
 import 'package:mescla_invest/constants/colors.dart';
@@ -66,32 +67,12 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
       return;
     }
 
-    String? errorMsg;
     try {
       _startupFuture = StartupService.getFullStartup(widget.startupId!);
-    } on FirebaseFunctionsException catch (err) {
-      if (err.code == "not-found") {
-        errorMsg = "Startup não encontrada!";
-      } else {
-        errorMsg =
-            "Erro inesperado interno ao buscar dados de startup! Tente novamente mais tarde!";
-      }
     } catch (err) {
-      debugPrint("Erro ao buscar dados de startup: $err");
-      errorMsg = "Erro inesperado ao buscar dados de startup!";
-    } finally {
-      if (errorMsg != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(errorMsg!),
-                backgroundColor: Colors.redAccent,
-              ),
-            );
-            Navigator.pop(context);
-          }
-        });
+      if (mounted) {
+        handleException(err: err, context: context);
+        Navigator.pop(context);
       }
     }
   }
@@ -110,12 +91,8 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
           setState(() {
             _startupFuture = StartupService.getFullStartup(widget.startupId!);
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Tokens comprados com sucesso!'),
-              backgroundColor: AppColors.verdeMescla,
-            ),
-          );
+
+          showSnackbar(msg: "Tokens comprados com sucesso!", context: context);
         },
       ),
     );

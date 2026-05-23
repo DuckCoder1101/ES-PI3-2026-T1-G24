@@ -8,6 +8,8 @@ import 'package:mescla_invest/models/user/transaction_model.dart';
 import 'package:mescla_invest/models/user/wallet_model.dart';
 import 'package:mescla_invest/screens/app_root.dart';
 import 'package:mescla_invest/services/user_service.dart';
+import 'package:mescla_invest/utils/handle_exception.dart';
+import 'package:mescla_invest/utils/show_snackbar.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -53,10 +55,10 @@ class _WalletScreenState extends State<WalletScreen>
     try {
       final wallet = await UserService.getWallet();
       if (mounted) setState(() => _wallet = wallet);
-    } on FirebaseFunctionsException catch (e) {
-      _showSnack(e.message ?? 'Erro ao carregar carteira.', isError: true);
-    } catch (_) {
-      _showSnack('Erro ao carregar carteira.', isError: true);
+    } catch (err) {
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) setState(() => _isLoadingWallet = false);
     }
@@ -67,11 +69,10 @@ class _WalletScreenState extends State<WalletScreen>
     try {
       final investments = await UserService.getUserInvestments();
       if (mounted) setState(() => _investments = investments);
-    } on FirebaseFunctionsException catch (e) {
-      _showSnack('Erro ao carregar investimentos ${e.message}.', isError: true);
     } catch (err) {
-      debugPrint("Erro ao carregar investimentos: $err");
-      _showSnack('Erro ao carregar investimentos.', isError: true);
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) setState(() => _isLoadingInvestments = false);
     }
@@ -82,11 +83,10 @@ class _WalletScreenState extends State<WalletScreen>
     try {
       final txs = await UserService.getUserTransactions();
       if (mounted) setState(() => _transactions = txs);
-    } on FirebaseFunctionsException catch (e) {
-      _showSnack('Erro ao carregar transações: ${e.message}.', isError: true);
     } catch (err) {
-      debugPrint("Erro ao carregar transações: $err");
-      _showSnack('Erro ao carregar transações.', isError: true);
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) setState(() => _isLoadingTransactions = false);
     }
@@ -105,21 +105,14 @@ class _WalletScreenState extends State<WalletScreen>
         onSuccess: () async {
           await _loadWallet();
           await _loadTransactions();
-          _showSnack('Saldo adicionado com sucesso!');
-        },
-      ),
-    );
-  }
 
-  void _showSnack(String msg, {bool isError = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg, style: const TextStyle(fontWeight: FontWeight.w600)),
-        backgroundColor: isError ? Colors.redAccent : AppColors.verdeMescla,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.all(16),
+          if (mounted) {
+            showSnackbar(
+              msg: 'Saldo adicionado com sucesso!',
+              context: context,
+            );
+          }
+        },
       ),
     );
   }

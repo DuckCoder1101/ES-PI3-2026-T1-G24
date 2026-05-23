@@ -1,7 +1,6 @@
 // Autor: Vinicius Santuci Virgolino
 // RA: 25000294
 
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mescla_invest/constants/colors.dart';
@@ -9,6 +8,8 @@ import 'package:mescla_invest/models/order.dart';
 import 'package:mescla_invest/models/startup/startup_model.dart';
 import 'package:mescla_invest/services/order_service.dart';
 import 'package:mescla_invest/services/startup_service.dart';
+import 'package:mescla_invest/utils/handle_exception.dart';
+import 'package:mescla_invest/utils/show_snackbar.dart';
 import 'package:mescla_invest/widgets/layout/model_header.dart';
 
 class CreateOrderScreen extends StatefulWidget {
@@ -79,10 +80,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           );
         }
       });
-    } on FirebaseFunctionsException catch (err) {
-      _showSnack("Erro ao carregar startups: ${err.message}", isError: true);
-    } catch (_) {
-      _showSnack('Erro desconhecido ao carregar startups.', isError: true);
+    } catch (err) {
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) setState(() => _isLoadingStartups = false);
     }
@@ -90,22 +91,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   // Registra a ordem no balcão
   Future<void> _submitOrder() async {
-    if (_selectedStartup == null) {
-      _showSnack('Selecione uma startup.', isError: true);
-      return;
-    }
-
-    if (_tokenAmount <= 0) {
-      _showSnack('A quantidade deve ser maior que zero.', isError: true);
-      return;
-    }
-
-    if (_pricePerTokenCents <= 0) {
-      _showSnack('Informe um preço válido por token.', isError: true);
-      return;
-    }
-
     setState(() => _isSubmitting = true);
+
     try {
       await OrderService.registerOrder(
         startupId: _selectedStartup!.id,
@@ -114,30 +101,17 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         tokenAmount: _tokenAmount,
       );
 
-      _showSnack('Ordem publicada com sucesso!', isError: false);
-
-      // Retorna true para o MarketScreen recarregar a lista
-      if (mounted) Navigator.pop(context, true);
-    } on FirebaseFunctionsException catch (e) {
-      _showSnack(e.message ?? 'Erro ao publicar ordem.', isError: true);
-    } catch (_) {
-      _showSnack('Erro inesperado. Tente novamente.', isError: true);
+      if (mounted) {
+        Navigator.pop(context, true);
+        showSnackbar(msg: 'Ordem publicada com sucesso!', context: context);
+      }
+    } catch (err) {
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
-  }
-
-  void _showSnack(String msg, {bool isError = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: isError ? Colors.redAccent : AppColors.verdeMescla,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
   }
 
   @override
