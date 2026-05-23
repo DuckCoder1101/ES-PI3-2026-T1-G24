@@ -3,9 +3,35 @@
  * RA: 25000636
  */
 
+import 'package:flutter/material.dart';
+import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/startup/awnser_model.dart';
 
-enum QuestionVisibility { publica, privada }
+enum QuestionVisibility {
+  publica,
+  privada;
+
+  String get label {
+    return switch (this) {
+      publica => "Públicas",
+      privada => "Privadas",
+    };
+  }
+
+  Color get color {
+    return switch (this) {
+      publica => AppColors.verdeMescla,
+      privada => const Color(0xFFFFB300),
+    };
+  }
+
+  IconData get icon {
+    return switch (this) {
+      publica => Icons.public,
+      privada => Icons.lock,
+    };
+  }
+}
 
 class QuestionModel {
   final String id;
@@ -44,8 +70,10 @@ class QuestionModel {
                   )
                 : null)
           : null,
-      answers: (map['answers'] ?? [])
-          .map((a) => AnswerModel.fromMap(Map<String, dynamic>.from(a)))
+      answers: (map['answers'] as List? ?? [])
+          .map<AnswerModel>(
+            (a) => AnswerModel.fromMap(Map<String, dynamic>.from(a)),
+          )
           .toList(),
     );
   }

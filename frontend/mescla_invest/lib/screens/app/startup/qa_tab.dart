@@ -6,22 +6,15 @@
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/startup/question_model.dart';
+import 'package:mescla_invest/models/startup/startup_model.dart';
 import 'package:mescla_invest/services/startup_service.dart';
+import 'package:mescla_invest/services/user_service.dart';
 import 'package:mescla_invest/utils/handle_exception.dart';
 
 class TabQA extends StatefulWidget {
-  final String startupId;
-  final String startupName;
+  final StartupModel startup;
 
-  // Controla se o usuário pode acessar a aba privada do Q&A
-  final bool isInvestor;
-
-  const TabQA({
-    super.key,
-    required this.startupId,
-    required this.startupName,
-    this.isInvestor = false,
-  });
+  const TabQA({super.key, required this.startup});
 
   @override
   State<TabQA> createState() => _TabQAState();
@@ -30,7 +23,10 @@ class TabQA extends StatefulWidget {
 class _TabQAState extends State<TabQA> {
   bool _isLoading = false;
   bool _isEnviando = false;
+
+  String? _avatarUrl;
   QuestionVisibility _visibility = QuestionVisibility.publica;
+
   List<QuestionModel> _questions = [];
   final _perguntaController = TextEditingController();
 
@@ -38,6 +34,7 @@ class _TabQAState extends State<TabQA> {
   void initState() {
     super.initState();
     _refreshQuestions();
+    _loadAvatar();
   }
 
   @override
@@ -46,12 +43,19 @@ class _TabQAState extends State<TabQA> {
     super.dispose();
   }
 
+  Future<void> _loadAvatar() async {
+    try {
+      final url = await UserService.getAvatarUrl();
+      if (mounted) setState(() => _avatarUrl = url);
+    } catch (_) {}
+  }
+
   Future<void> _refreshQuestions() async {
     if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final data = await StartupService.getQuestions(
-        startupId: widget.startupId,
+        startupId: widget.startup.id,
         visibility: _visibility,
       );
       if (mounted) setState(() => _questions = data);
@@ -71,7 +75,7 @@ class _TabQAState extends State<TabQA> {
     setState(() => _isEnviando = true);
     try {
       await StartupService.registerQuestion(
-        startupId: widget.startupId,
+        startupId: widget.startup.id,
         content: texto,
         visibility: _visibility,
       );
@@ -89,7 +93,7 @@ class _TabQAState extends State<TabQA> {
   Future<void> _handleDelete(String questionId) async {
     try {
       await StartupService.deleteQuestion(
-        startupId: widget.startupId,
+        startupId: widget.startup.id,
         questionId: questionId,
       );
       _refreshQuestions();
@@ -102,23 +106,17 @@ class _TabQAState extends State<TabQA> {
 
   @override
   Widget build(BuildContext context) {
-    final Color corDestaque = _visibility == QuestionVisibility.publica
-        ? AppColors.verdeMescla
-        : const Color(0xFFFFB300);
-
     final bool showInvestorGate =
-        _visibility == QuestionVisibility.privada && !widget.isInvestor;
+        _visibility == QuestionVisibility.privada && !widget.startup.isInvestor;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildToggle(corDestaque),
+        _buildToggle(),
         const SizedBox(height: 24),
         if (showInvestorGate)
           _buildInvestorGate()
         else ...[
-          if (_visibility == QuestionVisibility.privada)
-            _buildAvisoPrivado(corDestaque),
           if (_isLoading)
             const Center(
               child: Padding(
@@ -131,15 +129,16 @@ class _TabQAState extends State<TabQA> {
               child: Padding(
                 padding: EdgeInsets.all(32.0),
                 child: Text(
-                  "Nenhuma pergunta por aqui.",
+                  "Nenhuma pergunta enviada.",
                   style: TextStyle(color: Colors.white38),
                 ),
               ),
             )
           else
-            ..._questions.map((q) => _buildDismissibleCard(q, corDestaque)),
+            ..._questions.map((q) => _buildDismissibleCard(q)),
+
           const SizedBox(height: 24),
-          _buildInput(corDestaque),
+          _buildInput(),
         ],
       ],
     );
@@ -205,8 +204,8 @@ class _TabQAState extends State<TabQA> {
     );
   }
 
-  Widget _buildDismissibleCard(QuestionModel q, Color accentColor) {
-    if (!q.isAuthor) return _buildQuestionCard(q, accentColor);
+  Widget _buildDismissibleCard(QuestionModel q) {
+    if (!q.isAuthor) return _buildQuestionCard(q);
 
     return Dismissible(
       key: Key(q.id),
@@ -254,11 +253,13 @@ class _TabQAState extends State<TabQA> {
         ),
         child: const Icon(Icons.delete_sweep, color: Colors.white, size: 28),
       ),
-      child: _buildQuestionCard(q, accentColor),
+      child: _buildQuestionCard(q),
     );
   }
 
-  Widget _buildQuestionCard(QuestionModel q, Color accentColor) {
+  Widget _buildQuestionCard(QuestionModel q) {
+    final accentColor = _visibility.color;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -277,11 +278,21 @@ class _TabQAState extends State<TabQA> {
               CircleAvatar(
                 backgroundColor: q.isAuthor ? accentColor : Colors.white12,
                 radius: 16,
-                child: Icon(
-                  q.isAuthor ? Icons.person : Icons.alternate_email,
-                  size: 14,
-                  color: Colors.black,
-                ),
+                child: q.isAuthor && _avatarUrl != null
+                    ? ClipOval(
+                        child: Image.network(
+                          _avatarUrl!,
+                          width: 32,
+                          height: 32,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => const Icon(
+                            Icons.person,
+                            size: 14,
+                            color: Colors.black,
+                          ),
+                        ),
+                      )
+                    : Icon(Icons.person, size: 14, color: Colors.black),
               ),
               const SizedBox(width: 12),
               Text(
@@ -321,7 +332,7 @@ class _TabQAState extends State<TabQA> {
     );
   }
 
-  Widget _buildToggle(Color activeColor) {
+  Widget _buildToggle() {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -330,31 +341,19 @@ class _TabQAState extends State<TabQA> {
       ),
       child: Row(
         children: [
-          _buildToggleOption(
-            "Público",
-            QuestionVisibility.publica,
-            activeColor,
-          ),
-          _buildToggleOption(
-            "Privado",
-            QuestionVisibility.privada,
-            activeColor,
-          ),
+          _buildToggleOption(QuestionVisibility.publica),
+          _buildToggleOption(QuestionVisibility.privada),
         ],
       ),
     );
   }
 
-  Widget _buildToggleOption(
-    String label,
-    QuestionVisibility val,
-    Color activeColor,
-  ) {
-    final isSelected = _visibility == val;
+  Widget _buildToggleOption(QuestionVisibility visibility) {
+    final isSelected = _visibility == visibility;
     return Expanded(
       child: GestureDetector(
         onTap: () {
-          setState(() => _visibility = val);
+          setState(() => _visibility = visibility);
           _refreshQuestions();
         },
         child: Container(
@@ -363,36 +362,30 @@ class _TabQAState extends State<TabQA> {
             color: isSelected ? const Color(0xFF2A2A2A) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isSelected ? activeColor : Colors.white38,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(visibility.icon, color: visibility.color, size: 14),
+
+              const SizedBox(width: 8),
+
+              Text(
+                visibility.label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isSelected ? visibility.color : Colors.white38,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildAvisoPrivado(Color color) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 24),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        "Área exclusiva para investidores. Suas perguntas são enviadas diretamente aos fundadores.",
-        style: TextStyle(color: color, fontSize: 13),
-      ),
-    );
-  }
-
-  Widget _buildInput(Color accentColor) {
+  Widget _buildInput() {
     return Row(
       children: [
         Expanded(
@@ -417,7 +410,7 @@ class _TabQAState extends State<TabQA> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: accentColor,
+              color: _visibility.color,
               borderRadius: BorderRadius.circular(12),
             ),
             child: _isEnviando
