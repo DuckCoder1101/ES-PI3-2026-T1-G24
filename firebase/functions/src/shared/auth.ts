@@ -6,7 +6,7 @@
 import { CallableRequest, HttpsError } from "firebase-functions/https";
 import { UserProfile } from "../user/types/dtos";
 
-export const getUserProfile = (req: CallableRequest): UserProfile => {
+export const getAuthenticatedUser = (req: CallableRequest): UserProfile => {
   if (!req.auth) {
     throw new HttpsError(
       "unauthenticated",

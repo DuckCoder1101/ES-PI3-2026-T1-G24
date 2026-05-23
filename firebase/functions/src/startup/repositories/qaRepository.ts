@@ -5,7 +5,7 @@
 
 import { FieldValue } from "firebase-admin/firestore";
 import { database } from "../../shared/firebase";
-import { QuestionDocument } from "../types/documents";
+import { QuestionDocument, QuestionVisibility } from "../types/documents";
 import { QuestionListDTO, QuestionRegisterDTO } from "../types/dtos";
 import { HttpsError } from "firebase-functions/https";
 
@@ -29,23 +29,29 @@ export const saveQuestion = async (
  */
 export const getStartupQuestions = async (
   startupId: string,
-  visibility: string,
-  currentUserId: string,
+  visibility: QuestionVisibility,
+  uid: string,
 ): Promise<QuestionListDTO[]> => {
-  const snapshot = await getQuestionsCollection(startupId)
-    .where("visibility", "==", visibility)
-    .get();
+  let query = getQuestionsCollection(startupId).where(
+    "visibility",
+    "==",
+    visibility,
+  );
 
-  const questions = snapshot.docs.map((doc) => {
+  if (visibility == "privada") {
+    query = query.where("authorUId", "==", uid);
+  }
+
+  const snapshot = await query.get();
+  const questions = snapshot!.docs.map((doc) => {
     const data = doc.data() as QuestionDocument;
     return {
       id: doc.id,
-      isAuthor: data.authorUId === currentUserId,
+      isAuthor: data.authorUId === uid,
       ...data,
     };
   });
 
-  // Ordena as questões por mais recentes -> não era possível usar o .sort()
   return questions.sort((a, b) => {
     const timeA = a.createdAt?.toMillis() || 0;
     const timeB = b.createdAt?.toMillis() || 0;
@@ -70,7 +76,6 @@ export const deleteQuestionById = async (
 
   const data = doc.data() as QuestionDocument;
 
-  // Verificação de segurança: apenas o autor pode deletar
   if (data.authorUId !== userId) {
     throw new HttpsError(
       "permission-denied",

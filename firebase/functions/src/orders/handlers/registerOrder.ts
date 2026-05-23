@@ -5,7 +5,7 @@
 
 import { HttpsError, onCall } from "firebase-functions/https";
 
-import { getUserProfile } from "../../shared/auth";
+import { getAuthenticatedUser } from "../../shared/auth";
 import { normalizeString } from "../../shared/utils";
 import { orderTypes } from "../shared/constants";
 
@@ -21,13 +21,13 @@ import { checkStartupExists } from "../../startup/repositories/startupsRepositor
  * Para ordem de venda: bloqueia os tokens correspondentes no investimento.
  */
 export const registerOrder = onCall(async (req) => {
-  const { uid } = getUserProfile(req);
+  const { uid } = getAuthenticatedUser(req);
 
   const order = req.data as OrderRegisterRequestDTO;
   const orderType = normalizeString(order.type) as OrderType;
 
   if (!order.startupId || !checkStartupExists(order.startupId)) {
-    throw new HttpsError("not-found", "Startup não encontrada!");
+    throw new HttpsError("invalid-argument", "ID de stratup inválido!");
   }
 
   if (!orderType || !orderTypes.includes(orderType)) {

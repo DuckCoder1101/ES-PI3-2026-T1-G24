@@ -5,14 +5,14 @@
 
 import { HttpsError, onCall } from "firebase-functions/https";
 import { getById } from "../repositories/usersRepository";
-import { getUserProfile } from "../../shared/auth";
+import { getAuthenticatedUser } from "../../shared/auth";
 import { logger } from "firebase-functions";
 
 /*
  * Retorna os dados completos do usuário
  */
 export const getMe = onCall(async (request) => {
-  const { uid } = getUserProfile(request);
+  const { uid } = getAuthenticatedUser(request);
   const user = await getById(uid);
 
   logger.log("Buscando usuário por ID: " + uid);

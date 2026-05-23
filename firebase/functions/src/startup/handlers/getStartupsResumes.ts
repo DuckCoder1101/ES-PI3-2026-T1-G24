@@ -4,19 +4,17 @@
  */
 
 import { onCall } from "firebase-functions/https";
-import { getUserProfile } from "../../shared/auth";
+import { getAuthenticatedUser } from "../../shared/auth";
 import { findStartupsResumes } from "../repositories/startupsRepository";
 
 /*
- * Retorna uma lista resumida de todas as startups (id e nome).
+ * Retorna lista resumida de todas as startups (id, nome, isInvestor).
  * Usada para popular dropdowns e seletores no app.
  */
 export const getStartupResumes = onCall(async (req) => {
-  getUserProfile(req);
+  const { uid } = getAuthenticatedUser(req);
 
-  const startups = await findStartupsResumes();
+  const startups = await findStartupsResumes(uid);
 
-  return {
-    startups,
-  };
+  return { startups };
 });

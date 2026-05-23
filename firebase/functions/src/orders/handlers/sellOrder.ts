@@ -4,7 +4,7 @@
  */
 
 import { HttpsError, onCall } from "firebase-functions/https";
-import { getUserProfile } from "../../shared/auth";
+import { getAuthenticatedUser } from "../../shared/auth";
 import { normalizeString } from "../../shared/utils";
 import { executeSellToOrder } from "../repositories/orderRepository";
 
@@ -13,7 +13,7 @@ import { executeSellToOrder } from "../repositories/orderRepository";
  * O vendedor entrega os tokens e recebe os fundos bloqueados pelo comprador.
  */
 export const sellOrder = onCall(async (req) => {
-  const { uid } = getUserProfile(req);
+  const { uid } = getAuthenticatedUser(req);
 
   const orderId = normalizeString(req.data.orderId);
 

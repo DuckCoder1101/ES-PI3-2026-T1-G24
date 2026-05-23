@@ -12,7 +12,7 @@ import { checkCPF, checkPhone } from "../shared/validations";
 
 import { UserSignupDTO } from "../types/dtos";
 import { createUserAccount } from "../repositories/usersRepository";
-import { getUserProfile } from "../../shared/auth";
+import { getAuthenticatedUser } from "../../shared/auth";
 
 /*
  * Verifica se a autenticação já foi criada no FirebaseAuth
@@ -20,7 +20,7 @@ import { getUserProfile } from "../../shared/auth";
  * Se tudo estiver válido, chama a função de cadastro no repositório e salva a sessão
  */
 export const signup = onCall(async (request) => {
-  const { uid, email } = getUserProfile(request);
+  const { uid, email } = getAuthenticatedUser(request);
   const data = request.data as UserSignupDTO;
 
   const name = normalizeString(data.name);

@@ -8,14 +8,13 @@ import { normalizeString } from "../../shared/utils";
 import { GetStartupsRequestBodyDTO, StartupStageFilter } from "../types/dtos";
 import { StartupsSearchFilters } from "../shared/constants";
 import { findStartups } from "../repositories/startupsRepository";
-import { getUserProfile } from "../../shared/auth";
+import { getAuthenticatedUser } from "../../shared/auth";
 
 /*
- * Busca todas as startups de um determinado intervalo e quantidade no banco
- * Este método usa infity scroll. É necessário informar um offset, um filtro e um limite!
+ * Busca startups com paginação (infinity scroll).
  */
-export const getStartups = onCall(async (req) => {
-  getUserProfile(req);
+export const getStartupsList = onCall(async (req) => {
+  const { uid } = getAuthenticatedUser(req);
 
   const { filter, offset, limit } = req.data as GetStartupsRequestBodyDTO;
 
@@ -26,23 +25,21 @@ export const getStartups = onCall(async (req) => {
     throw new HttpsError("invalid-argument", "Filtro de busca inválido!");
   }
 
-  if (typeof offset != "number" || offset < 0) {
+  if (typeof offset !== "number" || offset < 0) {
     throw new HttpsError(
       "invalid-argument",
       "Offset inválido! O offset deve ser um número >= 0.",
     );
   }
 
-  if (typeof limit != "number" || limit <= 0 || limit > 10) {
+  if (typeof limit !== "number" || limit <= 0 || limit > 10) {
     throw new HttpsError(
       "invalid-argument",
       "Limite inválido! O limite deve ser um número entre 1 e 10.",
     );
   }
 
-  const startups = await findStartups(offset, limit, stage, name);
+  const startups = await findStartups(uid, offset, limit, stage, name);
 
-  return {
-    startups,
-  };
+  return { startups };
 });

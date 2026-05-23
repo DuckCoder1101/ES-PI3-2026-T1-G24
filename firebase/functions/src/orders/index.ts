@@ -3,7 +3,7 @@
  * RA: 25000636
  */
 
-export * from "./handlers/getOrders";
+export * from "./handlers/getOrdersList";
 export * from "./handlers/getUserOrders";
 export * from "./handlers/registerOrder";
 export * from "./handlers/buyOrder";

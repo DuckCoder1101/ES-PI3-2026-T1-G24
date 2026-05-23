@@ -1,3 +1,8 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import { StartupResumeDTO } from "../../startup/types/dtos";
 import {
   BaseTransaction,

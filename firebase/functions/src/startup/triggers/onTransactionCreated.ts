@@ -13,54 +13,57 @@ import {
 } from "../repositories/startupsRepository";
 
 /*
- * Trigger disparado automaticamente toda vez que uma nova transação é criada.
- * Recalcula o preço do token da startup envolvida com base na taxa de ocupação
- * (tokens vendidos / tokens emitidos) e registra o novo preço no histórico.
+ * Trigger disparado toda vez que uma nova transação é criada.
+ * Recalcula o preço do token da startup com base na taxa de ocupação
+ * (tokens vendidos / tokens emitidos) e registra no histórico.
+ * Transações do tipo "funds" são ignoradas pois não envolvem tokens.
  */
 export const onTransactionCreated = onDocumentCreated(
   "transactions/{transactionId}",
   async (event) => {
-    logger.info("EVENT:");
-    logger.info(JSON.stringify(event));
-
-    logger.info("DATA:");
-    logger.info(JSON.stringify(event.data));
-
     const transactionId = event.params.transactionId;
-    const transaction = event.data?.data() as TransactionDocument;
-
-    logger.info("TRANSACTION:");
-    logger.info(JSON.stringify(transaction));
-
-    logger.log("Atualizando valorização: " + transaction.id);
+    const transaction = event.data?.data() as TransactionDocument | undefined;
 
     if (!transaction) {
-      logger.log("Transação inválida para histórico: nula.");
+      logger.warn("Transação nula, ignorando trigger.", { transactionId });
       return;
     }
 
-    if (transaction?.id || transaction.type == "funds") {
-      logger.log(
-        `Transação inválida para histórico: ${transaction.id} - ${transaction.type}`,
-      );
+    // Transações de depósito de fundos não afetam o preço dos tokens
+    if (transaction.type === "funds") {
+      logger.log(`Transação de fundos ignorada: ${transactionId}`);
       return;
     }
 
-    const startup = await getFullStartup(transaction.startupId);
+    const startupId = (transaction as { startupId?: string }).startupId;
+
+    if (!startupId) {
+      logger.warn("Transação sem startupId, ignorando.", { transactionId, type: transaction.type });
+      return;
+    }
+
+    logger.log(`Recalculando preço do token para startup: ${startupId}`);
+
+    // SYSTEM_UID: trigger de sistema não pertence a nenhum usuário.
+    // getFullStartup precisa de uid apenas para calcular isInvestor,
+    // que não é relevante aqui — passamos string vazia.
+    const startup = await getFullStartup(startupId, "");
+
+    if (startup.totalTokensIssued === 0) {
+      logger.warn("Startup sem tokens emitidos, ignorando recálculo.", { startupId });
+      return;
+    }
 
     const tokensSold = startup.totalTokensIssued - startup.totalTokensAvailable;
     const occupancyRate = tokensSold / startup.totalTokensIssued;
-    const fatorDemanda = (occupancyRate - 0.3) * 0.5;
+    const demandFactor = (occupancyRate - 0.3) * 0.5;
 
     const newPriceCents = Math.round(
-      startup.currentTokenPriceCents * (1 + fatorDemanda),
+      startup.currentTokenPriceCents * (1 + demandFactor),
     );
 
-    updateTokenPrice(
-      transaction.startupId,
-      newPriceCents,
-      occupancyRate,
-      transactionId,
-    );
+    updateTokenPrice(startupId, newPriceCents, occupancyRate, transactionId);
+
+    logger.log(`Novo preço do token: ${newPriceCents} centavos (ocupação: ${(occupancyRate * 100).toFixed(1)}%)`);
   },
 );

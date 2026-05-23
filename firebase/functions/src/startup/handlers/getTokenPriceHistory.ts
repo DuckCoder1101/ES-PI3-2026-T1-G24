@@ -1,13 +1,17 @@
 import { HttpsError, onCall } from "firebase-functions/https";
-import { getUserProfile } from "../../shared/auth";
+import { getAuthenticatedUser } from "../../shared/auth";
 import { GetTokenPriceHistoryRequestDTO } from "../types/dtos";
 import { normalizeString } from "../../shared/utils";
 import { DateInterval } from "../types/documents";
 import { DateIntervals } from "../shared/constants";
 import { getStartupTokenPriceHistory } from "../repositories/startupsRepository";
 
+/*
+ * Retorna o histórico de preço de tokens da startup
+ * Usado nos gráficos
+ */
 export const getTokenPriceHistory = onCall(async (req) => {
-  getUserProfile(req);
+  getAuthenticatedUser(req);
 
   const data = req.data as GetTokenPriceHistoryRequestDTO;
 
@@ -30,6 +34,4 @@ export const getTokenPriceHistory = onCall(async (req) => {
   return {
     priceHistory,
   };
-
-  // Verifica se as datas são válidas
 });

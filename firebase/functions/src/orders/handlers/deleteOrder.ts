@@ -4,12 +4,12 @@
  */
 
 import { HttpsError, onCall } from "firebase-functions/https";
-import { getUserProfile } from "../../shared/auth";
+import { getAuthenticatedUser } from "../../shared/auth";
 import { normalizeString } from "../../shared/utils";
 import { deleteOrderById } from "../repositories/orderRepository";
 
 export const deleteOrder = onCall(async (req) => {
-  const { uid } = getUserProfile(req);
+  const { uid } = getAuthenticatedUser(req);
 
   const orderId = normalizeString(req.data.orderId);
 
@@ -22,4 +22,4 @@ export const deleteOrder = onCall(async (req) => {
   return {
     success: true,
   };
-});
+});

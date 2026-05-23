@@ -5,16 +5,15 @@
 
 import { HttpsError, onCall } from "firebase-functions/https";
 import { getStartupQuestions } from "../../repositories/qaRepository";
-import { getUserProfile } from "../../../shared/auth";
-import { database } from "../../../shared/firebase";
+import { getAuthenticatedUser } from "../../../shared/auth";
+import { isInvestor } from "../../../user/repositories/usersRepository";
 
 /*
  * Retorna as perguntas de uma startup conforme a visibilidade solicitada.
- * Perguntas privadas são exclusivas para investidores da startup.
  */
 export const getQuestions = onCall(async (req) => {
   const { startupId, visibility } = req.data;
-  const { uid } = getUserProfile(req);
+  const { uid } = getAuthenticatedUser(req);
 
   if (!startupId || !visibility) {
     throw new HttpsError(
@@ -23,21 +22,11 @@ export const getQuestions = onCall(async (req) => {
     );
   }
 
-  // Perguntas privadas: apenas investidores têm acesso
-  if (visibility === "privada") {
-    const investmentDoc = await database
-      .collection("investments")
-      .doc(uid)
-      .collection("startups")
-      .doc(startupId)
-      .get();
-
-    if (!investmentDoc.exists) {
-      throw new HttpsError(
-        "permission-denied",
-        "Apenas investidores desta startup podem acessar perguntas privadas.",
-      );
-    }
+  if (visibility == "privada" && !isInvestor(uid, startupId)) {
+    throw new HttpsError(
+      "permission-denied",
+      "Apenas investidores podem ler perguntas privadas!",
+    );
   }
 
   const questions = await getStartupQuestions(startupId, visibility, uid);

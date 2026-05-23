@@ -3,10 +3,8 @@
  * RA: 25000636
  */
 
-import admin from "firebase-admin";
 import { FieldValue } from "firebase-admin/firestore";
 import { HttpsError } from "firebase-functions/https";
-
 import { database } from "../../shared/firebase";
 
 import {
@@ -22,55 +20,16 @@ import {
   WalletDocument,
 } from "../types/documents";
 
-import { StartupResumeDTO } from "../../startup/types/dtos";
-import { chunkArray } from "../../shared/dataArray";
-
 const cpfsCollection = database.collection("cpf_index");
 const usersCollection = database.collection("users");
 const walletsCollection = database.collection("wallets");
 const transactionsCollection = database.collection("transactions");
-const investmentsCollection = database.collection("investments");
-const startupsCollection = database.collection("startups");
+
+const getInvestmentsStartupsCollection = (uid: string) =>
+  database.collection("investments").doc(uid).collection("startups");
 
 /*
- * Busca startups resumidas
- */
-const getStartupResumeMap = async (
-  ids: string[],
-): Promise<Record<string, StartupResumeDTO>> => {
-  const uniqueIds = [...new Set(ids)];
-
-  if (uniqueIds.length === 0) {
-    return {};
-  }
-
-  const chunks = chunkArray(uniqueIds, 10);
-
-  const snapshots = await Promise.all(
-    chunks.map((chunk) =>
-      startupsCollection
-        .where(admin.firestore.FieldPath.documentId(), "in", chunk)
-        .select("name")
-        .get(),
-    ),
-  );
-
-  const startups: Record<string, StartupResumeDTO> = {};
-
-  snapshots.forEach((snapshot) => {
-    snapshot.docs.forEach((doc) => {
-      startups[doc.id] = {
-        ...(doc.data() as StartupResumeDTO),
-        id: doc.id,
-      };
-    });
-  });
-
-  return startups;
-};
-
-/*
- * Cadastra um novo usuário
+ * Cadastra um novo usuário, criando sua carteira e indexando o CPF.
  */
 export const createUserAccount = async (
   uid: string,
@@ -104,24 +63,26 @@ export const createUserAccount = async (
 };
 
 /*
- * Atualiza dados do usuário
+ * Atualiza nome e telefone do perfil do usuário.
  */
 export const updateUserData = async (
   uid: string,
   data: UpdateProfileDTO,
 ): Promise<void> => {
-  try {
-    await usersCollection.doc(uid).update({
-      name: data.name,
-      phone: data.phone,
-    });
-  } catch {
+  const userRef = await usersCollection.doc(uid).get();
+
+  if (!userRef.exists) {
     throw new HttpsError("not-found", "Usuário não encontrado!");
   }
+
+  userRef.ref.update({
+    name: data.name,
+    phone: data.phone,
+  });
 };
 
 /*
- * Busca usuário
+ * Busca os dados completos do usuário pelo UID.
  */
 export const getById = async (uid: string): Promise<UserFullDTO> => {
   const snapshot = await usersCollection.doc(uid).get();
@@ -130,16 +91,14 @@ export const getById = async (uid: string): Promise<UserFullDTO> => {
     throw new HttpsError("not-found", "Usuário não encontrado!");
   }
 
-  const userData = snapshot.data() as UserDocument;
-
   return {
     uid,
-    ...userData,
+    ...(snapshot.data() as UserDocument),
   };
 };
 
 /*
- * Busca carteira
+ * Retorna a carteira do usuário.
  */
 export const getWallet = async (uid: string): Promise<WalletDocument> => {
   const snapshot = await walletsCollection.doc(uid).get();
@@ -152,16 +111,9 @@ export const getWallet = async (uid: string): Promise<WalletDocument> => {
 };
 
 /*
- * Adiciona fundos
+ * Adiciona fundos fictícios à carteira e registra a transação.
  */
-export const addFundsToWallet = async (
-  uid: string,
-  fundsCents: number,
-): Promise<void> => {
-  if (fundsCents <= 0) {
-    throw new HttpsError("invalid-argument", "Valor inválido!");
-  }
-
+export const addFundsToWallet = async (uid: string, fundsCents: number) => {
   await database.runTransaction(async (tx) => {
     const walletRef = walletsCollection.doc(uid);
     const walletDoc = await tx.get(walletRef);
@@ -176,7 +128,6 @@ export const addFundsToWallet = async (
     });
 
     const transactionRef = transactionsCollection.doc();
-
     tx.set(transactionRef, {
       type: "funds",
       authorUId: uid,
@@ -188,39 +139,54 @@ export const addFundsToWallet = async (
 };
 
 /*
- * Retorna investimentos do usuário
+ * Retorna todos os investimentos do usuário.
  */
+// usersRepository.ts
 export const getInvestments = async (
   uid: string,
 ): Promise<InvestmentListDTO[]> => {
-  const snapshot = await investmentsCollection
-    .doc(uid)
-    .collection("startups")
-    .get();
+  const snapshot = await getInvestmentsStartupsCollection(uid).get();
+  if (snapshot.empty) return [];
 
-  const startupIds = [...new Set(snapshot.docs.map((doc) => doc.id))];
-  const startups = await getStartupResumeMap(startupIds);
+  // Busca dados das startups em paralelo, direto — sem passar por startupsRepository
+  const startupDocs = await Promise.all(
+    snapshot.docs.map((doc) =>
+      database
+        .collection("startups")
+        .doc((doc.data() as InvestmentDocument).startupId)
+        .get(),
+    ),
+  );
 
-  return snapshot.docs.flatMap((doc) => {
+  return snapshot.docs.map((doc, i) => {
     const data = doc.data() as InvestmentDocument;
-    const startup = startups[doc.id];
-
-    if (!startup) {
-      return [];
-    }
-
-    return [
-      {
-        ...data,
-        startup,
-        tokenAmount:
-          typeof data.tokenAmount === "number" ? data.tokenAmount : 0,
-
-        lockedTokenAmount:
-          typeof data.lockedTokenAmount === "number"
-            ? data.lockedTokenAmount
-            : 0,
-      } satisfies InvestmentListDTO,
-    ];
+    const startupDoc = startupDocs[i];
+    return {
+      ...data,
+      startup: startupDoc.exists
+        ? {
+            id: startupDoc.id,
+            name: startupDoc.data()!.name as string,
+            isInvestor: true,
+          }
+        : {
+            id: data.startupId,
+            name: "Startup removida!",
+            isInvestor: false,
+          },
+    } satisfies InvestmentListDTO;
   });
+};
+
+/*
+ * Retorna se o usuário é investidor daquela startup
+ */
+export const isInvestor = async (
+  uid: string,
+  startupId: string,
+): Promise<boolean> => {
+  const snapshot = await getInvestmentsStartupsCollection(uid)
+    .doc(startupId)
+    .get();
+  return snapshot.exists;
 };
