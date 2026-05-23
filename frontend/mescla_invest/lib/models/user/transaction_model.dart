@@ -1,5 +1,5 @@
 /*
- * Autor: Cristian Fava
+ * Autor: Cristian Eduardo Fava
  * RA: 25000636
  */
 
@@ -8,9 +8,14 @@ import 'package:mescla_invest/models/startup/startup_model.dart';
 
 enum TransactionType { investment, funds, trade }
 
+// ---------------------------------------------------------------------------
+// Base
+// ---------------------------------------------------------------------------
+
 /*
  * Modelo base de transação.
- * Todas as transações possuem id, tipo, valor em centavos, data e lista de UIDs envolvidos.
+ * Todas as transações possuem id, tipo, valor em centavos, data
+ * e lista de UIDs envolvidos.
  */
 abstract class TransactionModel {
   final String? id;
@@ -19,7 +24,7 @@ abstract class TransactionModel {
   final DateTime? createdAt;
   final List<String> userUIds;
 
-  // Valor em reais (calculado a partir de centavos)
+  /// Valor em reais (calculado a partir de centavos).
   double get amount => amountCents / 100;
 
   TransactionModel({
@@ -30,30 +35,33 @@ abstract class TransactionModel {
     this.createdAt,
   });
 
-  // Faz o parse do mapa genérico e retorna o subtipo correto de TransactionModel
+  /// Faz o parse do mapa genérico e retorna o subtipo correto de TransactionModel.
   static TransactionModel fromMap(Map<String, dynamic> rawMap) {
     final map = rawMap.map((key, value) => MapEntry(key.trim(), value));
     final typeStr = map['type'] as String? ?? '';
 
-    switch (typeStr) {
-      case 'investment':
-        return InvestmentTransactionModel.fromMap(map);
-      case 'trade':
-        return TradeTransactionModel.fromMap(map);
-      case 'funds':
-      default:
-        return FundsTransactionModel.fromMap(map);
-    }
+    return switch (typeStr) {
+      'investment' => InvestmentTransactionModel.fromMap(map),
+      'trade' => TradeTransactionModel.fromMap(map),
+      _ => FundsTransactionModel.fromMap(map),
+    };
   }
 }
 
-// Transação de compra direta de tokens na página de uma startup.
+// ---------------------------------------------------------------------------
+// Investment — compra direta de tokens na página da startup
+// ---------------------------------------------------------------------------
+
 class InvestmentTransactionModel extends TransactionModel {
   final String investorUId;
+
+  /// Resumo da startup, inclui [isInvestor] (sempre true após investimento).
   final StartupResumeDTO startup;
+
   final int tokensPurchased;
   final int tokenPriceCents;
 
+  /// Preço do token em reais.
   double get tokenPrice => tokenPriceCents / 100;
 
   InvestmentTransactionModel({
@@ -70,20 +78,23 @@ class InvestmentTransactionModel extends TransactionModel {
   factory InvestmentTransactionModel.fromMap(Map<String, dynamic> map) {
     return InvestmentTransactionModel(
       id: map['id'],
-      amountCents: (map['amountCents'] ?? 0) as int,
+      amountCents: (map['amountCents'] as num?)?.toInt() ?? 0,
       userUIds: List<String>.from(map['userUIds'] ?? []),
       createdAt: parseTimestamp(map['createdAt']),
       investorUId: map['investorUId'] ?? '',
       startup: StartupResumeDTO.fromMap(
         Map<String, dynamic>.from(map['startup']),
       ),
-      tokensPurchased: (map['tokensPurchased'] ?? 0) as int,
-      tokenPriceCents: (map['tokenPriceCents'] ?? 0) as int,
+      tokensPurchased: (map['tokensPurchased'] as num?)?.toInt() ?? 0,
+      tokenPriceCents: (map['tokenPriceCents'] as num?)?.toInt() ?? 0,
     );
   }
 }
 
-// Transação de compra ou venda de tokens entre usuários via balcão.
+// ---------------------------------------------------------------------------
+// Trade — compra/venda de tokens entre usuários via balcão
+// ---------------------------------------------------------------------------
+
 class TradeTransactionModel extends TransactionModel {
   final String purchaserUId;
   final String sellerUId;
@@ -91,6 +102,7 @@ class TradeTransactionModel extends TransactionModel {
   final int tokensPurchased;
   final int tokenPriceCents;
 
+  /// Preço do token em reais.
   double get tokenPrice => tokenPriceCents / 100;
 
   TradeTransactionModel({
@@ -108,19 +120,22 @@ class TradeTransactionModel extends TransactionModel {
   factory TradeTransactionModel.fromMap(Map<String, dynamic> map) {
     return TradeTransactionModel(
       id: map['id'],
-      amountCents: (map['amountCents'] ?? 0) as int,
+      amountCents: (map['amountCents'] as num?)?.toInt() ?? 0,
       userUIds: List<String>.from(map['userUIds'] ?? []),
       createdAt: parseTimestamp(map['createdAt']),
       purchaserUId: map['purchaserUId'] ?? '',
       sellerUId: map['sellerUId'] ?? '',
       startupId: map['startupId'] ?? '',
-      tokensPurchased: (map['tokensPurchased'] ?? 0) as int,
-      tokenPriceCents: (map['tokenPriceCents'] ?? 0) as int,
+      tokensPurchased: (map['tokensPurchased'] as num?)?.toInt() ?? 0,
+      tokenPriceCents: (map['tokenPriceCents'] as num?)?.toInt() ?? 0,
     );
   }
 }
 
-// Transação de adição de saldo fictício à carteira (simulação de depósito).
+// ---------------------------------------------------------------------------
+// Funds — depósito de saldo fictício na carteira
+// ---------------------------------------------------------------------------
+
 class FundsTransactionModel extends TransactionModel {
   final String authorUId;
 
@@ -135,7 +150,7 @@ class FundsTransactionModel extends TransactionModel {
   factory FundsTransactionModel.fromMap(Map<String, dynamic> map) {
     return FundsTransactionModel(
       id: map['id'],
-      amountCents: (map['amountCents'] ?? 0) as int,
+      amountCents: (map['amountCents'] as num?)?.toInt() ?? 0,
       userUIds: List<String>.from(map['userUIds'] ?? []),
       createdAt: parseTimestamp(map['createdAt']),
       authorUId: map['authorUId'] ?? '',

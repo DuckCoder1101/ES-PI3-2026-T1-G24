@@ -36,7 +36,7 @@ class _TabAboutState extends State<TabAbout> {
           '$selectedDirectory/${widget.startup.name}/sumario_executivo.pdf';
 
       await StartupService.downloadExecutiveSummary(
-        widget.startup.executiveSumaryPath!,
+        widget.startup.executiveSummaryPath!,
         localPath,
       );
 
@@ -76,7 +76,7 @@ class _TabAboutState extends State<TabAbout> {
           ),
         ),
 
-        if (widget.startup.executiveSumaryPath != null) ...[
+        if (widget.startup.executiveSummaryPath != null) ...[
           const SizedBox(height: 20),
           PrimaryButton(
             text: "Baixar sumário executivo: ",

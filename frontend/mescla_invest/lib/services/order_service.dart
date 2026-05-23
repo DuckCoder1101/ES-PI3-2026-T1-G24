@@ -4,7 +4,7 @@
  */
 
 import 'package:cloud_functions/cloud_functions.dart';
-import 'package:mescla_invest/models/order.dart';
+import 'package:mescla_invest/models/order_model.dart';
 
 class OrderService {
   // Busca todas as ordens de um tipo
@@ -14,7 +14,7 @@ class OrderService {
     required int limit,
   }) async {
     final response = await FirebaseFunctions.instance
-        .httpsCallable('getOrders')
+        .httpsCallable('getOrdersList')
         .call({'orderType': orderType.name, 'offset': offset, 'limit': limit});
 
     final data = Map<String, dynamic>.from(response.data);

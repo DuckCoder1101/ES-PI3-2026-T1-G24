@@ -58,7 +58,7 @@ class StartupService {
   }) async {
     try {
       final response = await FirebaseFunctions.instance
-          .httpsCallable('getStartups')
+          .httpsCallable('getStartupsList')
           .call({
             'offset': offset.toInt(),
             'limit': limit.toInt(),

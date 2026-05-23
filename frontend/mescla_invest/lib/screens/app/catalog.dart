@@ -347,13 +347,15 @@ class _CatalogScreenState extends State<CatalogScreen> {
                           fontSize: 12,
                         ),
                       ),
-                      Text(
-                        "Tokens possuídos: x",
-                        style: const TextStyle(
-                          color: Colors.white38,
-                          fontSize: 12,
+
+                      if (startup.isInvestor)
+                        Text(
+                          "INVESTIDOR",
+                          style: TextStyle(
+                            color: AppColors.verdeMescla,
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ],

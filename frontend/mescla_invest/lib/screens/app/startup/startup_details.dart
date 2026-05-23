@@ -327,13 +327,9 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
       case _StartupDetailsTab.price: // ← novo case
         return TabPriceHistory(startupId: widget.startupId!);
       case _StartupDetailsTab.partners:
-        return TabPartners(startup: startup, startupId: widget.startupId!);
+        return TabPartners(startup: startup);
       case _StartupDetailsTab.qa:
-        return TabQA(
-          startupId: widget.startupId!,
-          startupName: startup.name,
-          isInvestor: startup.isInvestor,
-        );
+        return TabQA(startup: startup);
       case _StartupDetailsTab.updates:
         return const Center(
           child: Text(

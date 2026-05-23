@@ -9,13 +9,8 @@ import 'package:mescla_invest/models/startup/startup_model.dart';
 
 class TabPartners extends StatelessWidget {
   final StartupModel startup;
-  final String startupId;
 
-  const TabPartners({
-    super.key,
-    required this.startup,
-    required this.startupId,
-  });
+  const TabPartners({super.key, required this.startup});
 
   @override
   Widget build(BuildContext context) {

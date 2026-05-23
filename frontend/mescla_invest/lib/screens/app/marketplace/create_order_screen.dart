@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/models/order.dart';
+import 'package:mescla_invest/models/order_model.dart';
 import 'package:mescla_invest/models/startup/startup_model.dart';
 import 'package:mescla_invest/services/order_service.dart';
 import 'package:mescla_invest/services/startup_service.dart';
