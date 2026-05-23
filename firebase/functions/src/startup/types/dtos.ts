@@ -16,6 +16,7 @@ export type StartupStageFilter = StartupStage | "all";
 
 export interface StartupDetailsDTO extends StartupDocument {
   id: string;
+  isInvestor: boolean;
 }
 
 export interface StartupListItemDTO {
@@ -24,15 +25,17 @@ export interface StartupListItemDTO {
   stage: StartupStage;
   shortDescription: string;
   capitalRaisedCents: number;
-  totalTokensIssued: number;
+  totalTokensAvailable: number;
   currentTokenPriceCents: number;
   thumbnailPath?: string;
   tags: string[];
+  isInvestor: boolean;
 }
 
 export interface StartupResumeDTO {
   id: string;
   name: string;
+  isInvestor: boolean;
 }
 
 export interface GetStartupsRequestBodyDTO {

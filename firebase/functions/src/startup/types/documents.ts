@@ -28,6 +28,7 @@ export interface ExternalMember {
 }
 
 export interface StartupDocument {
+  id: string;
   name: string;
   stage: StartupStage;
   shortDescription: string;

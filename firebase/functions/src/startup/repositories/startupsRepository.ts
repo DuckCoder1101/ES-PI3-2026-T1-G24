@@ -8,11 +8,10 @@ import { database } from "../../shared/firebase";
 import {
   DateInterval,
   DateLimits,
-  PriceHistoryDocument as PriceHistoryPointDocument,
+  PriceHistoryDocument,
   StartupDocument,
 } from "../types/documents";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
-
 import {
   StartupDetailsDTO,
   StartupListItemDTO,
@@ -21,9 +20,30 @@ import {
 } from "../types/dtos";
 
 const startupsCollection = database.collection("startups");
+
 const getPriceHistoryCollection = (startupId: string) =>
   startupsCollection.doc(startupId).collection("priceHistory");
 
+const getInvestmentsStartupsCollection = (uid: string) =>
+  database.collection("investments").doc(uid).collection("startups");
+
+/*
+ * Retorna os IDs das startups que o usuário é investidor
+ */
+const getInvestedStartupIds = async (uid: string): Promise<Set<string>> => {
+  const snapshot = await database
+    .collection("investments")
+    .doc(uid)
+    .collection("startups")
+    .select() // busca só os IDs dos docs, sem campos
+    .get();
+
+  return new Set(snapshot.docs.map((doc) => doc.id));
+};
+
+/*
+ * Transforma os lites do enum em objetos Date
+ */
 const getLimitsFromDateInterval = (interval: DateInterval): DateLimits => {
   const end = new Date();
   const start = new Date();
@@ -47,9 +67,10 @@ const getLimitsFromDateInterval = (interval: DateInterval): DateLimits => {
 };
 
 /*
- * Busca as startups no banco de dados seguindo um offset, um limite e um filtro
+ * Busca as startups no banco seguindo offset, limite e filtro.
  */
 export const findStartups = async (
+  uid: string,
   offset: number,
   limit: number,
   filter: StartupStageFilter,
@@ -60,14 +81,16 @@ export const findStartups = async (
       ? startupsCollection
       : startupsCollection.where("stage", "==", filter);
 
-  // Aplica filtro de nome apenas se existir
   if (name && name.trim().length > 0) {
     query = query
       .where("name", ">=", name)
       .where("name", "<=", name + "\uf8ff");
   }
 
-  const snapshot = await query.offset(offset).limit(limit).get();
+  const [snapshot, investments] = await Promise.all([
+    query.offset(offset).limit(limit).get(),
+    getInvestedStartupIds(uid),
+  ]);
 
   return snapshot.docs.map((doc) => {
     const startup = doc.data() as StartupDocument;
@@ -78,30 +101,43 @@ export const findStartups = async (
       stage: startup.stage,
       shortDescription: startup.shortDescription,
       capitalRaisedCents: startup.capitalRaisedCents,
-      totalTokensIssued: startup.totalTokensIssued,
+      totalTokensAvailable: startup.totalTokensAvailable,
       currentTokenPriceCents: startup.currentTokenPriceCents,
       tags: startup.tags ?? [],
       thumbnailPath: startup.thumbnailPath,
+      isInvestor: investments.has(doc.id),
     } satisfies StartupListItemDTO;
   });
 };
 
-export const findStartupsResumes = async (): Promise<StartupResumeDTO[]> => {
+/*
+ * Retorna lista resumida de todas as startups (id, nome, isInvestor).
+ * Usada para popular dropdowns e seletores no app.
+ */
+export const findStartupsResumes = async (
+  uid: string,
+): Promise<StartupResumeDTO[]> => {
   const snapshot = await startupsCollection.select("name").get();
+  const investedIds = await getInvestedStartupIds(uid);
 
   return snapshot.docs.map((doc) => ({
-    ...(doc.data() as StartupResumeDTO),
     id: doc.id,
+    name: (doc.data() as Pick<StartupDocument, "name">).name,
+    isInvestor: investedIds.has(doc.id),
   })) satisfies StartupResumeDTO[];
 };
 
 /*
- * Busca no banco todos os dados de uma startup
+ * Busca todos os dados de uma startup
  */
 export const getFullStartup = async (
   startupId: string,
+  uid: string,
 ): Promise<StartupDetailsDTO> => {
-  const doc = await startupsCollection.doc(startupId).get();
+  const [doc, investmentDoc] = await Promise.all([
+    startupsCollection.doc(startupId).get(),
+    getInvestmentsStartupsCollection(uid).doc(startupId).get(),
+  ]);
 
   if (!doc.exists) {
     throw new HttpsError("not-found", "Startup não encontrada!");
@@ -110,29 +146,31 @@ export const getFullStartup = async (
   const startup = doc.data() as StartupDocument;
 
   return {
-    id: doc.id,
     ...startup,
-  } satisfies StartupDetailsDTO;
+    id: doc.id,
+    isInvestor: investmentDoc.exists,
+  };
 };
 
 /*
- * Verifica se uma startup existe
+ * Verifica se uma startup existe.
  */
-export const checkStartupExists = async (startupId: string) => {
+export const checkStartupExists = async (
+  startupId: string,
+): Promise<boolean> => {
   const doc = await startupsCollection.doc(startupId).get();
   return doc.exists;
 };
 
 /*
- * Atualiza o preço atual do token de uma startup dentro de uma transaction
- * e registra o snapshot no histórico de preços.
+ * Atualiza o preço atual do token e registra no histórico de preços.
  */
 export const updateTokenPrice = (
   startupId: string,
   newPriceCents: number,
-  taxaOcupacao: number,
+  occupancyRate: number,
   triggeredByTransactionId: string,
-) => {
+): void => {
   database.runTransaction(async (tx) => {
     const startupRef = startupsCollection.doc(startupId);
     const priceHistoryRef = getPriceHistoryCollection(startupId).doc();
@@ -144,20 +182,20 @@ export const updateTokenPrice = (
 
     tx.set(priceHistoryRef, {
       priceCents: newPriceCents,
-      taxaOcupacao,
-      triggeredBy: triggeredByTransactionId,
+      occupancyRate,
+      triggerId: triggeredByTransactionId,
       createdAt: FieldValue.serverTimestamp(),
     });
   });
 };
 
 /*
- * Retorna os pontos de atualização da valorização da startup
+ * Retorna os pontos de valorização do token de uma startup em um intervalo de datas.
  */
 export const getStartupTokenPriceHistory = async (
   startupId: string,
   dateInterval: DateInterval,
-) => {
+): Promise<PriceHistoryDocument[]> => {
   const { start, end } = getLimitsFromDateInterval(dateInterval);
 
   const snapshot = await getPriceHistoryCollection(startupId)
@@ -165,9 +203,5 @@ export const getStartupTokenPriceHistory = async (
     .where("createdAt", "<=", Timestamp.fromDate(end))
     .get();
 
-  const priceHistory = snapshot.docs.map(
-    (doc) => doc.data() as PriceHistoryPointDocument,
-  );
-
-  return priceHistory;
+  return snapshot.docs.map((doc) => doc.data() as PriceHistoryDocument);
 };

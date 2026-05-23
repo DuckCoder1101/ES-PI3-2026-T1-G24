@@ -137,6 +137,7 @@ export const saveOrder = async (order: OrderRegisterDTO): Promise<void> => {
           style: "currency",
           currency: "BRL",
         });
+
         throw new HttpsError(
           "out-of-range",
           `Você não possui fundos suficientes para a ordem de compra! Seu saldo é ${fundsStr}`,

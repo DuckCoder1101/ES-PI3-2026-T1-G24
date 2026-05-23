@@ -4,7 +4,7 @@
  */
 
 import { HttpsError, onCall } from "firebase-functions/https";
-import { getUserProfile } from "../../shared/auth";
+import { getAuthenticatedUser } from "../../shared/auth";
 import { normalizeString } from "../../shared/utils";
 import { database } from "../../shared/firebase";
 import { FieldValue } from "firebase-admin/firestore";
@@ -19,10 +19,9 @@ const getInvestmentsCollection = (uid: string) =>
 
 /*
  * Permite a compra direta de tokens de uma startup a partir da página da startup.
- * Debita o valor da carteira do usuário e credita os tokens no investimento.
  */
 export const buyTokens = onCall(async (req) => {
-  const { uid } = getUserProfile(req);
+  const { uid } = getAuthenticatedUser(req);
 
   const startupId = normalizeString(req.data.startupId);
   const tokenAmount = req.data.tokenAmount as number;

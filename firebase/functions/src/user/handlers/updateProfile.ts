@@ -8,14 +8,14 @@ import { updateUserData } from "../repositories/usersRepository";
 import { UpdateProfileDTO } from "../types/dtos";
 import { normalizeString } from "../../shared/utils";
 import { checkPhone } from "../shared/validations";
-import { getUserProfile } from "../../shared/auth";
+import { getAuthenticatedUser } from "../../shared/auth";
 
 /*
  * Atualiza as informações do perfil do usuário
  * Nome e telefone
  */
 export const updateProfile = onCall(async (req) => {
-  const { uid } = getUserProfile(req);
+  const { uid } = getAuthenticatedUser(req);
   const data = req.data as UpdateProfileDTO;
 
   data.name = normalizeString(data.name);

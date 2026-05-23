@@ -4,7 +4,7 @@
  */
 
 import { HttpsError, onCall } from "firebase-functions/https";
-import { getUserProfile } from "../../shared/auth";
+import { getAuthenticatedUser } from "../../shared/auth";
 import { normalizeString } from "../../shared/utils";
 import { executeBuyFromOrder } from "../repositories/orderRepository";
 
@@ -13,7 +13,7 @@ import { executeBuyFromOrder } from "../repositories/orderRepository";
  * O comprador paga com saldo da carteira e recebe os tokens imediatamente.
  */
 export const buyOrder = onCall(async (req) => {
-  const { uid } = getUserProfile(req);
+  const { uid } = getAuthenticatedUser(req);
 
   const orderId = normalizeString(req.data.orderId);
 

@@ -4,7 +4,7 @@
  */
 
 import { onCall } from "firebase-functions/https";
-import { getUserProfile } from "../../shared/auth";
+import { getAuthenticatedUser } from "../../shared/auth";
 import { getInvestments } from "../repositories/usersRepository";
 
 /*
@@ -12,7 +12,7 @@ import { getInvestments } from "../repositories/usersRepository";
  * Cada item contém o ID da startup, tokens disponíveis e tokens bloqueados em ordens de venda.
  */
 export const getUserInvestments = onCall(async (req) => {
-  const { uid } = getUserProfile(req);
+  const { uid } = getAuthenticatedUser(req);
 
   const investments = await getInvestments(uid);
 

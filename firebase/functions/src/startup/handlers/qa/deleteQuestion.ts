@@ -3,24 +3,17 @@
  * RA: 25000636
  */
 
-import { HttpsError, onCall } from "firebase-functions/https";
+import { onCall } from "firebase-functions/https";
 import { deleteQuestionById } from "../../repositories/qaRepository";
-import { getUserProfile } from "../../../shared/auth";
+import { getAuthenticatedUser } from "../../../shared/auth";
 
 export const deleteQuestion = onCall(async (req) => {
   const { startupId, questionId } = req.data;
-  const { uid } = getUserProfile(req);
+  const { uid } = getAuthenticatedUser(req);
 
-  try {
-    await deleteQuestionById(startupId, questionId, uid);
+  await deleteQuestionById(startupId, questionId, uid);
 
-    return {
-      success: true,
-    };
-  } catch {
-    throw new HttpsError(
-      "permission-denied",
-      "Permission denied: You are not the author.",
-    );
-  }
+  return {
+    success: true,
+  };
 });

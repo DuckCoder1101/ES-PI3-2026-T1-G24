@@ -4,7 +4,7 @@
  */
 
 import { onCall } from "firebase-functions/https";
-import { getUserProfile } from "../../shared/auth";
+import { getAuthenticatedUser } from "../../shared/auth";
 import { findUserTransactions } from "../repositories/transactionsRepository";
 
 /*
@@ -12,7 +12,7 @@ import { findUserTransactions } from "../repositories/transactionsRepository";
  * Inclui transações de adição de fundos, compras diretas e negociações no balcão.
  */
 export const getUserTransactions = onCall(async (req) => {
-  const { uid } = getUserProfile(req);
+  const { uid } = getAuthenticatedUser(req);
   const transactions = await findUserTransactions(uid);
 
   return {

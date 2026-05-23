@@ -5,36 +5,33 @@
 
 import { HttpsError, onCall } from "firebase-functions/https";
 import { saveQuestion } from "../../repositories/qaRepository";
-import { getUserProfile } from "../../../shared/auth";
-import { database } from "../../../shared/firebase";
+import { getAuthenticatedUser } from "../../../shared/auth";
+import { isInvestor } from "../../../user/repositories/usersRepository";
+import { QuestionVisibilities } from "../../constants/questionVisibility";
 
 /*
  * Registra uma nova pergunta em uma startup.
- * Perguntas privadas só podem ser enviadas por investidores da startup.
  */
 export const registerQuestion = onCall(async (req) => {
   const { startupId, content, visibility } = req.data;
-  const { uid } = getUserProfile(req);
+  const { uid } = getAuthenticatedUser(req);
 
   if (!startupId || !content) {
     throw new HttpsError("invalid-argument", "Campos obrigatórios ausentes.");
   }
 
-  // Perguntas privadas: apenas investidores podem enviar
-  if (visibility === "privada") {
-    const investmentDoc = await database
-      .collection("investments")
-      .doc(uid)
-      .collection("startups")
-      .doc(startupId)
-      .get();
+  if (!QuestionVisibilities.includes(visibility)) {
+    throw new HttpsError(
+      "invalid-argument",
+      "Visibilidade da questão inválida!",
+    );
+  }
 
-    if (!investmentDoc.exists) {
-      throw new HttpsError(
-        "permission-denied",
-        "Apenas investidores desta startup podem enviar perguntas privadas.",
-      );
-    }
+  if (visibility == "privada" && !isInvestor(uid, startupId)) {
+    throw new HttpsError(
+      "permission-denied",
+      "Apenas investidores podem fazer perguntas privadas!",
+    );
   }
 
   await saveQuestion(startupId, {
@@ -43,5 +40,7 @@ export const registerQuestion = onCall(async (req) => {
     visibility: visibility,
   });
 
-  return { success: true };
+  return {
+    success: true,
+  };
 });
