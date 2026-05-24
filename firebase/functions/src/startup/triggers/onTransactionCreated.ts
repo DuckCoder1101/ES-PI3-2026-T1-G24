@@ -8,15 +8,13 @@ import { logger } from "firebase-functions/v2";
 
 import { TransactionDocument } from "../../transaction/types/documents";
 import {
-  getFullStartup,
+  getStartupTokenInfo,
   updateTokenPrice,
 } from "../repositories/startupsRepository";
 
 /*
  * Trigger disparado toda vez que uma nova transação é criada.
  * Recalcula o preço do token da startup com base na taxa de ocupação
- * (tokens vendidos / tokens emitidos) e registra no histórico.
- * Transações do tipo "funds" são ignoradas pois não envolvem tokens.
  */
 export const onTransactionCreated = onDocumentCreated(
   "transactions/{transactionId}",
@@ -38,32 +36,39 @@ export const onTransactionCreated = onDocumentCreated(
     const startupId = (transaction as { startupId?: string }).startupId;
 
     if (!startupId) {
-      logger.warn("Transação sem startupId, ignorando.", { transactionId, type: transaction.type });
+      logger.warn("Transação sem startupId, ignorando.", {
+        transactionId,
+        type: transaction.type,
+      });
       return;
     }
 
     logger.log(`Recalculando preço do token para startup: ${startupId}`);
 
-    // SYSTEM_UID: trigger de sistema não pertence a nenhum usuário.
-    // getFullStartup precisa de uid apenas para calcular isInvestor,
-    // que não é relevante aqui — passamos string vazia.
-    const startup = await getFullStartup(startupId, "");
+    const { totalTokensAvailable, totalTokensIssued, currentTokenPriceCents } =
+      await getStartupTokenInfo(startupId);
 
-    if (startup.totalTokensIssued === 0) {
-      logger.warn("Startup sem tokens emitidos, ignorando recálculo.", { startupId });
+    if (totalTokensIssued === 0) {
+      logger.warn("Startup sem tokens emitidos, ignorando recálculo.", {
+        startupId,
+      });
       return;
     }
 
-    const tokensSold = startup.totalTokensIssued - startup.totalTokensAvailable;
-    const occupancyRate = tokensSold / startup.totalTokensIssued;
-    const demandFactor = (occupancyRate - 0.3) * 0.5;
+    const tokensSold = totalTokensIssued - totalTokensAvailable;
+    const occupancyRate = tokensSold / totalTokensIssued;
+
+    // Garante fator sempre >= 0: preço só sobe (ou fica estável) com vendas
+    const demandFactor = Math.max(0, occupancyRate - 0.3) * 0.5;
 
     const newPriceCents = Math.round(
-      startup.currentTokenPriceCents * (1 + demandFactor),
+      currentTokenPriceCents * (1 + demandFactor),
     );
 
     updateTokenPrice(startupId, newPriceCents, occupancyRate, transactionId);
 
-    logger.log(`Novo preço do token: ${newPriceCents} centavos (ocupação: ${(occupancyRate * 100).toFixed(1)}%)`);
+    logger.log(
+      `Novo preço do token: ${newPriceCents} centavos (ocupação: ${(occupancyRate * 100).toFixed(1)}%)`,
+    );
   },
 );

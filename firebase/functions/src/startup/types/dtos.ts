@@ -38,6 +38,13 @@ export interface StartupResumeDTO {
   isInvestor: boolean;
 }
 
+export interface StartupTokenInfoDTO {
+  id: string;
+  totalTokensIssued: number;
+  totalTokensAvailable: number;
+  currentTokenPriceCents: number;
+}
+
 export interface GetStartupsRequestBodyDTO {
   offset: number;
   limit: number;

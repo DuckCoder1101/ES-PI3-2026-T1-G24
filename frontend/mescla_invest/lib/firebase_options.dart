@@ -24,8 +24,6 @@ class DefaultFirebaseOptions {
         return android;
       case TargetPlatform.iOS:
         return ios;
-      case TargetPlatform.macOS:
-        return macos;
       case TargetPlatform.windows:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for windows - '
@@ -60,15 +58,6 @@ class DefaultFirebaseOptions {
     storageBucket: 'es-pi3-2026-t1-g24.firebasestorage.app',
   );
 
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyD0VIfZqMkaBla0o_n0l_fHXQCyXLmbiHY',
-    appId: '1:69341000932:ios:ede95b06d545ba44d028f1',
-    messagingSenderId: '69341000932',
-    projectId: 'es-pi3-2026-t1-g24',
-    storageBucket: 'es-pi3-2026-t1-g24.firebasestorage.app',
-    iosBundleId: 'br.edu.puccampinas.mesclaInvest',
-  );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyD0VIfZqMkaBla0o_n0l_fHXQCyXLmbiHY',
     appId: '1:69341000932:ios:ede95b06d545ba44d028f1',
@@ -77,5 +66,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'es-pi3-2026-t1-g24.firebasestorage.app',
     iosBundleId: 'br.edu.puccampinas.mesclaInvest',
   );
-
 }
