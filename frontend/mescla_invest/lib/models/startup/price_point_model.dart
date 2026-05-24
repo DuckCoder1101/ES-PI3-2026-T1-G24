@@ -3,6 +3,7 @@
  * RA: 25000636
  */
 
+import 'package:flutter/foundation.dart';
 import 'package:mescla_invest/formatters/timestamp_to_date.dart';
 
 enum DateInterval {
@@ -47,11 +48,12 @@ class PricePoint {
   double get priceReais => priceCents / 100;
 
   factory PricePoint.fromMap(Map<String, dynamic> map) {
+    debugPrint(map["createdAt"].toString());
     return PricePoint(
       priceCents: (map['priceCents'] as num?)?.toInt() ?? 0,
       occupancyRate: (map['occupancyRate'] as num?)?.toDouble() ?? 0.0,
       triggerId: map['triggerId'] as String? ?? '',
-      createdAt: parseTimestamp(map["createdAt"]) ?? DateTime.now(),
+      createdAt: (parseTimestamp(map["createdAt"]) ?? DateTime.now()).toLocal(),
     );
   }
 }

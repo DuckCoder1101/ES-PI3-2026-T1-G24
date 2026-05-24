@@ -17,6 +17,7 @@ import {
   StartupListItemDTO,
   StartupResumeDTO,
   StartupStageFilter,
+  StartupTokenInfoDTO,
 } from "../types/dtos";
 
 const startupsCollection = database.collection("startups");
@@ -204,4 +205,23 @@ export const getStartupTokenPriceHistory = async (
     .get();
 
   return snapshot.docs.map((doc) => doc.data() as PriceHistoryDocument);
+};
+
+export const getStartupTokenInfo = async (
+  startupId: string,
+): Promise<StartupTokenInfoDTO> => {
+  const snapshot = await startupsCollection.doc(startupId).get();
+
+  if (!snapshot.exists) {
+    throw new HttpsError("not-found", "Startup não encontrada!");
+  }
+
+  const startup = snapshot.data() as StartupDocument;
+
+  return {
+    id: startup.id,
+    totalTokensAvailable: startup.totalTokensAvailable,
+    totalTokensIssued: startup.totalTokensIssued,
+    currentTokenPriceCents: startup.currentTokenPriceCents,
+  } satisfies StartupTokenInfoDTO;
 };
