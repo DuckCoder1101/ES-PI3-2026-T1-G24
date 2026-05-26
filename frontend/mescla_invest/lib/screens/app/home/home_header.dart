@@ -2,15 +2,20 @@
 // RA: 25000294
 
 import 'package:flutter/material.dart';
+import 'package:mescla_invest/models/user/wallet_model.dart';
 import 'package:mescla_invest/screens/app_root.dart';
 import 'package:mescla_invest/screens/app/wallet/wallet_screen.dart';
 
 class HomeHeader extends StatelessWidget {
-  final String saldo;
+  final WalletModel? wallet;
+  final bool isLoadingWallet;
+  final VoidCallback onWalletUpdated;
 
   const HomeHeader({
     super.key,
-    required this.saldo,
+    required this.wallet,
+    required this.isLoadingWallet,
+    required this.onWalletUpdated,
   });
 
   void _showAddFundsModal(BuildContext context) {
@@ -21,7 +26,7 @@ class HomeHeader extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => AddFundsSheet(onSuccess: () {}),
+      builder: (_) => AddFundsSheet(onSuccess: onWalletUpdated),
     );
   }
 
@@ -29,6 +34,9 @@ class HomeHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = authUserDataProvider.value;
     final nome = user?.name.split(' ').first ?? 'usuário';
+    final saldo = isLoadingWallet
+        ? 'Carregando...'
+        : 'R\$ ${(wallet?.funds ?? 0).toStringAsFixed(2).replaceAll('.', ',')}';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,7 +93,7 @@ class HomeHeader extends StatelessWidget {
                 ),
               ),
               child: const Text(
-                'Negociar',
+                'Adicionar fundos',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
