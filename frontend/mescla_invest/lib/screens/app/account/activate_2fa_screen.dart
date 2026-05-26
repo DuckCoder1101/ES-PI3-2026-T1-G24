@@ -61,36 +61,32 @@ class _Activate2FAScreenState extends State<Activate2FAScreen> {
       setState(() {
         _otpauthUrl = result.otpauthUrl;
         _secret = result.secret;
+        _loadingQr = false;
       });
-    } on PlatformException catch (e) {
-      final code = e.code.toUpperCase();
-
-      // LOGIN RECENTE
-      if (code.contains("REQUIRES_RECENT_LOGIN")) {
-        final success = await _showReauthenticationDialog();
-        if (success) {
-          await _initActivation();
-        }
-      }
-    } on FirebaseAuthException catch (_) {
-      // LOGIN RECENTE
+    } on PlatformException catch (_) {
       final success = await _showReauthenticationDialog();
       if (success) {
         await _initActivation();
+      } else {
+        if (mounted) setState(() => _loadingQr = false);
       }
-    } catch (_) {
-      // OUTRO ERRO
+    } on FirebaseAuthException catch (_) {
+      final success = await _showReauthenticationDialog();
+      if (success) {
+        await _initActivation();
+      } else {
+        if (mounted) setState(() => _loadingQr = false);
+      }
+    } catch (err) {
+      debugPrint(err.toString());
+
       if (!mounted) return;
+      handleException(err: err, context: context);
 
       setState(() {
         _qrError = 'Erro ao gerar QR code. Tente novamente.';
+        _loadingQr = false;
       });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loadingQr = false;
-        });
-      }
     }
   }
 
@@ -367,6 +363,18 @@ class _Activate2FAScreenState extends State<Activate2FAScreen> {
       );
     }
 
+    // Guarda defensiva: se por algum motivo o URL ainda for nulo,
+    // exibe o estado de loading em vez de lançar um null check error.
+    final url = _otpauthUrl;
+    if (url == null) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: CircularProgressIndicator(color: AppColors.verdeMescla),
+        ),
+      );
+    }
+
     return Column(
       children: [
         const Text(
@@ -384,11 +392,7 @@ class _Activate2FAScreenState extends State<Activate2FAScreen> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: QrImageView(
-              data: _otpauthUrl!,
-              version: QrVersions.auto,
-              size: 200,
-            ),
+            child: QrImageView(data: url, version: QrVersions.auto, size: 200),
           ),
         ),
 
@@ -396,12 +400,12 @@ class _Activate2FAScreenState extends State<Activate2FAScreen> {
 
         GestureDetector(
           onTap: () async {
-            final uri = Uri.parse(_otpauthUrl!);
+            final uri = Uri.parse(url);
 
             if (await canLaunchUrl(uri)) {
               await launchUrl(uri);
             } else if (mounted) {
-              Clipboard.setData(ClipboardData(text: _otpauthUrl!));
+              Clipboard.setData(ClipboardData(text: url));
               showSnackbar(msg: 'URL copiada!', context: context);
             }
           },
