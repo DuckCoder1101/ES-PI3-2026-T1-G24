@@ -6,12 +6,14 @@ import 'package:mescla_invest/constants/colors.dart';
 
 // Enum dos destinos da navbar
 enum NavDestination {
+  home,
   catalog,
   market,
   wallet,
   account;
 
   String get label => switch (this) {
+    home => 'Início',
     catalog => 'Catálogo',
     market => 'Mercado',
     wallet => 'Carteira',
@@ -19,6 +21,7 @@ enum NavDestination {
   };
 
   IconData get icon => switch (this) {
+    home => Icons.home_outlined,
     catalog => Icons.grid_view_outlined,
     market => Icons.show_chart_outlined,
     wallet => Icons.account_balance_wallet_outlined,
@@ -26,6 +29,7 @@ enum NavDestination {
   };
 
   IconData get iconSelected => switch (this) {
+    home => Icons.home_rounded,
     catalog => Icons.grid_view_rounded,
     market => Icons.show_chart_rounded,
     wallet => Icons.account_balance_wallet_rounded,
