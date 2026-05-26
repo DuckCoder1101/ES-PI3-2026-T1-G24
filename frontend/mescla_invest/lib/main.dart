@@ -1,8 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:mescla_invest/screens/app/startup/startup_details.dart';
-import 'package:mescla_invest/screens/app/user/activate_2fa.dart';
+import 'package:mescla_invest/screens/app/startup/startup_details_screen.dart';
+import 'package:mescla_invest/screens/app/account/activate_2fa_screen.dart';
 import 'package:mescla_invest/screens/public/auth/forgot_password.dart';
 import 'package:mescla_invest/screens/public/welcome.dart';
 import 'package:mescla_invest/screens/app_root.dart';

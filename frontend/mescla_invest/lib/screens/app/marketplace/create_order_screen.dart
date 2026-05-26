@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mescla_invest/constants/colors.dart';
+import 'package:mescla_invest/formatters/str_formaters.dart';
 import 'package:mescla_invest/models/order_model.dart';
 import 'package:mescla_invest/models/startup/startup_model.dart';
 import 'package:mescla_invest/services/order_service.dart';
@@ -14,16 +15,14 @@ import 'package:mescla_invest/widgets/layout/model_header.dart';
 
 class CreateOrderScreen extends StatefulWidget {
   final String? startupId;
-  final OrderType orderType;
-
-  const CreateOrderScreen({super.key, required this.orderType, this.startupId});
+  const CreateOrderScreen({super.key, this.startupId});
 
   @override
   State<CreateOrderScreen> createState() => _CreateOrderScreenState();
 }
 
 class _CreateOrderScreenState extends State<CreateOrderScreen> {
-  late OrderType _orderType;
+  OrderType _orderType = OrderType.buy;
 
   // Startup selecionada no dropdown
   List<StartupResumeDTO> _startups = [];
@@ -51,7 +50,6 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   @override
   void initState() {
     super.initState();
-    _orderType = widget.orderType;
     _fetchStartups();
   }
 
@@ -367,7 +365,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                     _buildResumoRow(
                       'Preço/token',
                       _pricePerTokenCents > 0
-                          ? 'R\$ ${(_pricePerTokenCents / 100).toStringAsFixed(2).replaceAll('.', ',')}'
+                          ? formatCurrency(_pricePerTokenCents / 100)
                           : '—',
                     ),
                     const SizedBox(height: 8),
@@ -425,7 +423,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                         ),
                       )
                     : Text(
-                        _orderType.label,
+                        "Registrar ordem",
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,

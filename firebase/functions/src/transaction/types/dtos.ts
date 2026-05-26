@@ -10,15 +10,15 @@ import {
   TradeTransaction,
 } from "./documents";
 
-export interface InvestmentTransactionListDTO extends BaseTransaction {
-  type: "investment";
-  investorUId: string;
+export interface StartupTransactionListDTO extends BaseTransaction {
+  type: "investment" | "trade";
+  investorUId?: string;
   startup: StartupResumeDTO;
   tokensPurchased: number;
   tokenPriceCents: number;
 }
 
 export type TransactionListDTO =
-  | InvestmentTransactionListDTO
+  | StartupTransactionListDTO
   | TradeTransaction
   | FundsTransaction;

@@ -6,10 +6,7 @@
 import { database } from "../../shared/firebase";
 import { findStartupsResumes } from "../../startup/repositories/startupsRepository";
 import { TransactionDocument } from "../types/documents";
-import {
-  InvestmentTransactionListDTO,
-  TransactionListDTO,
-} from "../types/dtos";
+import { StartupTransactionListDTO, TransactionListDTO } from "../types/dtos";
 
 const transactionsCollection = database.collection("transactions");
 
@@ -34,7 +31,7 @@ export const findUserTransactions = async (
   })) as TransactionDocument[];
 
   return transactions.map((t) => {
-    if (t.type === "investment") {
+    if (t.type != "funds") {
       return {
         ...t,
         startup: startups.find((s) => s.id == t.startupId) ?? {
@@ -42,7 +39,7 @@ export const findUserTransactions = async (
           name: "Startup removida",
           isInvestor: false,
         },
-      } satisfies InvestmentTransactionListDTO;
+      } satisfies StartupTransactionListDTO;
     }
 
     return t;

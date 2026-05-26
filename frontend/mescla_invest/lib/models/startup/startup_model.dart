@@ -98,6 +98,7 @@ class StartupModel {
   final String name;
   final String description;
   final String shortDescription;
+  final String executiveSummary;
 
   /// Preço atual do token em reais (convertido de centavos).
   final double tokenPrice;
@@ -113,8 +114,6 @@ class StartupModel {
   // Caminhos de arquivos no storage
   final String? thumbnailPath;
   final String? videoPath;
-
-  final String? executiveSummaryPath;
 
   // URLs resolvidas após download do storage (mutáveis)
   String? thumbnailUrl;
@@ -132,7 +131,7 @@ class StartupModel {
     required this.name,
     required this.description,
     required this.shortDescription,
-    required this.executiveSummaryPath,
+    required this.executiveSummary,
     required this.tokenPrice,
     required this.totalTokensIssued,
     required this.totalTokensAvailable,
@@ -153,13 +152,13 @@ class StartupModel {
       name: map['name'] ?? '',
       description: map['description'] ?? '',
       shortDescription: map['shortDescription'] ?? '',
+      executiveSummary: map['executiveSummary'] ?? '',
       tokenPrice:
           ((map['currentTokenPriceCents'] as num?)?.toDouble() ?? 0) / 100,
       totalTokensIssued: (map['totalTokensIssued'] as num?)?.toInt() ?? 0,
       totalTokensAvailable: (map['totalTokensAvailable'] as num?)?.toInt() ?? 0,
       totalRaised: ((map['capitalRaisedCents'] as num?)?.toDouble() ?? 0) / 100,
       stage: StartupStage.values.byName(map['stage'] ?? 'nova'),
-      executiveSummaryPath: map['executiveSummaryPath'],
       thumbnailPath: map['thumbnailPath'],
       videoPath: map['videoPath'],
       tags: List<String>.from(map['tags'] ?? []),

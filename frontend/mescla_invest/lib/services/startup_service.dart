@@ -14,13 +14,12 @@ class StartupService {
     }
   }
 
-  static Future<void> downloadExecutiveSummary(
-    String executiveSumaryPath,
-    String localPath,
-  ) async {
+  static Future<void> downloadPitch(String startupId, String localPath) async {
     try {
       final File file = File(localPath);
-      await FirebaseStorage.instance.ref(executiveSumaryPath).writeToFile(file);
+      await FirebaseStorage.instance
+          .ref("startups/$startupId/pitch.pdf")
+          .writeToFile(file);
     } catch (err) {
       rethrow;
     }
