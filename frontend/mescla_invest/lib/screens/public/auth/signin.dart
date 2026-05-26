@@ -24,6 +24,9 @@ class _SigninScreenState extends State<SigninScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
+
   bool _senhaVisivel = false;
   bool _isLoading = false;
   bool _invalidCredentials = false;
@@ -32,6 +35,10 @@ class _SigninScreenState extends State<SigninScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
+
     super.dispose();
   }
 
@@ -57,7 +64,7 @@ class _SigninScreenState extends State<SigninScreen> {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } on FirebaseAuthMultiFactorException catch (e) {
-      // Usuário tem TOTP enrolado: redireciona para verificação
+      // Usuário tem 2FA: redireciona para verificação
       if (!mounted) return;
 
       await Navigator.push(
@@ -122,7 +129,12 @@ class _SigninScreenState extends State<SigninScreen> {
               const SizedBox(height: 8),
               TextField(
                 controller: _emailController,
+                focusNode: _emailFocus,
                 keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                onSubmitted: (_) {
+                  FocusScope.of(context).requestFocus(_passwordFocus);
+                },
                 style: const TextStyle(color: Colors.white),
                 onChanged: (_) {
                   if (_invalidCredentials) {
@@ -143,11 +155,16 @@ class _SigninScreenState extends State<SigninScreen> {
                       ),
                     ),
               ),
+
               const SizedBox(height: 28),
               const InputLabel(texto: 'Senha'),
               const SizedBox(height: 8),
+
               TextField(
                 controller: _passwordController,
+                focusNode: _passwordFocus,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _loginUsuario(),
                 obscureText: !_senhaVisivel,
                 style: const TextStyle(color: Colors.white),
                 onChanged: (_) {

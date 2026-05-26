@@ -33,12 +33,9 @@ class _TabAboutState extends State<TabAbout> {
       setState(() => _isDownloading = true);
 
       final String localPath =
-          '$selectedDirectory/${widget.startup.name}/sumario_executivo.pdf';
+          '$selectedDirectory/sumario_executivo_${widget.startup.name}.pdf';
 
-      await StartupService.downloadExecutiveSummary(
-        widget.startup.executiveSummaryPath!,
-        localPath,
-      );
+      await StartupService.downloadPitch(widget.startup.id, localPath);
 
       if (mounted) {
         showSnackbar(msg: "Download concluído com sucesso!", context: context);
@@ -76,15 +73,54 @@ class _TabAboutState extends State<TabAbout> {
           ),
         ),
 
-        if (widget.startup.executiveSummaryPath != null) ...[
-          const SizedBox(height: 20),
-          PrimaryButton(
-            text: "Baixar sumário executivo: ",
-            onPressed: _isDownloading ? null : downloadExecutiveSummary,
-          ),
-        ],
+        _buildExecutiveSummarySection(),
+
+        const SizedBox(height: 20),
+        PrimaryButton(
+          text: "Baixar pitch",
+          onPressed: _isDownloading ? null : downloadExecutiveSummary,
+          isLoading: _isDownloading,
+        ),
 
         if (widget.startup.videoUrl != null) _buildVideoSection(),
+      ],
+    );
+  }
+
+  Widget _buildExecutiveSummarySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 24),
+        const Text(
+          'SUMÁRIO EXECUTIVO',
+          style: TextStyle(
+            color: AppColors.verdeMescla,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.verdeMescla.withValues(alpha: 0.3),
+              width: 1,
+            ),
+          ),
+          child: Text(
+            widget.startup.executiveSummary,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 15,
+              height: 1.6,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
       ],
     );
   }

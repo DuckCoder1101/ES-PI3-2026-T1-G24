@@ -12,8 +12,22 @@ enum OrderType {
 
   String get label {
     return switch (this) {
-      OrderType.buy => "Comprar",
-      OrderType.sell => "Vender",
+      OrderType.buy => "Ordem de compra",
+      OrderType.sell => "Ordem de venda",
+    };
+  }
+}
+
+enum OrderTypeFilter {
+  buy,
+  sell,
+  myOrders;
+
+  String get label {
+    return switch (this) {
+      buy => "ORDENS DE COMPRA",
+      sell => "ORDERNS DE VENDA",
+      myOrders => "MINHAS ORDENS",
     };
   }
 }

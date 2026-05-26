@@ -8,10 +8,6 @@ import 'package:mescla_invest/models/startup/startup_model.dart';
 
 enum TransactionType { investment, funds, trade }
 
-// ---------------------------------------------------------------------------
-// Base
-// ---------------------------------------------------------------------------
-
 /*
  * Modelo base de transação.
  * Todas as transações possuem id, tipo, valor em centavos, data
@@ -48,14 +44,10 @@ abstract class TransactionModel {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Investment — compra direta de tokens na página da startup
-// ---------------------------------------------------------------------------
-
 class InvestmentTransactionModel extends TransactionModel {
   final String investorUId;
 
-  /// Resumo da startup, inclui [isInvestor] (sempre true após investimento).
   final StartupResumeDTO startup;
 
   final int tokensPurchased;
@@ -91,14 +83,13 @@ class InvestmentTransactionModel extends TransactionModel {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Trade — compra/venda de tokens entre usuários via balcão
-// ---------------------------------------------------------------------------
-
 class TradeTransactionModel extends TransactionModel {
   final String purchaserUId;
   final String sellerUId;
-  final String startupId;
+
+  final StartupResumeDTO startup;
+
   final int tokensPurchased;
   final int tokenPriceCents;
 
@@ -112,7 +103,7 @@ class TradeTransactionModel extends TransactionModel {
     super.createdAt,
     required this.purchaserUId,
     required this.sellerUId,
-    required this.startupId,
+    required this.startup,
     required this.tokensPurchased,
     required this.tokenPriceCents,
   }) : super(type: TransactionType.trade);
@@ -125,17 +116,16 @@ class TradeTransactionModel extends TransactionModel {
       createdAt: parseTimestamp(map['createdAt']),
       purchaserUId: map['purchaserUId'] ?? '',
       sellerUId: map['sellerUId'] ?? '',
-      startupId: map['startupId'] ?? '',
+      startup: StartupResumeDTO.fromMap(
+        Map<String, dynamic>.from(map['startup']),
+      ),
       tokensPurchased: (map['tokensPurchased'] as num?)?.toInt() ?? 0,
       tokenPriceCents: (map['tokenPriceCents'] as num?)?.toInt() ?? 0,
     );
   }
 }
 
-// ---------------------------------------------------------------------------
 // Funds — depósito de saldo fictício na carteira
-// ---------------------------------------------------------------------------
-
 class FundsTransactionModel extends TransactionModel {
   final String authorUId;
 
