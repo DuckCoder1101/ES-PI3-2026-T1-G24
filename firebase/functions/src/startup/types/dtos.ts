@@ -6,6 +6,7 @@
 import { Timestamp } from "firebase-admin/firestore";
 import {
   DateInterval,
+  PriceHistoryDocument,
   QuestionAnwserDocument,
   QuestionVisibility,
   StartupDocument,
@@ -36,6 +37,8 @@ export interface StartupResumeDTO {
   id: string;
   name: string;
   isInvestor: boolean;
+  currentTokenPriceCents: number;
+  initialTokenPriceCents: number;
 }
 
 export interface StartupTokenInfoDTO {
@@ -43,6 +46,7 @@ export interface StartupTokenInfoDTO {
   totalTokensIssued: number;
   totalTokensAvailable: number;
   currentTokenPriceCents: number;
+  initialTokenPriceCents: number;
 }
 
 export interface GetStartupsRequestBodyDTO {
@@ -77,4 +81,10 @@ export interface QuestionListDTO {
 export interface GetTokenPriceHistoryRequestDTO {
   startupId: string;
   dateInterval: DateInterval;
+}
+
+export interface StartupPriceSeriesDTO {
+  startupId: string;
+  startupName: string;
+  priceHistory: PriceHistoryDocument[];
 }

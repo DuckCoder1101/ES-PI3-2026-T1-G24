@@ -5,6 +5,7 @@
 
 import 'package:mescla_invest/models/startup/external_member_model.dart';
 import 'package:mescla_invest/models/startup/founder_model.dart';
+import 'package:mescla_invest/models/startup/price_point_model.dart';
 
 enum StartupStage {
   nova,
@@ -22,25 +23,45 @@ enum StartupStage {
 
 enum StartupStageFilter { nova, em_operacao, em_expansao, all }
 
-// StartupResumeDTO — resumo mínimo retornado em listas, ordens e transações--
+// StartupResumeDTO — resumo mínimo retornado em listas, ordens e transações
 class StartupResumeDTO {
   final String id;
   final String name;
-
-  /// Indica se o usuário autenticado possui tokens desta startup.
   final bool isInvestor;
+  final int currentTokenPriceCents;
+  // Preço de lançamento — usado para calcular valorização percentual
+  final int initialTokenPriceCents;
+
+  double get tokenPrice => currentTokenPriceCents / 100;
+  double get initialTokenPrice => initialTokenPriceCents / 100;
+
+  /// Valorização percentual desde o lançamento.
+  /// Retorna null se o preço inicial for zero (dado ausente).
+  double? get appreciationPercent {
+    if (initialTokenPriceCents == 0) return null;
+    return ((currentTokenPriceCents - initialTokenPriceCents) /
+            initialTokenPriceCents) *
+        100;
+  }
 
   const StartupResumeDTO({
     required this.id,
     required this.name,
+    required this.currentTokenPriceCents,
+    required this.initialTokenPriceCents,
     this.isInvestor = false,
   });
 
   factory StartupResumeDTO.fromMap(Map<String, dynamic> rawMap) {
     final map = rawMap.map((key, value) => MapEntry(key.trim(), value));
+    final current = map['currentTokenPriceCents'] as int? ?? 0;
     return StartupResumeDTO(
       id: map['id'] ?? '',
       name: map['name'] ?? '',
+      currentTokenPriceCents: current,
+      // fallback: se initialTokenPriceCents não vier do backend, usa o atual
+      // (valorização aparecerá como 0%, que é correto para dados legados)
+      initialTokenPriceCents: map['initialTokenPriceCents'] as int? ?? current,
       isInvestor: map['isInvestor'] == true,
     );
   }
@@ -52,8 +73,8 @@ class StartupListDTO {
   final String name;
   final String shortDescription;
 
-  /// Preço atual do token em reais (convertido de centavos).
-  final double tokenPrice;
+  final int currentTokenPriceCents;
+  double get tokenPrice => currentTokenPriceCents / 100;
 
   final int totalTokensAvailable;
   final StartupStage stage;
@@ -67,7 +88,7 @@ class StartupListDTO {
     required this.id,
     required this.name,
     required this.shortDescription,
-    required this.tokenPrice,
+    required this.currentTokenPriceCents,
     required this.totalTokensAvailable,
     required this.stage,
     required this.thumbnailPath,
@@ -81,8 +102,7 @@ class StartupListDTO {
       id: map['id'] ?? '',
       name: map['name'] ?? '',
       shortDescription: map['shortDescription'] ?? '',
-      tokenPrice:
-          ((map['currentTokenPriceCents'] as num?)?.toDouble() ?? 0) / 100,
+      currentTokenPriceCents: map['currentTokenPriceCents'] ?? 0,
       totalTokensAvailable: (map['totalTokensAvailable'] as num?)?.toInt() ?? 0,
       stage: StartupStage.values.byName(map['stage'] ?? 'nova'),
       thumbnailPath: map['thumbnailPath'],
@@ -92,7 +112,6 @@ class StartupListDTO {
   }
 }
 
-// StartupModel — dados completos retornados na página de detalhes
 class StartupModel {
   final String id;
   final String name;
@@ -100,22 +119,18 @@ class StartupModel {
   final String shortDescription;
   final String executiveSummary;
 
-  /// Preço atual do token em reais (convertido de centavos).
-  final double tokenPrice;
+  final int currentTokenPriceCents;
+  double get tokenPrice => currentTokenPriceCents / 100;
 
   final int totalTokensIssued;
   final int totalTokensAvailable;
 
-  /// Capital total captado em reais (convertido de centavos).
   final double totalRaised;
-
   final StartupStage stage;
 
-  // Caminhos de arquivos no storage
   final String? thumbnailPath;
   final String? videoPath;
 
-  // URLs resolvidas após download do storage (mutáveis)
   String? thumbnailUrl;
   String? videoUrl;
 
@@ -132,7 +147,7 @@ class StartupModel {
     required this.description,
     required this.shortDescription,
     required this.executiveSummary,
-    required this.tokenPrice,
+    required this.currentTokenPriceCents,
     required this.totalTokensIssued,
     required this.totalTokensAvailable,
     required this.totalRaised,
@@ -153,8 +168,7 @@ class StartupModel {
       description: map['description'] ?? '',
       shortDescription: map['shortDescription'] ?? '',
       executiveSummary: map['executiveSummary'] ?? '',
-      tokenPrice:
-          ((map['currentTokenPriceCents'] as num?)?.toDouble() ?? 0) / 100,
+      currentTokenPriceCents: map['currentTokenPriceCents'] ?? 0,
       totalTokensIssued: (map['totalTokensIssued'] as num?)?.toInt() ?? 0,
       totalTokensAvailable: (map['totalTokensAvailable'] as num?)?.toInt() ?? 0,
       totalRaised: ((map['capitalRaisedCents'] as num?)?.toDouble() ?? 0) / 100,
@@ -168,6 +182,29 @@ class StartupModel {
           .toList(),
       externalMembers: (map['externalMember'] as List? ?? [])
           .map((e) => ExternalMemberModel.fromMap(Map<String, dynamic>.from(e)))
+          .toList(),
+    );
+  }
+}
+
+class StartupPriceSeries {
+  final String startupId;
+  final String startupName;
+  final List<PricePoint> points;
+
+  const StartupPriceSeries({
+    required this.startupId,
+    required this.startupName,
+    required this.points,
+  });
+
+  factory StartupPriceSeries.fromMap(Map<String, dynamic> map) {
+    final rawPoints = map['priceHistory'] as List? ?? [];
+    return StartupPriceSeries(
+      startupId: map['startupId'] as String? ?? '',
+      startupName: map['startupName'] as String? ?? '',
+      points: rawPoints
+          .map((e) => PricePoint.fromMap(Map<String, dynamic>.from(e)))
           .toList(),
     );
   }

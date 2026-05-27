@@ -11,5 +11,7 @@ export * from "./handlers/qa/getQuestions";
 export * from "./handlers/qa/registerQuestion";
 export * from "./handlers/qa/deleteQuestion";
 export * from "./handlers/getTokenPriceHistory";
+export * from "./handlers/getInvestedStartupsPriceHistory";
 
 export * from "./triggers/onTransactionCreated";
+export * from "./triggers/dailyPriceSnapshot";

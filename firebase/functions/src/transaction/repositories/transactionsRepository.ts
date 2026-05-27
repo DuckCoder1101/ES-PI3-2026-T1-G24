@@ -37,6 +37,8 @@ export const findUserTransactions = async (
         startup: startups.find((s) => s.id == t.startupId) ?? {
           id: t.startupId,
           name: "Startup removida",
+          currentTokenPriceCents: 0,
+          initialTokenPriceCents: 0,
           isInvestor: false,
         },
       } satisfies StartupTransactionListDTO;

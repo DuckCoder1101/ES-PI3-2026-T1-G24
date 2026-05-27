@@ -38,6 +38,8 @@ export interface StartupDocument {
   totalTokensIssued: number;
   totalTokensAvailable: number;
   currentTokenPriceCents: number;
+  // Preço de lançamento — imutável, usado como base do cálculo de valorização
+  initialTokenPriceCents: number;
   founders: Founder[];
   externalMember: ExternalMember[];
 

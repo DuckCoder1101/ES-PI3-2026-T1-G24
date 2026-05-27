@@ -8,7 +8,6 @@ import 'package:mescla_invest/formatters/str_formaters.dart';
 import 'package:mescla_invest/models/startup/startup_model.dart';
 import 'package:mescla_invest/services/startup_service.dart';
 import 'package:mescla_invest/utils/handle_exception.dart';
-import 'package:mescla_invest/widgets/layout/header.dart';
 import 'package:mescla_invest/constants/colors.dart';
 
 class CatalogScreen extends StatefulWidget {
@@ -109,7 +108,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
       child: SafeArea(
         child: Column(
           children: [
-            AppHeader(),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),

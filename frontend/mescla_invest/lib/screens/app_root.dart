@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/user/user_model.dart';
 import 'package:mescla_invest/screens/app/marketplace/market_screen.dart';
-import 'package:mescla_invest/screens/app/catalog_screen.dart';
+import 'package:mescla_invest/screens/app/startup/catalog_screen.dart';
 import 'package:mescla_invest/screens/app/account/account_screen.dart';
 import 'package:mescla_invest/screens/app/wallet/wallet_screen.dart';
 import 'package:mescla_invest/screens/public/auth/verify_email.dart';
@@ -13,6 +13,7 @@ import 'package:mescla_invest/screens/public/welcome.dart';
 import 'package:mescla_invest/services/user_service.dart';
 import 'package:mescla_invest/utils/handle_exception.dart';
 import 'package:mescla_invest/widgets/layout/navbar.dart';
+import 'package:mescla_invest/screens/app/home/home_screen.dart';
 
 final authUserDataProvider = ValueNotifier<UserModel?>(null);
 
@@ -29,7 +30,7 @@ class _AppRootState extends State<AppRoot> {
   StreamSubscription<User?>? _authSubscription;
 
   _AuthState _authState = _AuthState.loading;
-  NavDestination _currentDestination = NavDestination.catalog;
+  NavDestination _currentDestination = NavDestination.home;
 
   @override
   void initState() {
@@ -92,6 +93,7 @@ class _AppRootState extends State<AppRoot> {
   }
 
   Widget _buildScreen(NavDestination destination) => switch (destination) {
+    NavDestination.home => const HomeScreen(),
     NavDestination.catalog => const CatalogScreen(),
     NavDestination.market => const MarketScreen(),
     NavDestination.wallet => const WalletScreen(),
