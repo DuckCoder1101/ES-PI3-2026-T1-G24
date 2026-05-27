@@ -19,6 +19,7 @@ import {
   UserDocument,
   WalletDocument,
 } from "../types/documents";
+import { StartupDocument } from "../../startup/types/documents";
 
 const cpfsCollection = database.collection("cpf_index");
 const usersCollection = database.collection("users");
@@ -141,38 +142,38 @@ export const addFundsToWallet = async (uid: string, fundsCents: number) => {
 /*
  * Retorna todos os investimentos do usuário.
  */
-// usersRepository.ts
 export const getInvestments = async (
   uid: string,
 ): Promise<InvestmentListDTO[]> => {
   const snapshot = await getInvestmentsStartupsCollection(uid).get();
   if (snapshot.empty) return [];
 
-  // Busca dados das startups em paralelo, direto — sem passar por startupsRepository
-  const startupDocs = await Promise.all(
-    snapshot.docs.map((doc) =>
-      database
-        .collection("startups")
-        .doc((doc.data() as InvestmentDocument).startupId)
-        .get(),
-    ),
+  const refs = snapshot.docs.map((doc) =>
+    database.collection("startups").doc(doc.data().startupId),
   );
+  const startupDocs = await database.getAll(...refs);
 
   return snapshot.docs.map((doc, i) => {
     const data = doc.data() as InvestmentDocument;
     const startupDoc = startupDocs[i];
+    const startup = startupDoc.data() as StartupDocument;
+
     return {
       ...data,
       startup: startupDoc.exists
         ? {
             id: startupDoc.id,
-            name: startupDoc.data()!.name as string,
+            name: startup.name,
             isInvestor: true,
+            currentTokenPriceCents: startup.currentTokenPriceCents,
+            initialTokenPriceCents: startup.initialTokenPriceCents,
           }
         : {
             id: data.startupId,
             name: "Startup removida!",
             isInvestor: false,
+            currentTokenPriceCents: 0,
+            initialTokenPriceCents: 0,
           },
     } satisfies InvestmentListDTO;
   });

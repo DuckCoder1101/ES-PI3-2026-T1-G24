@@ -2,14 +2,17 @@
 // RA: 25000294
 
 import 'package:flutter/material.dart';
+import 'package:mescla_invest/constants/colors.dart';
+import 'package:mescla_invest/formatters/str_formaters.dart';
 import 'package:mescla_invest/models/user/wallet_model.dart';
 import 'package:mescla_invest/screens/app_root.dart';
-import 'package:mescla_invest/screens/app/wallet/wallet_screen.dart';
+import 'package:mescla_invest/utils/show_snackbar.dart';
+import 'package:mescla_invest/widgets/layout/add_funds_sheet.dart';
 
 class HomeHeader extends StatelessWidget {
   final WalletModel? wallet;
   final bool isLoadingWallet;
-  final VoidCallback onWalletUpdated;
+  final Future<void> Function() onWalletUpdated;
 
   const HomeHeader({
     super.key,
@@ -22,11 +25,22 @@ class HomeHeader extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: AppColors.campoEscuro,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (_) => AddFundsSheet(onSuccess: onWalletUpdated),
+      builder: (_) => AddFundsSheet(
+        onSuccess: () async {
+          await onWalletUpdated();
+
+          if (context.mounted) {
+            showSnackbar(
+              msg: 'Saldo adicionado com sucesso!',
+              context: context,
+            );
+          }
+        },
+      ),
     );
   }
 
@@ -34,9 +48,6 @@ class HomeHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = authUserDataProvider.value;
     final nome = user?.name.split(' ').first ?? 'usuário';
-    final saldo = isLoadingWallet
-        ? 'Carregando...'
-        : 'R\$ ${(wallet?.funds ?? 0).toStringAsFixed(2).replaceAll('.', ',')}';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -52,7 +63,6 @@ class HomeHeader extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const Icon(Icons.notifications_outlined, color: Colors.white),
           ],
         ),
 
@@ -70,10 +80,12 @@ class HomeHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  saldo,
-                  style: const TextStyle(
+                  isLoadingWallet
+                      ? "Carregando..."
+                      : formatCurrency(wallet?.funds ?? 0),
+                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 26,
+                    fontSize: isLoadingWallet ? 18 : 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

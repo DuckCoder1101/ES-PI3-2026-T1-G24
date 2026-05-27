@@ -3,6 +3,23 @@
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:mescla_invest/formatters/str_formaters.dart';
+import 'package:mescla_invest/models/startup/price_point_model.dart';
+import 'package:mescla_invest/models/startup/startup_model.dart';
+import 'package:mescla_invest/services/startup_service.dart';
+import 'package:mescla_invest/utils/handle_exception.dart';
+
+const List<Color> _kSeriesColors = [
+  Color(0xFF7FDD3A),
+  Color(0xFF4FC3F7),
+  Color(0xFFFFB74D),
+  Color(0xFFCE93D8),
+  Color(0xFFEF5350),
+  Color(0xFF4DB6AC),
+  Color(0xFFFFF176),
+];
+
+Color _colorFor(int index) => _kSeriesColors[index % _kSeriesColors.length];
 
 class TokenChart extends StatefulWidget {
   const TokenChart({super.key});
@@ -12,77 +29,53 @@ class TokenChart extends StatefulWidget {
 }
 
 class _TokenChartState extends State<TokenChart> {
-  static const Color verdeMescla = Color(0xFF7FDD3A);
-  String _periodoSelecionado = 'Diário';
+  static const Color _verde = Color(0xFF7FDD3A);
+  static const Color _cardColor = Color(0xFF1E1E1E);
+  static const Color _fieldDark = Color(0xFF2A2A2A);
 
-  final List<String> _periodos = ['Diário', 'Semanal', 'Mensal', '6M', 'YTD'];
+  DateInterval _selectedInterval = DateInterval.oneMonth;
 
-  final Map<String, List<FlSpot>> _dadosGrafico = {
-    'Diário': [
-      FlSpot(0, 800),
-      FlSpot(1, 850),
-      FlSpot(2, 820),
-      FlSpot(3, 900),
-      FlSpot(4, 950),
-      FlSpot(5, 1000),
-      FlSpot(6, 1215),
-    ],
-    'Semanal': [
-      FlSpot(0, 600),
-      FlSpot(1, 700),
-      FlSpot(2, 750),
-      FlSpot(3, 800),
-      FlSpot(4, 900),
-      FlSpot(5, 1000),
-      FlSpot(6, 1215),
-    ],
-    'Mensal': [
-      FlSpot(0, 400),
-      FlSpot(1, 500),
-      FlSpot(2, 600),
-      FlSpot(3, 750),
-      FlSpot(4, 900),
-      FlSpot(5, 1100),
-      FlSpot(6, 1215),
-    ],
-    '6M': [
-      FlSpot(0, 200),
-      FlSpot(1, 400),
-      FlSpot(2, 600),
-      FlSpot(3, 800),
-      FlSpot(4, 1000),
-      FlSpot(5, 1100),
-      FlSpot(6, 1215),
-    ],
-    'YTD': [
-      FlSpot(0, 100),
-      FlSpot(1, 300),
-      FlSpot(2, 500),
-      FlSpot(3, 700),
-      FlSpot(4, 900),
-      FlSpot(5, 1100),
-      FlSpot(6, 1215),
-    ],
-  };
+  List<StartupPriceSeries> _series = [];
+  bool _isLoading = true;
 
-  final Map<String, List<String>> _labelsPeriodo = {
-    'Diário': ['19:00', '12:00', '18:00'],
-    'Semanal': ['Seg', 'Qua', 'Dom'],
-    'Mensal': ['Sem 1', 'Sem 2', 'Sem 4'],
-    '6M': ['Jan', 'Mar', 'Jun'],
-    'YTD': ['Jan', 'Abr', 'Dez'],
-  };
+  // Índice da série em destaque; -1 = todas visíveis
+  int _hoveredIndex = -1;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  // Carregamento
+
+  Future<void> _loadData() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _hoveredIndex = -1;
+    });
+
+    try {
+      final raw = await StartupService.getInvestedStartupsPriceHistory(
+        interval: _selectedInterval,
+      );
+      if (mounted) setState(() => _series = raw);
+    } catch (err) {
+      if (mounted) {
+        handleException(err: err, context: context);
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final spots = _dadosGrafico[_periodoSelecionado]!;
-    final labels = _labelsPeriodo[_periodoSelecionado]!;
-    final maxY = spots.map((s) => s.y).reduce((a, b) => a > b ? a : b);
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
+        color: _cardColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -97,147 +90,334 @@ class _TokenChartState extends State<TokenChart> {
             ),
           ),
           const SizedBox(height: 16),
-
-          // Filtros de período
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: _periodos.map((p) {
-                final isSelected = _periodoSelecionado == p;
-                return GestureDetector(
-                  onTap: () => setState(() => _periodoSelecionado = p),
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected ? verdeMescla : Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      p,
-                      style: TextStyle(
-                        color: isSelected ? Colors.black : Colors.white54,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Gráfico
-          SizedBox(
-            height: 180,
-            child: LineChart(
-              LineChartData(
-                gridData: const FlGridData(show: false),
-                borderData: FlBorderData(show: false),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 50,
-                      getTitlesWidget: (value, meta) {
-                        if (value == 0 || value == maxY) {
-                          return Text(
-                            'R\$ ${value.toInt()}',
-                            style: const TextStyle(
-                              color: Colors.white38,
-                              fontSize: 10,
-                            ),
-                          );
-                        }
-                        return const SizedBox();
-                      },
-                    ),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, meta) {
-                        final idx = value.toInt();
-                        if (idx == 0) {
-                          return Text(
-                            labels[0],
-                            style: const TextStyle(
-                              color: Colors.white38,
-                              fontSize: 10,
-                            ),
-                          );
-                        }
-                        if (idx == 3) {
-                          return Text(
-                            labels[1],
-                            style: const TextStyle(
-                              color: Colors.white38,
-                              fontSize: 10,
-                            ),
-                          );
-                        }
-                        if (idx == 6) {
-                          return Text(
-                            labels[2],
-                            style: const TextStyle(
-                              color: Colors.white38,
-                              fontSize: 10,
-                            ),
-                          );
-                        }
-                        return const SizedBox();
-                      },
-                    ),
-                  ),
-                ),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: spots,
-                    isCurved: true,
-                    color: verdeMescla,
-                    barWidth: 2,
-                    dotData: FlDotData(
-                      show: true,
-                      checkToShowDot: (spot, barData) => spot == spots.last,
-                    ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      color: verdeMescla.withValues(alpha: 0.15),
-                    ),
-                  ),
-                ],
-                lineTouchData: LineTouchData(
-                  touchTooltipData: LineTouchTooltipData(
-                    getTooltipItems: (touchedSpots) {
-                      return touchedSpots.map((spot) {
-                        return LineTooltipItem(
-                          'R\$ ${spot.y.toInt()}',
-                          const TextStyle(
-                            color: verdeMescla,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        );
-                      }).toList();
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ),
+          _buildIntervalSelector(),
+          const SizedBox(height: 20),
+          _buildBody(),
         ],
       ),
     );
+  }
+
+  // Seletor de intervalo
+
+  Widget _buildIntervalSelector() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: DateInterval.values.map((interval) {
+          final isSelected = _selectedInterval == interval;
+          return GestureDetector(
+            onTap: () {
+              if (_selectedInterval == interval) return;
+              setState(() => _selectedInterval = interval);
+              _loadData();
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected ? _verde : Colors.transparent,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                interval.label,
+                style: TextStyle(
+                  color: isSelected ? Colors.black : Colors.white54,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // Corpo (loading / erro / vazio / gráfico)
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const SizedBox(
+        height: 220,
+        child: Center(
+          child: CircularProgressIndicator(color: Color(0xFF7FDD3A)),
+        ),
+      );
+    }
+
+    if (_series.isEmpty) return _buildEmpty();
+    return _buildChart();
+  }
+
+  // Gráfico multi-linha
+
+  Widget _buildChart() {
+    double globalMinY = double.infinity;
+    double globalMaxY = double.negativeInfinity;
+
+    final List<LineChartBarData> bars = [];
+
+    for (int i = 0; i < _series.length; i++) {
+      final serie = _series[i];
+      final color = _colorFor(i);
+      final isDimmed = _hoveredIndex != -1 && _hoveredIndex != i;
+
+      final spots = serie.points
+          .asMap()
+          .entries
+          .map((e) => FlSpot(e.key.toDouble(), e.value.priceReais))
+          .toList();
+
+      for (final s in spots) {
+        if (s.y < globalMinY) globalMinY = s.y;
+        if (s.y > globalMaxY) globalMaxY = s.y;
+      }
+
+      bars.add(
+        LineChartBarData(
+          spots: spots,
+          isCurved: true,
+          curveSmoothness: 0.3,
+          color: color.withValues(alpha: isDimmed ? 0.2 : 1.0),
+          barWidth: isDimmed ? 1.5 : 2.5,
+          isStrokeCapRound: true,
+          dotData: FlDotData(
+            show: spots.length <= 10 && !isDimmed,
+            getDotPainter: (_, _, _, _) => FlDotCirclePainter(
+              radius: 3.5,
+              color: color,
+              strokeWidth: 1.5,
+              strokeColor: Colors.black,
+            ),
+          ),
+          belowBarData: BarAreaData(
+            show: !isDimmed,
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                color.withValues(alpha: 0.18),
+                color.withValues(alpha: 0.0),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Padding vertical para não cortar a linha nas bordas
+    final range = (globalMaxY - globalMinY).abs();
+    final padding = (range * 0.15).clamp(0.5, double.infinity);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Legenda interativa
+        _buildLegend(),
+        const SizedBox(height: 16),
+
+        // Gráfico
+        SizedBox(
+          height: 200,
+          child: LineChart(
+            LineChartData(
+              minY: globalMinY - padding,
+              maxY: globalMaxY + padding,
+              clipData: const FlClipData.all(),
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                horizontalInterval: (range + padding * 2) / 4,
+                getDrawingHorizontalLine: (_) =>
+                    const FlLine(color: Colors.white10, strokeWidth: 1),
+              ),
+              borderData: FlBorderData(show: false),
+              titlesData: FlTitlesData(
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 56,
+                    getTitlesWidget: (value, _) => Text(
+                      formatCurrency(value),
+                      style: const TextStyle(
+                        color: Colors.white38,
+                        fontSize: 9,
+                      ),
+                    ),
+                  ),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 28,
+                    // usa a série com mais pontos para os labels do eixo X
+                    interval: _bottomInterval(_maxPointCount()),
+                    getTitlesWidget: (value, _) {
+                      // Pega a data da série referência (maior série)
+                      final refSerie = _referenceSeries();
+                      final idx = value.toInt();
+                      if (refSerie == null ||
+                          idx < 0 ||
+                          idx >= refSerie.points.length) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          formatDate(refSerie.points[idx].createdAt),
+                          style: const TextStyle(
+                            color: Colors.white38,
+                            fontSize: 9,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                rightTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                topTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+              ),
+              lineTouchData: LineTouchData(
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipColor: (_) => const Color(0xFF1E1E1E),
+                  getTooltipItems: (touchedSpots) {
+                    return touchedSpots.map((s) {
+                      final color = _colorFor(s.barIndex);
+                      final serie = _series[s.barIndex];
+                      final idx = s.x.toInt();
+                      final date = idx < serie.points.length
+                          ? formatDate(serie.points[idx].createdAt)
+                          : '';
+                      return LineTooltipItem(
+                        '${serie.startupName}\n',
+                        TextStyle(
+                          color: color,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: '${formatCurrency(s.y)}  $date',
+                            style: const TextStyle(
+                              color: Colors.white54,
+                              fontSize: 11,
+                              fontWeight: FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList();
+                  },
+                ),
+              ),
+              lineBarsData: bars,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Legenda interativa
+
+  Widget _buildLegend() {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 6,
+      children: _series.asMap().entries.map((entry) {
+        final i = entry.key;
+        final serie = entry.value;
+        final color = _colorFor(i);
+        final isActive = _hoveredIndex == -1 || _hoveredIndex == i;
+
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _hoveredIndex = (_hoveredIndex == i) ? -1 : i;
+            });
+          },
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 150),
+            opacity: isActive ? 1.0 : 0.35,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: _fieldDark,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isActive ? color : Colors.white12,
+                  width: 1.2,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    serie.startupName,
+                    style: TextStyle(
+                      color: isActive ? Colors.white : Colors.white38,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  // Estados vazios / erro
+
+  Widget _buildEmpty() {
+    return const SizedBox(
+      height: 220,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.show_chart_rounded, color: Colors.white12, size: 48),
+            SizedBox(height: 12),
+            Text(
+              'Você ainda não possui investimentos.',
+              style: TextStyle(color: Colors.white38, fontSize: 13),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helpers
+
+  int _maxPointCount() =>
+      _series.map((s) => s.points.length).reduce((a, b) => a > b ? a : b);
+
+  StartupPriceSeries? _referenceSeries() {
+    if (_series.isEmpty) return null;
+    return _series.reduce((a, b) => a.points.length >= b.points.length ? a : b);
+  }
+
+  double _bottomInterval(int count) {
+    if (count <= 6) return 1;
+    if (count <= 12) return 2;
+    if (count <= 30) return 5;
+    return (count / 5).ceilToDouble();
   }
 }

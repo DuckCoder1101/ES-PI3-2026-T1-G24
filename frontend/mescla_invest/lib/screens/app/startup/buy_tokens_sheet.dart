@@ -3,12 +3,13 @@
  * RA: 25000636
  */
 
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mescla_invest/constants/colors.dart';
+import 'package:mescla_invest/formatters/str_formaters.dart';
 import 'package:mescla_invest/models/startup/startup_model.dart';
 import 'package:mescla_invest/services/user_service.dart';
+import 'package:mescla_invest/utils/handle_exception.dart';
 
 class BuyTokensSheet extends StatefulWidget {
   final StartupModel startup;
@@ -67,13 +68,9 @@ class _BuyTokensSheetState extends State<BuyTokensSheet> {
         Navigator.pop(context);
         widget.onSuccess();
       }
-    } on FirebaseFunctionsException catch (e) {
+    } catch (err) {
       if (mounted) {
-        setState(() => _errorMsg = 'Erro ao comprar tokens: ${e.message}');
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() => _errorMsg = 'Erro inesperado. Tente novamente.');
+        handleException(err: err, context: context);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -224,7 +221,7 @@ class _BuyTokensSheetState extends State<BuyTokensSheet> {
                   style: TextStyle(color: Colors.white54),
                 ),
                 Text(
-                  'R\$ ${_total.toStringAsFixed(2).replaceAll('.', ',')}',
+                  formatCurrency(_total),
                   style: const TextStyle(
                     color: AppColors.verdeMescla,
                     fontWeight: FontWeight.bold,
@@ -253,7 +250,7 @@ class _BuyTokensSheetState extends State<BuyTokensSheet> {
                     width: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.black,
+                      color: AppColors.verdeMescla,
                     ),
                   )
                 : const Text(

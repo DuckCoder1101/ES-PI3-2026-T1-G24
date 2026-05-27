@@ -92,7 +92,14 @@ class StartupService {
       final List rawList = data['startups'] ?? [];
 
       return rawList
-          .map((s) => StartupResumeDTO(id: s["id"], name: s["name"]))
+          .map(
+            (s) => StartupResumeDTO(
+              id: s["id"],
+              name: s["name"],
+              currentTokenPriceCents: s["currentTokenPriceCents"],
+              initialTokenPriceCents: s["initialTokenPriceCents"],
+            ),
+          )
           .toList();
     } catch (e) {
       rethrow;
@@ -168,6 +175,26 @@ class StartupService {
 
       return rawList
           .map((e) => PricePoint.fromMap(Map<String, dynamic>.from(e)))
+          .toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Histórico de todas as startups nas quais o usuário possui tokens
+  static Future<List<StartupPriceSeries>> getInvestedStartupsPriceHistory({
+    required DateInterval interval,
+  }) async {
+    try {
+      final response = await FirebaseFunctions.instance
+          .httpsCallable('getInvestedStartupsPriceHistory')
+          .call({'dateInterval': interval.value});
+
+      final data = response.data as Map<dynamic, dynamic>;
+      final List rawList = data['startups'] ?? [];
+
+      return rawList
+          .map((e) => StartupPriceSeries.fromMap(Map<String, dynamic>.from(e)))
           .toList();
     } catch (e) {
       rethrow;

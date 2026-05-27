@@ -5,6 +5,7 @@
 
 import { HttpsError } from "firebase-functions/https";
 import { database } from "../../shared/firebase";
+import { TransactionDocument } from "../../transaction/types/documents";
 import {
   DateInterval,
   DateLimits,
@@ -19,13 +20,16 @@ import {
   StartupStageFilter,
   StartupTokenInfoDTO,
 } from "../types/dtos";
+import { WalletDocument } from "../../user/types/documents";
 
 const startupsCollection = database.collection("startups");
+const walletsCollection = database.collection("wallets");
+const transactionsCollection = database.collection("transactions");
 
 const getPriceHistoryCollection = (startupId: string) =>
   startupsCollection.doc(startupId).collection("priceHistory");
 
-const getInvestmentsStartupsCollection = (uid: string) =>
+const getInvestmentsCollection = (uid: string) =>
   database.collection("investments").doc(uid).collection("startups");
 
 /*
@@ -118,14 +122,21 @@ export const findStartups = async (
 export const findStartupsResumes = async (
   uid: string,
 ): Promise<StartupResumeDTO[]> => {
-  const snapshot = await startupsCollection.select("name").get();
+  const snapshot = await startupsCollection
+    .select("name", "currentTokenPriceCents")
+    .get();
   const investedIds = await getInvestedStartupIds(uid);
 
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    name: (doc.data() as Pick<StartupDocument, "name">).name,
-    isInvestor: investedIds.has(doc.id),
-  })) satisfies StartupResumeDTO[];
+  return snapshot.docs.map((doc) => {
+    const startup = doc.data() as StartupDocument;
+    return {
+      id: doc.id,
+      name: startup.name,
+      currentTokenPriceCents: startup.currentTokenPriceCents,
+      initialTokenPriceCents: startup.initialTokenPriceCents,
+      isInvestor: investedIds.has(doc.id),
+    };
+  }) satisfies StartupResumeDTO[];
 };
 
 /*
@@ -137,7 +148,7 @@ export const getFullStartup = async (
 ): Promise<StartupDetailsDTO> => {
   const [doc, investmentDoc] = await Promise.all([
     startupsCollection.doc(startupId).get(),
-    getInvestmentsStartupsCollection(uid).doc(startupId).get(),
+    getInvestmentsCollection(uid).doc(startupId).get(),
   ]);
 
   if (!doc.exists) {
@@ -191,6 +202,19 @@ export const updateTokenPrice = (
 };
 
 /*
+ * Atualiza apenas o currentTokenPriceCents da startup
+ */
+export const updateCurrentPriceOnly = (
+  startupId: string,
+  newPriceCents: number,
+): void => {
+  startupsCollection.doc(startupId).update({
+    currentTokenPriceCents: newPriceCents,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+};
+
+/*
  * Retorna os pontos de valorização do token de uma startup em um intervalo de datas.
  */
 export const getStartupTokenPriceHistory = async (
@@ -207,6 +231,9 @@ export const getStartupTokenPriceHistory = async (
   return snapshot.docs.map((doc) => doc.data() as PriceHistoryDocument);
 };
 
+/*
+ * Retorna os dados de token de uma startup
+ */
 export const getStartupTokenInfo = async (
   startupId: string,
 ): Promise<StartupTokenInfoDTO> => {
@@ -223,5 +250,146 @@ export const getStartupTokenInfo = async (
     totalTokensAvailable: startup.totalTokensAvailable,
     totalTokensIssued: startup.totalTokensIssued,
     currentTokenPriceCents: startup.currentTokenPriceCents,
+    initialTokenPriceCents: startup.initialTokenPriceCents,
   } satisfies StartupTokenInfoDTO;
+};
+
+/*
+ * Retorna id + token info de TODAS as startups, sem filtro nem paginação.
+ */
+export const getAllStartupsTokenInfo = async (): Promise<
+  StartupTokenInfoDTO[]
+> => {
+  const snapshot = await startupsCollection
+    .select(
+      "id",
+      "currentTokenPriceCents",
+      "initialTokenPriceCents",
+      "totalTokensIssued",
+      "totalTokensAvailable",
+    )
+    .get();
+
+  return snapshot.docs.map((doc) => {
+    const s = doc.data() as StartupDocument;
+    return {
+      id: doc.id,
+      currentTokenPriceCents: s.currentTokenPriceCents,
+      initialTokenPriceCents: s.initialTokenPriceCents,
+      totalTokensIssued: s.totalTokensIssued,
+      totalTokensAvailable: s.totalTokensAvailable,
+    } satisfies StartupTokenInfoDTO;
+  });
+};
+
+/*
+ * Retorna todas as transações de uma startup ocorridas a partir de `since`.
+ * Usado pelo scheduler para calcular o VWAP do dia.
+ */
+export const getStartupTransactionsSince = async (
+  startupId: string,
+  since: Date,
+): Promise<TransactionDocument[]> => {
+  const snapshot = await database
+    .collection("transactions")
+    .where("startupId", "==", startupId)
+    .where("createdAt", ">=", Timestamp.fromDate(since))
+    .get();
+
+  return snapshot.docs
+    .map((doc) => doc.data() as TransactionDocument)
+    .filter((tx) => tx.type === "investment" || tx.type === "trade");
+};
+
+/*
+ * Compra os tokens de uma startup de forma direta
+ */
+export const buyStartupTokens = async (
+  uid: string,
+  startupId: string,
+  tokenAmount: number,
+) => {
+  await database.runTransaction(async (tx) => {
+    const startupRef = database.collection("startups").doc(startupId);
+    const startupDoc = await startupRef.get();
+
+    if (!startupDoc.exists) {
+      throw new HttpsError("not-found", "Startup não encontrada!");
+    }
+
+    const walletRef = walletsCollection.doc(uid);
+    const walletDoc = await tx.get(walletRef);
+
+    if (!walletDoc.exists) {
+      throw new HttpsError("not-found", "Carteira não encontrada!");
+    }
+
+    const investmentRef = getInvestmentsCollection(uid).doc(startupId);
+    const investmentDoc = await tx.get(investmentRef);
+
+    const startup = startupDoc.data() as StartupDocument;
+    const totalCents = startup.currentTokenPriceCents * tokenAmount;
+
+    // Verifica se o usuário possui saldo suficiente
+    const wallet = walletDoc.data() as WalletDocument;
+    if (wallet.fundsCents < totalCents) {
+      const fundsStr = (wallet.fundsCents / 100).toLocaleString("pt-br", {
+        style: "currency",
+        currency: "BRL",
+      });
+      throw new HttpsError(
+        "out-of-range",
+        `Saldo insuficiente para realizar a compra! Seu saldo é ${fundsStr}`,
+      );
+    }
+
+    // Verifica disponibilidade de tokens dentro da transação
+    if (startup.totalTokensAvailable < tokenAmount) {
+      throw new HttpsError(
+        "out-of-range",
+        `Tokens insuficientes disponíveis! Disponível: ${startup.totalTokensAvailable} tokens.`,
+      );
+    }
+
+    // Debita os fundos da carteira
+    tx.update(walletRef, {
+      fundsCents: FieldValue.increment(-totalCents),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    // Atualiza a disponibilidade de tokens e capital captado da startup
+    tx.update(startupRef, {
+      totalTokensAvailable: FieldValue.increment(-tokenAmount),
+      capitalRaisedCents: FieldValue.increment(totalCents),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    // Cria ou atualiza o investimento do usuário nessa startup
+    if (investmentDoc.exists) {
+      tx.update(investmentRef, {
+        tokenAmount: FieldValue.increment(tokenAmount),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    } else {
+      tx.set(investmentRef, {
+        startupId,
+        tokenAmount,
+        lockedTokenAmount: 0,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
+
+    // Registra a transação de investimento direto
+    const transactionRef = transactionsCollection.doc();
+    tx.set(transactionRef, {
+      type: "investment",
+      investorUId: uid,
+      startupId,
+      tokensPurchased: tokenAmount,
+      tokenPriceCents: startup.currentTokenPriceCents,
+      amountCents: totalCents,
+      userUIds: [uid],
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  });
 };
