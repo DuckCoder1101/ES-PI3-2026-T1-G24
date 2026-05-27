@@ -26,6 +26,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   // Startup selecionada no dropdown
   List<StartupResumeDTO> _startups = [];
+  List<StartupResumeDTO> get _filteredStartups {
+    if (_orderType == OrderType.buy) return _startups;
+    return _startups.where((s) => s.isInvestor).toList();
+  }
+
   StartupResumeDTO? _selectedStartup;
 
   bool _isLoadingStartups = true;
@@ -208,7 +213,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                             color: AppColors.verdeMescla,
                           ),
                           isExpanded: true,
-                          items: _startups.map((s) {
+                          items: _filteredStartups.map((s) {
                             return DropdownMenuItem(
                               value: s,
                               child: Text(
