@@ -78,9 +78,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           );
         }
       });
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     } finally {
       if (mounted) setState(() => _isLoadingStartups = false);
@@ -103,9 +103,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         Navigator.pop(context, true);
         showSnackbar(msg: 'Ordem publicada com sucesso!', context: context);
       }
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

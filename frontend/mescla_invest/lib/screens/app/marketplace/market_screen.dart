@@ -50,9 +50,9 @@ class _MarketScreenState extends State<MarketScreen> {
           _myOrders = results[2];
         });
       }
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

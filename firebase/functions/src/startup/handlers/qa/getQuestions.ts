@@ -22,7 +22,9 @@ export const getQuestions = onCall(async (req) => {
     );
   }
 
-  if (visibility == "privada" && !isInvestor(uid, startupId)) {
+  const investorCheck = await isInvestor(uid, startupId);
+
+  if (visibility == "privada" && !investorCheck) {
     throw new HttpsError(
       "permission-denied",
       "Apenas investidores podem ler perguntas privadas!",

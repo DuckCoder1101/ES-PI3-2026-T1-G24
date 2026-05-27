@@ -53,9 +53,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         showSnackbar(msg: 'Link de recuperação enviado!', context: context);
         Navigator.pop(context);
       }
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

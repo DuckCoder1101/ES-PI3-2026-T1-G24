@@ -10,10 +10,11 @@ import {
   InvestmentTransaction,
   TradeTransaction,
 } from "../../transaction/types/documents";
+
 import {
   getAllStartupsTokenInfo,
   getStartupTransactionsSince,
-  updateTokenPrice,
+  updateTokenHistory,
 } from "../repositories/startupsRepository";
 
 /*
@@ -28,11 +29,6 @@ export const dailyPriceSnapshot = onSchedule(
     logger.log("Iniciando snapshot diário de preços.");
 
     const startups = await getAllStartupsTokenInfo();
-
-    if (startups.length === 0) {
-      logger.log("Nenhuma startup encontrada. Encerrando.");
-      return;
-    }
 
     // Início do dia corrente (meia-noite) — janela para buscar transações do dia
     const startOfDay = new Date();
@@ -49,9 +45,7 @@ export const dailyPriceSnapshot = onSchedule(
 
         if (transactions.length === 0) {
           /*
-           * Sem transações no dia: repete o preço atual para que o gráfico
-           * não tenha lacunas. O triggerId "daily_snapshot_carry" sinaliza
-           * que é um ponto de continuidade, não um evento de mercado.
+           * Sem transações no dia: repete o preço atual para que o gráfico não tenha lacunas
            */
           priceCents = startup.currentTokenPriceCents;
 
@@ -95,12 +89,7 @@ export const dailyPriceSnapshot = onSchedule(
               startup.totalTokensIssued
             : 0;
 
-        const triggerId =
-          transactions.length === 0
-            ? "daily_snapshot_carry"
-            : "daily_snapshot_vwap";
-
-        updateTokenPrice(startup.id, priceCents, occupancyRate, triggerId);
+        updateTokenHistory(startup.id, priceCents, occupancyRate);
       }),
     );
 

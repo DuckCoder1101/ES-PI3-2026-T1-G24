@@ -5,15 +5,14 @@
 
 import { Timestamp } from "firebase-admin/firestore";
 import {
-  DateInterval,
   PriceHistoryDocument,
   QuestionAnwserDocument,
-  QuestionVisibility,
   StartupDocument,
   StartupStage,
 } from "./documents";
-
-export type StartupStageFilter = StartupStage | "all";
+import { StartupStageFilter } from "../constants/startupStageFilters";
+import { QuestionVisibility } from "../constants/questionVisibility";
+import { DateInterval } from "../constants/dateInverval";
 
 export interface StartupDetailsDTO extends StartupDocument {
   id: string;

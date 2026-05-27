@@ -22,6 +22,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   static const Color verdeMescla = Color(0xFF7FDD3A);
 
+  // Notifier utilizado para sinalizar ao TokenChart que ele deve recarregar
+  final ValueNotifier<int> _chartRefreshNotifier = ValueNotifier<int>(0);
+
   WalletModel? _wallet;
   List<InvestmentModel> _investments = [];
   bool _isLoadingWallet = true;
@@ -33,13 +36,19 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadAll();
   }
 
+  @override
+  void dispose() {
+    _chartRefreshNotifier.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadWallet() async {
     setState(() => _isLoadingWallet = true);
     try {
       final wallet = await UserService.getWallet();
       if (mounted) setState(() => _wallet = wallet);
-    } catch (err) {
-      if (mounted) handleException(err: err, context: context);
+    } catch (err, stack) {
+      if (mounted) handleException(err: err, stack: stack, context: context);
     } finally {
       if (mounted) setState(() => _isLoadingWallet = false);
     }
@@ -50,14 +59,17 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final investments = await UserService.getUserInvestments();
       if (mounted) setState(() => _investments = investments);
-    } catch (err) {
-      if (mounted) handleException(err: err, context: context);
+    } catch (err, stack) {
+      if (mounted) handleException(err: err, stack: stack, context: context);
     } finally {
       if (mounted) setState(() => _isLoadingInvestments = false);
     }
   }
 
   Future<void> _loadAll() async {
+    // Incrementa o notifier para disparar de forma reativa a atualização interna do gráfico
+    _chartRefreshNotifier.value++;
+
     await Future.wait([_loadWallet(), _loadInvestments()]);
   }
 
@@ -84,7 +96,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final isPositive = (appreciation ?? 0) >= 0;
     final appreciationColor = isPositive ? verdeMescla : Colors.redAccent;
 
-    // FIX: padding horizontal consistente em toda a tela
     const double hPad = 16.0;
 
     return SafeArea(
@@ -108,13 +119,11 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // FIX: espaço entre header e card
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
             // Card total investido
             SliverToBoxAdapter(
               child: Padding(
-                // FIX: margem horizontal para não encostar nas bordas
                 padding: const EdgeInsets.symmetric(horizontal: hPad),
                 child: Container(
                   width: double.infinity,
@@ -196,27 +205,23 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // FIX: espaço entre card e gráfico
             const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-            // Gráfico com padding lateral
+            // Gráfico com padding lateral e injeção do Notifier
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: hPad),
-                child: const TokenChart(),
+                child: TokenChart(refreshTrigger: _chartRefreshNotifier),
               ),
             ),
 
-            // FIX: espaço entre gráfico e seção de investimentos
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
             // Seção "Meus investimentos"
             SliverToBoxAdapter(
               child: Padding(
-                // FIX: padding lateral na seção inteira
                 padding: const EdgeInsets.symmetric(horizontal: hPad),
                 child: Column(
-                  // FIX: alinhar conteúdo à esquerda, não centralizado
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
@@ -228,10 +233,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         letterSpacing: 1.2,
                       ),
                     ),
-
-                    // FIX: espaço entre título e lista
                     const SizedBox(height: 12),
-
                     if (_isLoadingInvestments)
                       const Center(
                         child: CircularProgressIndicator(color: verdeMescla),
@@ -259,7 +261,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // FIX: padding inferior para não cortar o último item
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
           ],
         ),

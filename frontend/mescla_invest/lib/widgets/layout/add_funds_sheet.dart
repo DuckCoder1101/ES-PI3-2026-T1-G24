@@ -44,9 +44,9 @@ class _AddFundsSheetState extends State<AddFundsSheet> {
         Navigator.pop(context);
         widget.onSuccess();
       }
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

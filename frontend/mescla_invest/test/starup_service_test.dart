@@ -301,7 +301,7 @@ void main() {
         final result = await callFunction(
           'getTokenPriceHistory',
           idToken: idToken,
-          data: {'startupId': startupId, 'dateInterval': '1M'},
+          data: {'startupId': startupId, 'dateInterval': '1m'},
         );
 
         final data = result['data'] as Map<String, dynamic>;
@@ -314,7 +314,7 @@ void main() {
           functionUri('getTokenPriceHistory'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
-            'data': {'startupId': 'qualquer-id', 'dateInterval': '1M'},
+            'data': {'startupId': 'qualquer-id', 'dateInterval': '1m'},
           }),
         );
 

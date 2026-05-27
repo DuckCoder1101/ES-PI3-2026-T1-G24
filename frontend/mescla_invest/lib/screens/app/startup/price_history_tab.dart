@@ -120,7 +120,7 @@ class _TabPriceHistoryState extends State<TabPriceHistory> {
                 ),
               ),
               child: Text(
-                interval.label,
+                interval.toString(),
                 style: TextStyle(
                   color: isSelected ? Colors.black : Colors.white54,
                   fontWeight: FontWeight.bold,

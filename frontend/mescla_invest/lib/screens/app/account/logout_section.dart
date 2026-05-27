@@ -57,8 +57,8 @@ class _LogoutSectionState extends State<LogoutSection> {
 
     try {
       await UserService.signout();
-    } catch (err) {
-      if (mounted) handleException(err: err, context: context);
+    } catch (err, stack) {
+      if (mounted) handleException(err: err, stack: stack, context: context);
     } finally {
       if (mounted) setState(() => _isLoggingOut = false);
     }

@@ -4,10 +4,9 @@
  */
 
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import { QuestionVisibility } from "../constants/questionVisibility";
 
 export type StartupStage = "nova" | "em_operacao" | "em_expansao";
-export type QuestionVisibility = "privada" | "publica";
-export type DateInterval = "1M" | "6M" | "1Y" | "5Y";
 
 export interface DateLimits {
   start: Date;

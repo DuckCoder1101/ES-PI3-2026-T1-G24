@@ -14,8 +14,12 @@ export const getAuthenticatedUser = (req: CallableRequest): UserProfile => {
     );
   }
 
+  if (!req.auth.token.email) {
+    throw new HttpsError("unauthenticated", "Email não encontrado no token.");
+  }
+
   return {
     uid: req.auth.uid,
-    email: req.auth.token.email!,
+    email: req.auth.token.email,
   };
 };

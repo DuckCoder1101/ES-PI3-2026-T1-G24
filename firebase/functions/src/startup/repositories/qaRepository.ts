@@ -5,9 +5,10 @@
 
 import { FieldValue } from "firebase-admin/firestore";
 import { database } from "../../shared/firebase";
-import { QuestionDocument, QuestionVisibility } from "../types/documents";
+import { QuestionDocument } from "../types/documents";
 import { QuestionListDTO, QuestionRegisterDTO } from "../types/dtos";
 import { HttpsError } from "firebase-functions/https";
+import { QuestionVisibility } from "../constants/questionVisibility";
 
 // Função auxiliar para obter a referência da sub-coleção de questões
 const getQuestionsCollection = (startupId: string) =>

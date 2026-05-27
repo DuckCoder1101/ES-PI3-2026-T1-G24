@@ -4,8 +4,8 @@
  */
 
 export * from "./handlers/getStartupsList";
-export * from "./handlers/getStartupDetails";
-export * from "./handlers/getStartupsResumes";
+export * from "./handlers/getStartupById";
+export * from "./handlers/getStartupResumes";
 export * from "./handlers/buyTokens";
 export * from "./handlers/qa/getQuestions";
 export * from "./handlers/qa/registerQuestion";

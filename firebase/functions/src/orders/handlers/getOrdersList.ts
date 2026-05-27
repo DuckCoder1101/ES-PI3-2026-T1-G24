@@ -8,7 +8,7 @@ import { GetOrdersRequestDTO } from "../types/dtos";
 import { normalizeString } from "../../shared/utils";
 import { OrderType } from "../types/documents";
 import { orderTypes } from "../shared/constants";
-import { findAllOrders } from "../repositories/orderRepository";
+import { findOrdersByOrderType } from "../repositories/orderRepository";
 import { getAuthenticatedUser } from "../../shared/auth";
 
 /*
@@ -41,7 +41,7 @@ export const getOrdersList = onCall(async (req) => {
     );
   }
 
-  const orders = await findAllOrders(orderType, uid, offset, limit);
+  const orders = await findOrdersByOrderType(orderType, uid, offset, limit);
 
   return {
     orders,

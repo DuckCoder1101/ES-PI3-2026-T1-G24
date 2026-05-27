@@ -27,16 +27,14 @@ enum StartupStageFilter { nova, em_operacao, em_expansao, all }
 class StartupResumeDTO {
   final String id;
   final String name;
-  final bool isInvestor;
   final int currentTokenPriceCents;
-  // Preço de lançamento — usado para calcular valorização percentual
   final int initialTokenPriceCents;
+
+  final bool isInvestor;
 
   double get tokenPrice => currentTokenPriceCents / 100;
   double get initialTokenPrice => initialTokenPriceCents / 100;
 
-  /// Valorização percentual desde o lançamento.
-  /// Retorna null se o preço inicial for zero (dado ausente).
   double? get appreciationPercent {
     if (initialTokenPriceCents == 0) return null;
     return ((currentTokenPriceCents - initialTokenPriceCents) /
@@ -54,14 +52,12 @@ class StartupResumeDTO {
 
   factory StartupResumeDTO.fromMap(Map<String, dynamic> rawMap) {
     final map = rawMap.map((key, value) => MapEntry(key.trim(), value));
-    final current = map['currentTokenPriceCents'] as int? ?? 0;
+
     return StartupResumeDTO(
       id: map['id'] ?? '',
-      name: map['name'] ?? '',
-      currentTokenPriceCents: current,
-      // fallback: se initialTokenPriceCents não vier do backend, usa o atual
-      // (valorização aparecerá como 0%, que é correto para dados legados)
-      initialTokenPriceCents: map['initialTokenPriceCents'] as int? ?? current,
+      name: (map['name'] as String?)?.toUpperCase() ?? '',
+      currentTokenPriceCents: map['currentTokenPriceCents'] ?? 0,
+      initialTokenPriceCents: map['initialTokenPriceCents'] ?? 0,
       isInvestor: map['isInvestor'] == true,
     );
   }
@@ -100,7 +96,7 @@ class StartupListDTO {
     final map = rawMap.map((key, value) => MapEntry(key.trim(), value));
     return StartupListDTO(
       id: map['id'] ?? '',
-      name: map['name'] ?? '',
+      name: (map['name'] as String?)?.toUpperCase() ?? '',
       shortDescription: map['shortDescription'] ?? '',
       currentTokenPriceCents: map['currentTokenPriceCents'] ?? 0,
       totalTokensAvailable: (map['totalTokensAvailable'] as num?)?.toInt() ?? 0,
@@ -164,7 +160,7 @@ class StartupModel {
     final map = rawMap.map((key, value) => MapEntry(key.trim(), value));
     return StartupModel(
       id: map['id'] ?? '',
-      name: map['name'] ?? '',
+      name: (map['name'] as String?)?.toUpperCase() ?? '',
       description: map['description'] ?? '',
       shortDescription: map['shortDescription'] ?? '',
       executiveSummary: map['executiveSummary'] ?? '',
@@ -202,7 +198,7 @@ class StartupPriceSeries {
     final rawPoints = map['priceHistory'] as List? ?? [];
     return StartupPriceSeries(
       startupId: map['startupId'] as String? ?? '',
-      startupName: map['startupName'] as String? ?? '',
+      startupName: (map['startupName'] as String?)?.toUpperCase() ?? '',
       points: rawPoints
           .map((e) => PricePoint.fromMap(Map<String, dynamic>.from(e)))
           .toList(),

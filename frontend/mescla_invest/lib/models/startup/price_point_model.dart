@@ -14,19 +14,10 @@ enum DateInterval {
 
   String get value {
     return switch (this) {
-      oneMonth => '1M',
-      sixMonths => '6M',
-      oneYear => '1Y',
-      fiveYears => '5Y',
-    };
-  }
-
-  String get label {
-    return switch (this) {
-      oneMonth => '1M',
-      sixMonths => '6M',
-      oneYear => '1A',
-      fiveYears => '5A',
+      oneMonth => '1m',
+      sixMonths => '6m',
+      oneYear => '1y',
+      fiveYears => '5y',
     };
   }
 }

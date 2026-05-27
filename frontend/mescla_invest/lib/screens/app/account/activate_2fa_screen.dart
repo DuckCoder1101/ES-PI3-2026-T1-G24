@@ -77,11 +77,11 @@ class _Activate2FAScreenState extends State<Activate2FAScreen> {
       } else {
         if (mounted) setState(() => _loadingQr = false);
       }
-    } catch (err) {
+    } catch (err, stack) {
       debugPrint(err.toString());
 
       if (!mounted) return;
-      handleException(err: err, context: context);
+      handleException(err: err, stack: stack, context: context);
 
       setState(() {
         _qrError = 'Erro ao gerar QR code. Tente novamente.';
@@ -203,9 +203,9 @@ class _Activate2FAScreenState extends State<Activate2FAScreen> {
         showSnackbar(msg: '2FA ativado com sucesso!', context: context);
         Navigator.of(context).pop(true);
       }
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     } finally {
       if (mounted) {

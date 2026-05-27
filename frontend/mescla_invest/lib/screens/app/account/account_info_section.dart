@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
+import 'package:mescla_invest/formatters/uppercase_format.dart';
 import 'package:mescla_invest/models/user/user_model.dart';
 import 'package:mescla_invest/screens/app_root.dart';
 import 'package:mescla_invest/services/user_service.dart';
@@ -79,8 +80,8 @@ class _AccountInfoSectionState extends State<AccountInfoSection> {
         setState(() => _dataChanged = false);
         showSnackbar(msg: 'Dados salvos com sucesso!', context: context);
       }
-    } catch (err) {
-      if (mounted) handleException(err: err, context: context);
+    } catch (err, stack) {
+      if (mounted) handleException(err: err, stack: stack, context: context);
     } finally {
       if (mounted) setState(() => _isSavingData = false);
     }
@@ -112,6 +113,7 @@ class _AccountInfoSectionState extends State<AccountInfoSection> {
             children: [
               TextField(
                 controller: _nameController,
+                inputFormatters: [UpperCaseTextFormatter()],
                 style: const TextStyle(color: Colors.white),
                 decoration: _inputDecoration('Nome completo'),
               ),
@@ -150,7 +152,7 @@ class _AccountInfoSectionState extends State<AccountInfoSection> {
                             width: 18,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: Colors.black,
+                              color: AppColors.verdeMescla,
                             ),
                           )
                         : const Text(

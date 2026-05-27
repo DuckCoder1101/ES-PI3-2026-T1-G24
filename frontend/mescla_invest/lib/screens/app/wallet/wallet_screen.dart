@@ -53,8 +53,8 @@ class _WalletScreenState extends State<WalletScreen>
     try {
       final wallet = await UserService.getWallet();
       if (mounted) setState(() => _wallet = wallet);
-    } catch (err) {
-      if (mounted) handleException(err: err, context: context);
+    } catch (err, stack) {
+      if (mounted) handleException(err: err, stack: stack, context: context);
     } finally {
       if (mounted) setState(() => _isLoadingWallet = false);
     }
@@ -65,8 +65,8 @@ class _WalletScreenState extends State<WalletScreen>
     try {
       final investments = await UserService.getUserInvestments();
       if (mounted) setState(() => _investments = investments);
-    } catch (err) {
-      if (mounted) handleException(err: err, context: context);
+    } catch (err, stack) {
+      if (mounted) handleException(err: err, stack: stack, context: context);
     } finally {
       if (mounted) setState(() => _isLoadingInvestments = false);
     }
@@ -77,8 +77,8 @@ class _WalletScreenState extends State<WalletScreen>
     try {
       final txs = await UserService.getUserTransactions();
       if (mounted) setState(() => _transactions = txs);
-    } catch (err) {
-      if (mounted) handleException(err: err, context: context);
+    } catch (err, stack) {
+      if (mounted) handleException(err: err, stack: stack, context: context);
     } finally {
       if (mounted) setState(() => _isLoadingTransactions = false);
     }

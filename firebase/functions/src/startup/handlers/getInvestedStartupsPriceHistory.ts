@@ -6,11 +6,10 @@
 import { HttpsError, onCall } from "firebase-functions/https";
 import { getAuthenticatedUser } from "../../shared/auth";
 import { normalizeString } from "../../shared/utils";
-import { DateInterval } from "../types/documents";
-import { DateIntervals } from "../shared/constants";
 import { getStartupTokenPriceHistory } from "../repositories/startupsRepository";
 import { getInvestments } from "../../user/repositories/usersRepository";
 import { StartupPriceSeriesDTO } from "../types/dtos";
+import { DateInterval, DateIntervals } from "../constants/dateInverval";
 
 /*
  * Retorna o histórico de preços de todas as startups nas quais o usuário possui tokens
