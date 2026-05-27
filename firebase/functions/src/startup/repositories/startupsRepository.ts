@@ -7,7 +7,6 @@ import { HttpsError } from "firebase-functions/https";
 import { database } from "../../shared/firebase";
 import { TransactionDocument } from "../../transaction/types/documents";
 import {
-  DateInterval,
   DateLimits,
   PriceHistoryDocument,
   StartupDocument,
@@ -17,10 +16,12 @@ import {
   StartupDetailsDTO,
   StartupListItemDTO,
   StartupResumeDTO,
-  StartupStageFilter,
   StartupTokenInfoDTO,
 } from "../types/dtos";
 import { WalletDocument } from "../../user/types/documents";
+import { formatCurrency } from "../../shared/formatters";
+import { DateInterval } from "../constants/dateInverval";
+import { StartupStageFilter } from "../constants/startupStageFilters";
 
 const startupsCollection = database.collection("startups");
 const walletsCollection = database.collection("wallets");
@@ -54,16 +55,16 @@ const getLimitsFromDateInterval = (interval: DateInterval): DateLimits => {
   const start = new Date();
 
   switch (interval) {
-    case "1M":
+    case "1m":
       start.setMonth(start.getMonth() - 1);
       break;
-    case "6M":
+    case "6m":
       start.setMonth(start.getMonth() - 6);
       break;
-    case "1Y":
+    case "1y":
       start.setFullYear(start.getFullYear() - 1);
       break;
-    case "5Y":
+    case "5y":
       start.setFullYear(start.getFullYear() - 5);
       break;
   }
@@ -84,7 +85,7 @@ export const findStartups = async (
   let query =
     filter === "all"
       ? startupsCollection
-      : startupsCollection.where("stage", "==", filter);
+      : startupsCollection.where("stage", "==", filter.toLowerCase());
 
   if (name && name.trim().length > 0) {
     query = query
@@ -123,7 +124,7 @@ export const findStartupsResumes = async (
   uid: string,
 ): Promise<StartupResumeDTO[]> => {
   const snapshot = await startupsCollection
-    .select("name", "currentTokenPriceCents")
+    .select("name", "currentTokenPriceCents", "initialTokenPriceCents")
     .get();
   const investedIds = await getInvestedStartupIds(uid);
 
@@ -142,48 +143,37 @@ export const findStartupsResumes = async (
 /*
  * Busca todos os dados de uma startup
  */
-export const getFullStartup = async (
+export const getById = async (
   startupId: string,
   uid: string,
 ): Promise<StartupDetailsDTO> => {
-  const [doc, investmentDoc] = await Promise.all([
+  const [startupDoc, investmentDoc] = await Promise.all([
     startupsCollection.doc(startupId).get(),
     getInvestmentsCollection(uid).doc(startupId).get(),
   ]);
 
-  if (!doc.exists) {
+  if (!startupDoc.exists) {
     throw new HttpsError("not-found", "Startup não encontrada!");
   }
 
-  const startup = doc.data() as StartupDocument;
+  const startup = startupDoc.data() as StartupDocument;
 
   return {
     ...startup,
-    id: doc.id,
+    id: startupDoc.id,
     isInvestor: investmentDoc.exists,
   };
 };
 
 /*
- * Verifica se uma startup existe.
- */
-export const checkStartupExists = async (
-  startupId: string,
-): Promise<boolean> => {
-  const doc = await startupsCollection.doc(startupId).get();
-  return doc.exists;
-};
-
-/*
  * Atualiza o preço atual do token e registra no histórico de preços.
  */
-export const updateTokenPrice = (
+export const updateTokenHistory = async (
   startupId: string,
   newPriceCents: number,
   occupancyRate: number,
-  triggeredByTransactionId: string,
-): void => {
-  database.runTransaction(async (tx) => {
+) => {
+  await database.runTransaction(async (tx) => {
     const startupRef = startupsCollection.doc(startupId);
     const priceHistoryRef = getPriceHistoryCollection(startupId).doc();
 
@@ -195,7 +185,6 @@ export const updateTokenPrice = (
     tx.set(priceHistoryRef, {
       priceCents: newPriceCents,
       occupancyRate,
-      triggerId: triggeredByTransactionId,
       createdAt: FieldValue.serverTimestamp(),
     });
   });
@@ -204,7 +193,7 @@ export const updateTokenPrice = (
 /*
  * Atualiza apenas o currentTokenPriceCents da startup
  */
-export const updateCurrentPriceOnly = (
+export const updateCurrentPrice = (
   startupId: string,
   newPriceCents: number,
 ): void => {
@@ -257,9 +246,7 @@ export const getStartupTokenInfo = async (
 /*
  * Retorna id + token info de TODAS as startups, sem filtro nem paginação.
  */
-export const getAllStartupsTokenInfo = async (): Promise<
-  StartupTokenInfoDTO[]
-> => {
+export const getAllStartupsTokenInfo = async () => {
   const snapshot = await startupsCollection
     .select(
       "id",
@@ -311,7 +298,7 @@ export const buyStartupTokens = async (
 ) => {
   await database.runTransaction(async (tx) => {
     const startupRef = database.collection("startups").doc(startupId);
-    const startupDoc = await startupRef.get();
+    const startupDoc = await tx.get(startupRef);
 
     if (!startupDoc.exists) {
       throw new HttpsError("not-found", "Startup não encontrada!");
@@ -333,13 +320,9 @@ export const buyStartupTokens = async (
     // Verifica se o usuário possui saldo suficiente
     const wallet = walletDoc.data() as WalletDocument;
     if (wallet.fundsCents < totalCents) {
-      const fundsStr = (wallet.fundsCents / 100).toLocaleString("pt-br", {
-        style: "currency",
-        currency: "BRL",
-      });
       throw new HttpsError(
         "out-of-range",
-        `Saldo insuficiente para realizar a compra! Seu saldo é ${fundsStr}`,
+        `Saldo insuficiente para realizar a compra! Seu saldo é ${formatCurrency(wallet.fundsCents)}`,
       );
     }
 

@@ -22,7 +22,9 @@ const List<Color> _kSeriesColors = [
 Color _colorFor(int index) => _kSeriesColors[index % _kSeriesColors.length];
 
 class TokenChart extends StatefulWidget {
-  const TokenChart({super.key});
+  final ValueNotifier<int> refreshTrigger;
+
+  const TokenChart({super.key, required this.refreshTrigger});
 
   @override
   State<TokenChart> createState() => _TokenChartState();
@@ -45,10 +47,18 @@ class _TokenChartState extends State<TokenChart> {
   void initState() {
     super.initState();
     _loadData();
+    // Escuta o gatilho de atualização vindo do widget pai
+    widget.refreshTrigger.addListener(_loadData);
+  }
+
+  @override
+  void dispose() {
+    // Remove o listener para evitar leaks de memória
+    widget.refreshTrigger.removeListener(_loadData);
+    super.dispose();
   }
 
   // Carregamento
-
   Future<void> _loadData() async {
     if (!mounted) return;
     setState(() {
@@ -61,9 +71,9 @@ class _TokenChartState extends State<TokenChart> {
         interval: _selectedInterval,
       );
       if (mounted) setState(() => _series = raw);
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -99,7 +109,6 @@ class _TokenChartState extends State<TokenChart> {
   }
 
   // Seletor de intervalo
-
   Widget _buildIntervalSelector() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -121,7 +130,7 @@ class _TokenChartState extends State<TokenChart> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                interval.label,
+                interval.value,
                 style: TextStyle(
                   color: isSelected ? Colors.black : Colors.white54,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -135,7 +144,6 @@ class _TokenChartState extends State<TokenChart> {
   }
 
   // Corpo (loading / erro / vazio / gráfico)
-
   Widget _buildBody() {
     if (_isLoading) {
       return const SizedBox(
@@ -151,7 +159,6 @@ class _TokenChartState extends State<TokenChart> {
   }
 
   // Gráfico multi-linha
-
   Widget _buildChart() {
     double globalMinY = double.infinity;
     double globalMaxY = double.negativeInfinity;
@@ -206,18 +213,14 @@ class _TokenChartState extends State<TokenChart> {
       );
     }
 
-    // Padding vertical para não cortar a linha nas bordas
     final range = (globalMaxY - globalMinY).abs();
     final padding = (range * 0.15).clamp(0.5, double.infinity);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Legenda interativa
         _buildLegend(),
         const SizedBox(height: 16),
-
-        // Gráfico
         SizedBox(
           height: 200,
           child: LineChart(
@@ -251,10 +254,8 @@ class _TokenChartState extends State<TokenChart> {
                   sideTitles: SideTitles(
                     showTitles: true,
                     reservedSize: 28,
-                    // usa a série com mais pontos para os labels do eixo X
                     interval: _bottomInterval(_maxPointCount()),
                     getTitlesWidget: (value, _) {
-                      // Pega a data da série referência (maior série)
                       final refSerie = _referenceSeries();
                       final idx = value.toInt();
                       if (refSerie == null ||
@@ -324,7 +325,6 @@ class _TokenChartState extends State<TokenChart> {
   }
 
   // Legenda interativa
-
   Widget _buildLegend() {
     return Wrap(
       spacing: 10,
@@ -383,8 +383,6 @@ class _TokenChartState extends State<TokenChart> {
     );
   }
 
-  // Estados vazios / erro
-
   Widget _buildEmpty() {
     return const SizedBox(
       height: 220,
@@ -403,8 +401,6 @@ class _TokenChartState extends State<TokenChart> {
       ),
     );
   }
-
-  // Helpers
 
   int _maxPointCount() =>
       _series.map((s) => s.points.length).reduce((a, b) => a > b ? a : b);

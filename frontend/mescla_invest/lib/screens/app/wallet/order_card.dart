@@ -84,9 +84,9 @@ class _OrderCardState extends State<OrderCard> {
       }
 
       await widget.onUpdate();
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     } finally {
       if (mounted) setState(() => isExecuting = false);
@@ -111,9 +111,9 @@ class _OrderCardState extends State<OrderCard> {
       }
 
       await widget.onUpdate();
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     } finally {
       if (mounted) setState(() => isExecuting = false);
@@ -138,9 +138,9 @@ class _OrderCardState extends State<OrderCard> {
       }
 
       await widget.onUpdate();
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     } finally {
       if (mounted) setState(() => isExecuting = false);

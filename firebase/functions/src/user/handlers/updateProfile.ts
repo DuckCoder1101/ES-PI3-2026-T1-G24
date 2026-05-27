@@ -18,7 +18,7 @@ export const updateProfile = onCall(async (req) => {
   const { uid } = getAuthenticatedUser(req);
   const data = req.data as UpdateProfileDTO;
 
-  data.name = normalizeString(data.name);
+  data.name = normalizeString(data.name).toLowerCase();
   data.phone = normalizeString(data.phone).replace(/\D/g, "");
 
   if (!checkPhone(data.phone)) {

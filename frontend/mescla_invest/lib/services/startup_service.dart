@@ -9,7 +9,7 @@ class StartupService {
   static Future<String> loadFile(String thumbnailPath) async {
     try {
       return await FirebaseStorage.instance.ref(thumbnailPath).getDownloadURL();
-    } catch (err) {
+    } catch (_) {
       rethrow;
     }
   }
@@ -20,15 +20,15 @@ class StartupService {
       await FirebaseStorage.instance
           .ref("startups/$startupId/pitch.pdf")
           .writeToFile(file);
-    } catch (err) {
+    } catch (_) {
       rethrow;
     }
   }
 
-  static Future<StartupModel> getFullStartup(String startupId) async {
+  static Future<StartupModel> getStartupById(String startupId) async {
     try {
       final response = await FirebaseFunctions.instance
-          .httpsCallable('getStartupDetails')
+          .httpsCallable('getStartupById')
           .call({'startupId': startupId});
 
       final startup = StartupModel.fromMap(
@@ -93,12 +93,7 @@ class StartupService {
 
       return rawList
           .map(
-            (s) => StartupResumeDTO(
-              id: s["id"],
-              name: s["name"],
-              currentTokenPriceCents: s["currentTokenPriceCents"],
-              initialTokenPriceCents: s["initialTokenPriceCents"],
-            ),
+            (map) => StartupResumeDTO.fromMap(Map<String, dynamic>.from(map)),
           )
           .toList();
     } catch (e) {

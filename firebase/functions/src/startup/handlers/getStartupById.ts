@@ -6,13 +6,13 @@
 import { HttpsError, onCall } from "firebase-functions/https";
 import { GetStartupDetailsBodyDTO } from "../types/dtos";
 import { normalizeString } from "../../shared/utils";
-import { getFullStartup } from "../repositories/startupsRepository";
+import { getById } from "../repositories/startupsRepository";
 import { getAuthenticatedUser } from "../../shared/auth";
 
 /*
  * Retorna todos os dados de uma startup
  */
-export const getStartupDetails = onCall(async (req) => {
+export const getStartupById = onCall(async (req) => {
   const { uid } = getAuthenticatedUser(req);
 
   const { startupId } = req.data as GetStartupDetailsBodyDTO;
@@ -22,5 +22,5 @@ export const getStartupDetails = onCall(async (req) => {
     throw new HttpsError("invalid-argument", "ID de startup inválido ou nulo!");
   }
 
-  return await getFullStartup(normalizedStartupId, uid);
+  return await getById(normalizedStartupId, uid);
 });

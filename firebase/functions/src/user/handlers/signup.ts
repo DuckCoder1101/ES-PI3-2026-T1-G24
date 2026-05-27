@@ -23,7 +23,7 @@ export const signup = onCall(async (request) => {
   const { uid, email } = getAuthenticatedUser(request);
   const data = request.data as UserSignupDTO;
 
-  const name = normalizeString(data.name);
+  const name = normalizeString(data.name).toLowerCase();
   const cpf = normalizeString(data.cpf).replace(/\D/g, "");
   const phone = normalizeString(data.phone).replace(/\D/g, "");
 

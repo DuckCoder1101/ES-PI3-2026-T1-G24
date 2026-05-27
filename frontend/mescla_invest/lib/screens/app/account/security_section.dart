@@ -83,8 +83,8 @@ class _SecuritySectionState extends State<SecuritySection> {
           setState(() => _has2Fa = false);
           showSnackbar(msg: '2FA desabilitado.', context: context);
         }
-      } catch (err) {
-        if (mounted) handleException(err: err, context: context);
+      } catch (err, stack) {
+        if (mounted) handleException(err: err, stack: stack, context: context);
       } finally {
         if (mounted) setState(() => _isTogglingTotp = false);
       }

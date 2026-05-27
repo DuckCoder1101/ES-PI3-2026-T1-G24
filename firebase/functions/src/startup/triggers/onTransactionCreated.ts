@@ -9,9 +9,10 @@ import { logger } from "firebase-functions/v2";
 import { TransactionDocument } from "../../transaction/types/documents";
 import {
   getStartupTokenInfo,
-  updateTokenPrice,
-  updateCurrentPriceOnly,
+  updateCurrentPrice,
 } from "../repositories/startupsRepository";
+
+const APPRECIATION_FACTOR = 1.5;
 
 /*
  * Trigger disparado toda vez que uma nova transação é criada.
@@ -32,7 +33,7 @@ export const onTransactionCreated = onDocumentCreated(
       return;
     }
 
-    const startupId = (transaction as { startupId?: string }).startupId;
+    const startupId = transaction.startupId;
 
     if (!startupId) {
       logger.warn("Transação sem startupId, ignorando.", {
@@ -72,12 +73,11 @@ export const onTransactionCreated = onDocumentCreated(
        *   - 50% ocupado → preçoInicial × 1.75
        *   - 100% ocupado → preçoInicial × 2.5  (teto: 2.5× o preço inicial)
        */
-      const APPRECIATION_FACTOR = 1.5;
       const newPriceCents = Math.round(
         initialTokenPriceCents * (1 + occupancyRate * APPRECIATION_FACTOR),
       );
 
-      updateTokenPrice(startupId, newPriceCents, occupancyRate, transactionId);
+      updateCurrentPrice(startupId, newPriceCents);
 
       logger.log(
         `[investment] Preço atualizado: ${newPriceCents}¢ ` +
@@ -98,7 +98,7 @@ export const onTransactionCreated = onDocumentCreated(
         return;
       }
 
-      updateCurrentPriceOnly(startupId, tradeTx.tokenPriceCents);
+      updateCurrentPrice(startupId, tradeTx.tokenPriceCents);
 
       logger.log(
         `[trade] Preço de referência atualizado: ${tradeTx.tokenPriceCents}¢ ` +

@@ -26,6 +26,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   // Startup selecionada no dropdown
   List<StartupResumeDTO> _startups = [];
+  List<StartupResumeDTO> get _filteredStartups {
+    if (_orderType == OrderType.buy) return _startups;
+    return _startups.where((s) => s.isInvestor).toList();
+  }
+
   StartupResumeDTO? _selectedStartup;
 
   bool _isLoadingStartups = true;
@@ -78,9 +83,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           );
         }
       });
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     } finally {
       if (mounted) setState(() => _isLoadingStartups = false);
@@ -103,9 +108,9 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         Navigator.pop(context, true);
         showSnackbar(msg: 'Ordem publicada com sucesso!', context: context);
       }
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -208,7 +213,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                             color: AppColors.verdeMescla,
                           ),
                           isExpanded: true,
-                          items: _startups.map((s) {
+                          items: _filteredStartups.map((s) {
                             return DropdownMenuItem(
                               value: s,
                               child: Text(

@@ -76,7 +76,7 @@ export const updateUserData = async (
     throw new HttpsError("not-found", "Usuário não encontrado!");
   }
 
-  userRef.ref.update({
+  await userRef.ref.update({
     name: data.name,
     phone: data.phone,
   });

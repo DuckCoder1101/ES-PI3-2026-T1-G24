@@ -31,7 +31,7 @@ class UserModel {
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
       uid: map['uid'],
-      name: map['name'] ?? '',
+      name: (map['name'] as String?)?.toUpperCase() ?? '',
       email: map['email'] ?? '',
       cpf: map['cpf'] ?? '',
       phone: map['phone'] ?? '',

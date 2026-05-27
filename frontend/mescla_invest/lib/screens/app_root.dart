@@ -84,8 +84,8 @@ class _AppRootState extends State<AppRoot> {
   Future<UserModel?> _loadUser() async {
     try {
       return await UserService.getFullUserData();
-    } catch (err) {
-      if (mounted) handleException(err: err, context: context);
+    } catch (err, stack) {
+      if (mounted) handleException(err: err, stack: stack, context: context);
     }
 
     await UserService.signout();

@@ -40,9 +40,9 @@ class _TabAboutState extends State<TabAbout> {
       if (mounted) {
         showSnackbar(msg: "Download concluído com sucesso!", context: context);
       }
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     } finally {
       if (mounted) {

@@ -5,10 +5,13 @@
 
 import { HttpsError, onCall } from "firebase-functions/https";
 import { normalizeString } from "../../shared/utils";
-import { GetStartupsRequestBodyDTO, StartupStageFilter } from "../types/dtos";
-import { StartupsSearchFilters } from "../shared/constants";
+import { GetStartupsRequestBodyDTO } from "../types/dtos";
 import { findStartups } from "../repositories/startupsRepository";
 import { getAuthenticatedUser } from "../../shared/auth";
+import {
+  StartupsSearchFilters,
+  StartupStageFilter,
+} from "../constants/startupStageFilters";
 
 /*
  * Busca startups com paginação (infinity scroll).
@@ -18,8 +21,10 @@ export const getStartupsList = onCall(async (req) => {
 
   const { filter, offset, limit } = req.data as GetStartupsRequestBodyDTO;
 
-  const stage = normalizeString(filter.stage) as StartupStageFilter;
-  const name = normalizeString(filter.name);
+  const stage = normalizeString(
+    filter.stage,
+  ).toLowerCase() as StartupStageFilter;
+  const name = normalizeString(filter.name).toLowerCase();
 
   if (!stage || !StartupsSearchFilters.includes(stage)) {
     throw new HttpsError("invalid-argument", "Filtro de busca inválido!");

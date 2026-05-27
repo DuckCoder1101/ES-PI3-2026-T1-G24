@@ -13,7 +13,6 @@ import { saveOrder } from "../repositories/orderRepository";
 
 import { OrderType } from "../types/documents";
 import { OrderRegisterRequestDTO } from "../types/dtos";
-import { checkStartupExists } from "../../startup/repositories/startupsRepository";
 
 /*
  * Registra uma nova ordem de compra ou de venda no balcão.
@@ -24,9 +23,9 @@ export const registerOrder = onCall(async (req) => {
   const { uid } = getAuthenticatedUser(req);
 
   const order = req.data as OrderRegisterRequestDTO;
-  const orderType = normalizeString(order.type) as OrderType;
+  const orderType = normalizeString(order.type).toLowerCase() as OrderType;
 
-  if (!order.startupId || !checkStartupExists(order.startupId)) {
+  if (!order.startupId) {
     throw new HttpsError("invalid-argument", "ID de stratup inválido!");
   }
 

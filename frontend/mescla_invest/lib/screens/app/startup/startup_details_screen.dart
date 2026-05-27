@@ -68,10 +68,10 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
     }
 
     try {
-      _startupFuture = StartupService.getFullStartup(widget.startupId!);
-    } catch (err) {
+      _startupFuture = StartupService.getStartupById(widget.startupId!);
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
         Navigator.pop(context);
       }
     }
@@ -89,7 +89,7 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
         startup: startup,
         onSuccess: () {
           setState(() {
-            _startupFuture = StartupService.getFullStartup(widget.startupId!);
+            _startupFuture = StartupService.getStartupById(widget.startupId!);
           });
 
           showSnackbar(msg: "Tokens comprados com sucesso!", context: context);

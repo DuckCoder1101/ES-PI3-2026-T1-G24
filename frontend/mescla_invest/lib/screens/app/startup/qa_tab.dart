@@ -59,9 +59,9 @@ class _TabQAState extends State<TabQA> {
         visibility: _visibility,
       );
       if (mounted) setState(() => _questions = data);
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -81,9 +81,9 @@ class _TabQAState extends State<TabQA> {
       );
       _perguntaController.clear();
       await _refreshQuestions();
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     } finally {
       if (mounted) setState(() => _isEnviando = false);
@@ -97,9 +97,9 @@ class _TabQAState extends State<TabQA> {
         questionId: questionId,
       );
       _refreshQuestions();
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     }
   }

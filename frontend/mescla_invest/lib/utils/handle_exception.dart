@@ -7,7 +7,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/utils/show_snackbar.dart';
 
-void handleException({required dynamic err, required BuildContext context}) {
+void handleException({
+  required dynamic err,
+  required StackTrace stack,
+  required BuildContext context,
+}) {
   if (err is FirebaseException) {
     debugPrint(err.code);
     final String errorMessage = switch (err.code) {
@@ -25,7 +29,7 @@ void handleException({required dynamic err, required BuildContext context}) {
 
     showSnackbar(msg: errorMessage, context: context, isError: true);
   } else {
-    debugPrint("Erro: $err.");
+    debugPrint("Erro: $err | Stack: $stack");
     showSnackbar(
       msg: "Não foi possível efetuar a ação. Contate os desenvolvedores",
       context: context,

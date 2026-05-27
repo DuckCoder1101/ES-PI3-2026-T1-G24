@@ -65,9 +65,9 @@ class _AvatarSectionState extends State<AvatarSection> {
       if (mounted) {
         showSnackbar(msg: 'Foto atualizada com sucesso!', context: context);
       }
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     } finally {
       if (mounted) setState(() => _isUploadingPhoto = false);

@@ -41,9 +41,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
           isError: true,
         );
       }
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     }
     {
@@ -71,9 +71,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       // Cooldown de 30s antes de permitir reenvio novamente
       await Future.delayed(const Duration(seconds: 30));
       if (mounted) setState(() => _resentRecently = false);
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     } finally {
       if (mounted) setState(() => _isResending = false);
@@ -83,9 +83,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   Future<void> _logout() async {
     try {
       await UserService.signout();
-    } catch (err) {
+    } catch (err, stack) {
       if (mounted) {
-        handleException(err: err, context: context);
+        handleException(err: err, stack: stack, context: context);
       }
     }
   }

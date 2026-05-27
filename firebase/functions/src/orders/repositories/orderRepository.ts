@@ -11,6 +11,7 @@ import { OrderDocument, OrderType } from "../types/documents";
 import { OrderListDTO, OrderRegisterDTO } from "../types/dtos";
 import { InvestmentDocument, WalletDocument } from "../../user/types/documents";
 import { StartupResumeDTO } from "../../startup/types/dtos";
+import { formatCurrency } from "../../shared/formatters";
 
 const getInvestmentsCollection = (uid: string) =>
   database.collection("investments").doc(uid).collection("startups");
@@ -23,7 +24,7 @@ const startupsCollection = database.collection("startups");
 /*
  * Pesquisa todas as ordens de compra ou de venda, de acordo com o filtro
  */
-export const findAllOrders = async (
+export const findOrdersByOrderType = async (
   orderType: OrderType,
   userUId: string,
   offset: number,
@@ -119,6 +120,11 @@ export const findUserOrders = async (
 export const saveOrder = async (order: OrderRegisterDTO): Promise<void> => {
   await database.runTransaction(async (tx) => {
     const orderRef = ordersCollection.doc();
+    const startupRef = await startupsCollection.doc(order.startupId).get();
+
+    if (!startupRef.exists) {
+      throw new HttpsError("not-found", "Startup não econtrada!");
+    }
 
     if (order.type === "buy") {
       const walletRef = walletsCollection.doc(order.authorUId);
@@ -133,14 +139,9 @@ export const saveOrder = async (order: OrderRegisterDTO): Promise<void> => {
 
       // Verifica se o usuário possui fundos suficientes para garantir a ordem de compra
       if (wallet.fundsCents < lockedFunds) {
-        const fundsStr = (wallet.fundsCents / 100).toLocaleString("pt-br", {
-          style: "currency",
-          currency: "BRL",
-        });
-
         throw new HttpsError(
           "out-of-range",
-          `Você não possui fundos suficientes para a ordem de compra! Seu saldo é ${fundsStr}`,
+          `Você não possui fundos suficientes para a ordem de compra! Seu saldo é ${formatCurrency(wallet.fundsCents)}`,
         );
       }
 
@@ -196,23 +197,23 @@ export const deleteOrderById = async (
   orderId: string,
   userUId: string,
 ): Promise<void> => {
-  const ref = ordersCollection.doc(orderId);
-  const doc = await ref.get();
-
-  if (!doc.exists) {
-    throw new HttpsError("not-found", "Ordem não encontrada!");
-  }
-
-  const order = doc.data() as OrderDocument;
-
-  if (order.authorUId !== userUId) {
-    throw new HttpsError(
-      "permission-denied",
-      "Você não tem permissão para apagar a ordem de outro usuário!",
-    );
-  }
-
   await database.runTransaction(async (tx) => {
+    const orderRef = ordersCollection.doc(orderId);
+    const doc = await tx.get(orderRef);
+
+    if (!doc.exists) {
+      throw new HttpsError("not-found", "Ordem não encontrada!");
+    }
+
+    const order = doc.data() as OrderDocument;
+
+    if (order.authorUId !== userUId) {
+      throw new HttpsError(
+        "permission-denied",
+        "Você não tem permissão para apagar a ordem de outro usuário!",
+      );
+    }
+
     if (order.type === "buy") {
       const walletRef = walletsCollection.doc(order.authorUId);
       const walletDoc = await tx.get(walletRef);
@@ -250,7 +251,7 @@ export const deleteOrderById = async (
       });
     }
 
-    tx.delete(ref);
+    tx.delete(orderRef);
   });
 };
 
@@ -312,13 +313,9 @@ export const executeBuyFromOrder = async (
 
     // Verifica se o comprador possui saldo suficiente
     if (buyerWallet.fundsCents < totalCents) {
-      const fundsStr = (buyerWallet.fundsCents / 100).toLocaleString("pt-br", {
-        style: "currency",
-        currency: "BRL",
-      });
       throw new HttpsError(
         "out-of-range",
-        `Saldo insuficiente para realizar a compra! Seu saldo é ${fundsStr}`,
+        `Saldo insuficiente para realizar a compra! Seu saldo é ${formatCurrency(buyerWallet.fundsCents)}`,
       );
     }
 

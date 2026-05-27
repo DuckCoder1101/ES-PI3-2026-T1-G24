@@ -8,6 +8,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mescla_invest/constants/colors.dart';
+import 'package:mescla_invest/formatters/str_formaters.dart';
 import 'package:mescla_invest/models/startup/price_point_model.dart';
 import 'package:mescla_invest/services/startup_service.dart';
 
@@ -120,7 +121,7 @@ class _TabPriceHistoryState extends State<TabPriceHistory> {
                 ),
               ),
               child: Text(
-                interval.label,
+                interval.value,
                 style: TextStyle(
                   color: isSelected ? Colors.black : Colors.white54,
                   fontWeight: FontWeight.bold,
@@ -226,7 +227,7 @@ class _TabPriceHistoryState extends State<TabPriceHistory> {
                   getTooltipItems: (spots) => spots
                       .map(
                         (s) => LineTooltipItem(
-                          'R\$ ${s.y.toStringAsFixed(2)}\n',
+                          formatCurrency(s.y),
                           TextStyle(
                             color: lineColor,
                             fontWeight: FontWeight.bold,
@@ -295,7 +296,7 @@ class _TabPriceHistoryState extends State<TabPriceHistory> {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Text(
-          'R\$ ${price.toStringAsFixed(2).replaceAll('.', ',')}',
+          formatCurrency(price),
           style: const TextStyle(
             color: Colors.white,
             fontSize: 26,
