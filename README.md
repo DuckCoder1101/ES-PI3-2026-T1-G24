@@ -41,37 +41,170 @@ Entre as funcionalidades previstas para o sistema estão:
 - Acompanhamento do portfólio de investimentos
 - Histórico de transações
 - Painel de controle do usuário
+- Sistema administrativo
+- Upload e gerenciamento de arquivos
+- Integração com Firebase
+- Sistema de perguntas e respostas entre investidores e startups
 
 ---
 
 # 🛠️ Tecnologias Utilizadas
 
-As tecnologias podem variar conforme a implementação do grupo, podendo incluir:
+## Frontend
 
-### Frontend
+- Flutter
+- Dart
+- Firebase Authentication
+- Cloud Firestore
+- Firebase Storage
 
-- React
+## Backend
+
+- Node.js
 - TypeScript
-- HTML / CSS
-- Framework de UI
+- Firebase Functions
+- Firebase Admin SDK
+- API REST
 
-### Backend
-
-- Node.js / API REST
-- Banco de dados relacional ou NoSQL
-
-### Outros
+## Outros
 
 - Git / GitHub
+- Firebase Hosting
 - Docker (opcional)
-- Blockchain (conceitual ou simulado)
+
+---
+
+# 📁 Estrutura de Pastas
+
+## Frontend (`frontend/mescla_invest`)
+
+```txt
+frontend/
+└── mescla_invest/
+    ├── android/                 # Configurações Android
+    ├── ios/                     # Configurações iOS
+    ├── web/                     # Configurações Web
+    ├── assets/                  # Arquivos estáticos
+    │
+    ├── lib/
+    │   ├── constants/           # Constantes globais
+    │   ├── formatters/          # Formatadores e helpers
+    │   ├── models/              # Models da aplicação
+    │   ├── screens/             # Telas da aplicação
+    │   ├── services/            # Serviços e integrações
+    │   ├── utils/               # Utilitários gerais
+    │   ├── widgets/             # Widgets reutilizáveis
+    │   │
+    │   ├── firebase_options.dart
+    │   └── main.dart
+    │
+    ├── test/                    # Testes
+    │
+    ├── pubspec.yaml
+    └── analysis_options.yaml
+```
+
+---
+
+## Backend
+
+O backend segue uma arquitetura modular baseada em **features**, onde cada funcionalidade possui sua própria estrutura interna.  
+Todas as features seguem o mesmo padrão utilizado na pasta `orders/`.
+
+### Estrutura Base das Features
+
+```txt
+backend/
+└── src/
+    └── features/
+        ├── orders/
+        │   ├── controllers/     # Controladores HTTP
+        │   ├── services/        # Regras de negócio
+        │   ├── repositories/    # Acesso ao banco de dados
+        │   ├── dto/             # Objetos de transferência de dados
+        │   ├── models/          # Models e interfaces
+        │   ├── routes/          # Rotas da feature
+        │   ├── validations/     # Validações
+        │   ├── middlewares/     # Middlewares específicos
+        │   └── index.ts         # Exportações da feature
+        │
+        ├── auth/
+        ├── users/
+        ├── startups/
+        ├── investments/
+        └── wallets/
+```
+
+### Organização Geral do Backend
+
+```txt
+backend/
+├── src/
+│   ├── config/                  # Configurações globais
+│   ├── database/                # Configuração do banco
+│   ├── shared/                  # Recursos compartilhados
+│   ├── middlewares/             # Middlewares globais
+│   ├── utils/                   # Funções utilitárias
+│   ├── routes/                  # Rotas principais
+│   └── features/                # Features do sistema
+│
+├── package.json
+├── tsconfig.json
+└── firebase.json
+```
+
+---
+
+# 🧠 Arquitetura do Projeto
+
+O sistema utiliza uma arquitetura baseada em separação de responsabilidades:
+
+- **Frontend Flutter**
+  - Responsável pela interface e experiência do usuário
+  - Consome APIs e serviços Firebase
+
+- **Backend Node.js**
+  - Responsável pelas regras de negócio
+  - Controle de autenticação
+  - Persistência e manipulação de dados
+
+- **Firebase**
+  - Autenticação
+  - Banco de dados
+  - Storage
+  - Hosting
+  - Cloud Functions
+
+---
+
+# 🚀 Como Executar o Projeto
+
+## Frontend
+
+```bash
+cd frontend/mescla_invest
+
+flutter pub get
+flutter run
+```
+
+---
+
+## Backend
+
+```bash
+cd backend
+
+npm install
+npm run dev
+```
 
 ---
 
 # 👥 Integrantes do Grupo
 
 | RA       | Nome                               |
-| ---------| -----------------------------------|
+| -------- | ---------------------------------- |
 | 25000636 | Cristian Eduardo Fava              |
 | 25002210 | Arthur Barres Tavares da Silva     |
 | 25009767 | Gustavo Antônio Marino             |
