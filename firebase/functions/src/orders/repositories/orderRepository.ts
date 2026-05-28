@@ -12,6 +12,10 @@ import { OrderListDTO, OrderRegisterDTO } from "../types/dtos";
 import { InvestmentDocument, WalletDocument } from "../../user/types/documents";
 import { StartupResumeDTO } from "../../startup/types/dtos";
 import { formatCurrency } from "../../shared/formatters";
+import {
+  StartupStageFilter,
+  StartupsSearchFilters,
+} from "../../startup/constants/startupStageFilters";
 
 const getInvestmentsCollection = (uid: string) =>
   database.collection("investments").doc(uid).collection("startups");
@@ -29,13 +33,34 @@ export const findOrdersByOrderType = async (
   userUId: string,
   offset: number,
   limit: number,
+  stageFilter: StartupStageFilter = "all",
 ): Promise<OrderListDTO[]> => {
-  const snapshot = await ordersCollection
-    .where("type", "==", orderType)
-    .orderBy("createdAt", "desc")
-    .offset(offset)
-    .limit(limit)
-    .get();
+  // Pré-filtra IDs de startups pelo estágio, quando solicitado
+  let allowedStartupIds: string[] | null = null;
+  if (stageFilter !== "all" && StartupsSearchFilters.includes(stageFilter)) {
+    const stageSnapshot = await startupsCollection
+      .where("stage", "==", stageFilter)
+      .select()
+      .get();
+    allowedStartupIds = stageSnapshot.docs.map((doc) => doc.id);
+    if (allowedStartupIds.length === 0) return [];
+  }
+
+  const snapshot =
+    allowedStartupIds !== null
+      ? await ordersCollection
+          .where("type", "==", orderType)
+          .where("startupId", "in", allowedStartupIds)
+          .orderBy("createdAt", "desc")
+          .offset(offset)
+          .limit(limit)
+          .get()
+      : await ordersCollection
+          .where("type", "==", orderType)
+          .orderBy("createdAt", "desc")
+          .offset(offset)
+          .limit(limit)
+          .get();
 
   const orders = snapshot.docs.map((doc) => ({
     id: doc.id,
@@ -49,7 +74,7 @@ export const findOrdersByOrderType = async (
   const startupsSnapshot = startupIds.length
     ? await startupsCollection
         .where(admin.firestore.FieldPath.documentId(), "in", startupIds)
-        .select("name")
+        .select("name", "stage")
         .get()
     : null;
 
@@ -92,7 +117,7 @@ export const findUserOrders = async (
   const startupsSnapshot = startupIds.length
     ? await startupsCollection
         .where(admin.firestore.FieldPath.documentId(), "in", startupIds)
-        .select("name")
+        .select("name", "stage")
         .get()
     : null;
 

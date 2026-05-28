@@ -3,6 +3,8 @@
  * RA: 25000636 
  */
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/formatters/str_formaters.dart';
 import 'package:mescla_invest/models/startup/startup_model.dart';
@@ -25,9 +27,11 @@ class _CatalogScreenState extends State<CatalogScreen> {
   bool _isLoading = true;
   bool _isMoreLoading = false;
   bool _hasMore = true;
-
-  int _offset = 0;
   final int _limit = 10;
+  int _offset = 0;
+  int _fetchToken = 0;
+
+  Timer? _debounce;
 
   StartupStageFilter _selectedStage = StartupStageFilter.all;
   String _searchName = "";
@@ -43,6 +47,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
   void dispose() {
     _scrollController.dispose();
     _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -57,6 +62,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
   }
 
   Future<void> _fetchStartups({bool reset = false}) async {
+    final token = ++_fetchToken; // incrementa a cada chamada
+
     if (reset) {
       setState(() {
         _offset = 0;
@@ -77,21 +84,21 @@ class _CatalogScreenState extends State<CatalogScreen> {
         nameFilter: _searchName,
       );
 
+      // Se um fetch mais novo já foi iniciado, descarta este resultado
+      if (token != _fetchToken) return;
+
       if (mounted) {
         setState(() {
           _startups.addAll(newStartups);
           _offset = _startups.length;
-
-          if (newStartups.length < _limit) {
-            _hasMore = false;
-          }
+          if (newStartups.length < _limit) _hasMore = false;
         });
       }
     } catch (err, stack) {
-      if (mounted) {
-        handleException(err: err, stack: stack, context: context);
-      }
+      if (token != _fetchToken) return;
+      if (mounted) handleException(err: err, stack: stack, context: context);
     } finally {
+      if (token != _fetchToken) return;
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -180,9 +187,12 @@ class _CatalogScreenState extends State<CatalogScreen> {
       child: TextField(
         controller: _searchController,
         style: const TextStyle(color: Colors.white),
-        onSubmitted: (value) {
+        onChanged: (value) {
           setState(() => _searchName = value);
-          _fetchStartups(reset: true);
+          _debounce?.cancel();
+          _debounce = Timer(const Duration(milliseconds: 400), () {
+            _fetchStartups(reset: true);
+          });
         },
         decoration: InputDecoration(
           icon: const Icon(Icons.search, color: Colors.white38, size: 20),
@@ -205,28 +215,21 @@ class _CatalogScreenState extends State<CatalogScreen> {
   }
 
   Widget _buildFilterTags() {
-    final Map<String, StartupStageFilter> filters = {
-      'Todas': StartupStageFilter.all,
-      'Nova': StartupStageFilter.nova,
-      'Em Operação': StartupStageFilter.em_operacao,
-      'Em expansão': StartupStageFilter.em_expansao,
-    };
-
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: filters.entries.map((entry) {
-          bool isSelected = _selectedStage == entry.value;
+        children: StartupStageFilter.values.map((stage) {
+          bool isSelected = _selectedStage == stage;
           return GestureDetector(
             onTap: () {
-              if (_selectedStage != entry.value) {
-                setState(() => _selectedStage = entry.value);
+              if (_selectedStage != stage) {
+                setState(() => _selectedStage = stage);
                 _fetchStartups(reset: true);
               }
             },
             child: Container(
               margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.verdeMescla
@@ -234,10 +237,11 @@ class _CatalogScreenState extends State<CatalogScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                entry.key,
+                stage.label,
                 style: TextStyle(
                   color: isSelected ? Colors.black : Colors.white70,
                   fontWeight: FontWeight.bold,
+                  fontSize: 12,
                 ),
               ),
             ),

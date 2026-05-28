@@ -10,14 +10,18 @@ import { OrderType } from "../types/documents";
 import { orderTypes } from "../shared/constants";
 import { findOrdersByOrderType } from "../repositories/orderRepository";
 import { getAuthenticatedUser } from "../../shared/auth";
+import {
+  StartupStageFilter,
+  StartupsSearchFilters,
+} from "../../startup/constants/startupStageFilters";
 
 /*
- * Retorna de de ordens com lazy loading
+ * Retorna lista de ordens com lazy loading e filtro opcional de estágio de startup
  */
 export const getOrdersList = onCall(async (req) => {
   const { uid } = getAuthenticatedUser(req);
 
-  let { orderType, offset, limit } = req.data as GetOrdersRequestDTO;
+  let { orderType, offset, limit, stage } = req.data as GetOrdersRequestDTO;
   orderType = normalizeString(orderType).toLowerCase() as OrderType;
 
   if (!orderType || !orderTypes.includes(orderType)) {
@@ -41,7 +45,18 @@ export const getOrdersList = onCall(async (req) => {
     );
   }
 
-  const orders = await findOrdersByOrderType(orderType, uid, offset, limit);
+  const stageFilter: StartupStageFilter =
+    stage && StartupsSearchFilters.includes(stage as StartupStageFilter)
+      ? (stage as StartupStageFilter)
+      : "all";
+
+  const orders = await findOrdersByOrderType(
+    orderType,
+    uid,
+    offset,
+    limit,
+    stageFilter,
+  );
 
   return {
     orders,

@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mescla_invest/constants/colors.dart';
+import 'package:mescla_invest/formatters/number_limit_formatter.dart';
 import 'package:mescla_invest/formatters/str_formaters.dart';
 import 'package:mescla_invest/models/order_model.dart';
 import 'package:mescla_invest/models/startup/startup_model.dart';
@@ -96,6 +97,14 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   Future<void> _submitOrder() async {
     setState(() => _isSubmitting = true);
 
+    if (_selectedStartup == null) {
+      return showSnackbar(
+        msg: "Selecione uma startup para continuar!",
+        context: context,
+        isError: true,
+      );
+    }
+
     try {
       await OrderService.registerOrder(
         startupId: _selectedStartup!.id,
@@ -144,7 +153,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
                     return Expanded(
                       child: GestureDetector(
-                        onTap: () => setState(() => _orderType = t),
+                        onTap: () => setState(() {
+                          _selectedStartup = null;
+                          _orderType = t;
+                        }),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
@@ -279,6 +291,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                         ),
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
+                          NumberLimitFormatter(),
                         ],
                         onChanged: (_) => setState(() {}),
                       ),
@@ -343,6 +356,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   ),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[\d,.]')),
+                    NumberLimitFormatter(),
                   ],
                   onChanged: (_) => setState(() {}),
                 ),
@@ -387,9 +401,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                           ),
                         ),
                         Text(
-                          _total > 0
-                              ? 'R\$ ${_total.toStringAsFixed(2).replaceAll('.', ',')}'
-                              : '—',
+                          _total > 0 ? formatCurrency(_total) : '—',
                           style: const TextStyle(
                             color: AppColors.verdeMescla,
                             fontWeight: FontWeight.bold,

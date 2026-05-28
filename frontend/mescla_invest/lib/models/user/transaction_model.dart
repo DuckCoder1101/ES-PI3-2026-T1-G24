@@ -8,6 +8,22 @@ import 'package:mescla_invest/models/startup/startup_model.dart';
 
 enum TransactionType { investment, funds, trade }
 
+enum TransactionTypeFilter {
+  all,
+  funds,
+  investment,
+  trade;
+
+  String get label {
+    return switch (this) {
+      all => "Todos",
+      funds => "Depósito",
+      investment => "Compra Direta",
+      trade => "Balcão",
+    };
+  }
+}
+
 /*
  * Modelo base de transação.
  * Todas as transações possuem id, tipo, valor em centavos, data

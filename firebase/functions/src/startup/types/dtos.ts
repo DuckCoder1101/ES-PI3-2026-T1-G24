@@ -38,6 +38,7 @@ export interface StartupResumeDTO {
   isInvestor: boolean;
   currentTokenPriceCents: number;
   initialTokenPriceCents: number;
+  stage?: StartupStage;
 }
 
 export interface StartupTokenInfoDTO {

@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/order_model.dart';
+import 'package:mescla_invest/models/startup/startup_model.dart';
 import 'package:mescla_invest/screens/app/marketplace/create_order_screen.dart';
 import 'package:mescla_invest/screens/app/wallet/order_card.dart';
 import 'package:mescla_invest/services/order_service.dart';
@@ -18,6 +19,7 @@ class MarketScreen extends StatefulWidget {
 
 class _MarketScreenState extends State<MarketScreen> {
   OrderTypeFilter _activeTab = OrderTypeFilter.buy;
+  StartupStageFilter _selectedStage = StartupStageFilter.all;
 
   // Listas de ordens carregadas do backend
   List<OrderModel> _buyOrders = [];
@@ -38,8 +40,18 @@ class _MarketScreenState extends State<MarketScreen> {
 
     try {
       final results = await Future.wait([
-        OrderService.getOrders(orderType: OrderType.buy, offset: 0, limit: 10),
-        OrderService.getOrders(orderType: OrderType.sell, offset: 0, limit: 10),
+        OrderService.getOrders(
+          orderType: OrderType.buy,
+          offset: 0,
+          limit: 10,
+          stageFilter: _selectedStage,
+        ),
+        OrderService.getOrders(
+          orderType: OrderType.sell,
+          offset: 0,
+          limit: 10,
+          stageFilter: _selectedStage,
+        ),
         OrderService.getUserOrders(),
       ]);
 
@@ -69,6 +81,43 @@ class _MarketScreenState extends State<MarketScreen> {
     if (result == true && mounted) {
       await _fetchOrders();
     }
+  }
+
+  Widget _buildFilterTags() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: StartupStageFilter.values.map((stage) {
+          final isSelected = _selectedStage == stage;
+          return GestureDetector(
+            onTap: () {
+              if (_selectedStage != stage) {
+                setState(() => _selectedStage = stage);
+                _fetchOrders();
+              }
+            },
+            child: Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.verdeMescla
+                    : AppColors.campoEscuro,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                stage.label,
+                style: TextStyle(
+                  color: isSelected ? Colors.black : Colors.white70,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
   }
 
   Widget _buildOrderList() {
@@ -170,7 +219,15 @@ class _MarketScreenState extends State<MarketScreen> {
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+
+              // Filtros de estágio
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _buildFilterTags(),
+              ),
+
+              const SizedBox(height: 12),
 
               // Label da aba
               Padding(

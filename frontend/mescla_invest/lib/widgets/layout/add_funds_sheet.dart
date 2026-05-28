@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mescla_invest/constants/colors.dart';
+import 'package:mescla_invest/formatters/number_limit_formatter.dart';
 import 'package:mescla_invest/services/user_service.dart';
 import 'package:mescla_invest/utils/handle_exception.dart';
 
@@ -105,7 +106,7 @@ class _AddFundsSheetState extends State<AddFundsSheet> {
         ),
         SizedBox(height: 4),
         Text(
-          'Simulação — nenhum valor real será cobrado. Mínimo: R\$ 10,00.',
+          'Mínimo: R\$ 10,00.',
           style: TextStyle(color: Colors.white38, fontSize: 13),
         ),
       ],
@@ -141,7 +142,10 @@ class _AddFundsSheetState extends State<AddFundsSheet> {
           borderSide: BorderSide(color: AppColors.verdeMescla, width: 2),
         ),
       ),
-      inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]'))],
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]')),
+        NumberLimitFormatter(maxValue: 1_000_000),
+      ],
       onChanged: (_) {
         if (_error != null) setState(() => _error = null);
       },
