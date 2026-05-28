@@ -206,9 +206,7 @@ npm run dev
 | RA       | Nome                               |
 | -------- | ---------------------------------- |
 | 25000636 | Cristian Eduardo Fava              |
-| 25002210 | Arthur Barres Tavares da Silva     |
 | 25009767 | Gustavo Antônio Marino             |
-| 25000131 | Maria Eduarda Perez Mostaro Campos |
 | 25000294 | Vinicius Santuci Virgolino         |
 
 ---
