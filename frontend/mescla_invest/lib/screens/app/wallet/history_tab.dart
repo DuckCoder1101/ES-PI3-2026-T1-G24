@@ -4,7 +4,7 @@ import 'package:mescla_invest/formatters/str_formaters.dart';
 import 'package:mescla_invest/models/user/transaction_model.dart';
 import 'package:mescla_invest/screens/app_root.dart';
 
-class HistoryTab extends StatelessWidget {
+class HistoryTab extends StatefulWidget {
   final List<TransactionModel> transactions;
   final bool isLoading;
 
@@ -15,35 +15,103 @@ class HistoryTab extends StatelessWidget {
   });
 
   @override
+  State<HistoryTab> createState() => _HistoryTabState();
+}
+
+class _HistoryTabState extends State<HistoryTab> {
+  TransactionTypeFilter _selectedType = TransactionTypeFilter.all;
+
+  List<TransactionModel> get _filtered {
+    if (_selectedType == TransactionTypeFilter.all) return widget.transactions;
+    return widget.transactions
+        .where((tx) => tx.type.name == _selectedType.name)
+        .toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (isLoading) {
+    if (widget.isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.verdeMescla),
       );
     }
 
-    if (transactions.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.receipt_long_outlined, color: Colors.white24, size: 48),
-            const SizedBox(height: 12),
-            Text(
-              "Nenhuma transação registrada.",
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white38, fontSize: 14),
-            ),
-          ],
-        ),
-      );
-    }
+    final filtered = _filtered;
 
-    return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      itemCount: transactions.length,
-      itemBuilder: (_, i) => _TransactionCard(tx: transactions[i]),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: _buildFilterTags(),
+        ),
+        Expanded(
+          child: filtered.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.receipt_long_outlined,
+                        color: Colors.white24,
+                        size: 48,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Nenhuma transação encontrada.',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white38,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  itemCount: filtered.length,
+                  itemBuilder: (_, i) => _TransactionCard(tx: filtered[i]),
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterTags() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: TransactionTypeFilter.values.map((type) {
+          final isSelected = _selectedType == type;
+          return GestureDetector(
+            onTap: () {
+              if (_selectedType != type) {
+                setState(() => _selectedType = type);
+              }
+            },
+            child: Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.verdeMescla
+                    : AppColors.campoEscuro,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                type.label,
+                style: TextStyle(
+                  color: isSelected ? Colors.black : Colors.white70,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 }

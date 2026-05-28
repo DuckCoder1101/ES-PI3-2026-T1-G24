@@ -43,7 +43,7 @@ class _SigninScreenState extends State<SigninScreen> {
   }
 
   void _goToWelcome() {
-    Navigator.of(context).pushNamedAndRemoveUntil('/welcome', (route) => false);
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   Future<void> _loginUsuario() async {

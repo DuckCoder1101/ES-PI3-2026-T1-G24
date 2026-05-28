@@ -124,7 +124,7 @@ export const findStartupsResumes = async (
   uid: string,
 ): Promise<StartupResumeDTO[]> => {
   const snapshot = await startupsCollection
-    .select("name", "currentTokenPriceCents", "initialTokenPriceCents")
+    .select("name", "currentTokenPriceCents", "initialTokenPriceCents", "stage")
     .get();
   const investedIds = await getInvestedStartupIds(uid);
 
@@ -136,6 +136,7 @@ export const findStartupsResumes = async (
       currentTokenPriceCents: startup.currentTokenPriceCents,
       initialTokenPriceCents: startup.initialTokenPriceCents,
       isInvestor: investedIds.has(doc.id),
+      stage: startup.stage,
     };
   }) satisfies StartupResumeDTO[];
 };

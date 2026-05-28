@@ -32,4 +32,5 @@ export interface GetOrdersRequestDTO {
   orderType: OrderType;
   offset: number;
   limit: number;
+  stage?: string;
 }

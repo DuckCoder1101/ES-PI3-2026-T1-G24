@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
+import 'package:mescla_invest/models/startup/startup_model.dart';
 import 'package:mescla_invest/models/user/investment_model.dart';
 
-class InvestmentsTab extends StatelessWidget {
+class InvestmentsTab extends StatefulWidget {
   final List<InvestmentModel> investments;
   final bool isLoading;
 
@@ -13,18 +14,89 @@ class InvestmentsTab extends StatelessWidget {
   });
 
   @override
+  State<InvestmentsTab> createState() => _InvestmentsTabState();
+}
+
+class _InvestmentsTabState extends State<InvestmentsTab> {
+  StartupStageFilter _selectedStage = StartupStageFilter.all;
+
+  List<InvestmentModel> get _filtered {
+    if (_selectedStage == StartupStageFilter.all) return widget.investments;
+    return widget.investments.where((inv) {
+      return inv.startup.stage?.name == _selectedStage.name;
+    }).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (isLoading) {
+    if (widget.isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.verdeMescla),
       );
     }
 
-    return ListView.builder(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      itemCount: investments.length,
-      itemBuilder: (_, i) => _InvestmentCard(investment: investments[i]),
+    final filtered = _filtered;
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: _buildFilterTags(),
+        ),
+        Expanded(
+          child: filtered.isEmpty
+              ? Center(
+                  child: Text(
+                    'Nenhum investimento encontrado.',
+                    style: const TextStyle(color: Colors.white38, fontSize: 14),
+                  ),
+                )
+              : ListView.builder(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  itemCount: filtered.length,
+                  itemBuilder: (_, i) =>
+                      _InvestmentCard(investment: filtered[i]),
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterTags() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: StartupStageFilter.values.map((stage) {
+          final isSelected = _selectedStage == stage;
+          return GestureDetector(
+            onTap: () {
+              if (_selectedStage != stage) {
+                setState(() => _selectedStage = stage);
+              }
+            },
+            child: Container(
+              margin: const EdgeInsets.only(right: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.verdeMescla
+                    : AppColors.campoEscuro,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                stage.label,
+                style: TextStyle(
+                  color: isSelected ? Colors.black : Colors.white70,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 }

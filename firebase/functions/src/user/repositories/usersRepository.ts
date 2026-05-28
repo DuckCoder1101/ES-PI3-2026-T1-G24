@@ -167,6 +167,7 @@ export const getInvestments = async (
             isInvestor: true,
             currentTokenPriceCents: startup.currentTokenPriceCents,
             initialTokenPriceCents: startup.initialTokenPriceCents,
+            stage: startup.stage,
           }
         : {
             id: data.startupId,

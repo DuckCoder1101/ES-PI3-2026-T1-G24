@@ -21,7 +21,21 @@ enum StartupStage {
   }
 }
 
-enum StartupStageFilter { nova, em_operacao, em_expansao, all }
+enum StartupStageFilter {
+  all,
+  nova,
+  em_operacao,
+  em_expansao;
+
+  String get label {
+    return switch (this) {
+      StartupStageFilter.all => "Todas",
+      StartupStageFilter.nova => "Nova",
+      StartupStageFilter.em_operacao => "Em operação",
+      StartupStageFilter.em_expansao => "Em expansão",
+    };
+  }
+}
 
 // StartupResumeDTO — resumo mínimo retornado em listas, ordens e transações
 class StartupResumeDTO {
@@ -42,12 +56,15 @@ class StartupResumeDTO {
         100;
   }
 
+  final StartupStage? stage;
+
   const StartupResumeDTO({
     required this.id,
     required this.name,
     required this.currentTokenPriceCents,
     required this.initialTokenPriceCents,
     this.isInvestor = false,
+    this.stage,
   });
 
   factory StartupResumeDTO.fromMap(Map<String, dynamic> rawMap) {
@@ -59,6 +76,9 @@ class StartupResumeDTO {
       currentTokenPriceCents: map['currentTokenPriceCents'] ?? 0,
       initialTokenPriceCents: map['initialTokenPriceCents'] ?? 0,
       isInvestor: map['isInvestor'] == true,
+      stage: map['stage'] != null
+          ? StartupStage.values.byName(map['stage'] as String)
+          : null,
     );
   }
 }

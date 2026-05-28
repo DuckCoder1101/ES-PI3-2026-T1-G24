@@ -40,6 +40,7 @@ export const findUserTransactions = async (
           currentTokenPriceCents: 0,
           initialTokenPriceCents: 0,
           isInvestor: false,
+          stage: undefined,
         },
       } satisfies StartupTransactionListDTO;
     }

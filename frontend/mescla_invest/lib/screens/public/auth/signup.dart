@@ -62,7 +62,7 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   void _goToWelcome() {
-    Navigator.of(context).pushNamedAndRemoveUntil('/welcome', (route) => false);
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   Future<void> _cadastrarUsuario() async {
