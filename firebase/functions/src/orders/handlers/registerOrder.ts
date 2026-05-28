@@ -9,6 +9,7 @@ import { getAuthenticatedUser } from "../../shared/auth";
 import { normalizeString } from "../../shared/utils";
 import { orderTypes } from "../shared/constants";
 
+import { logger } from "firebase-functions/v2";
 import { saveOrder } from "../repositories/orderRepository";
 
 import { OrderType } from "../types/documents";
@@ -26,7 +27,7 @@ export const registerOrder = onCall(async (req) => {
   const orderType = normalizeString(order.type).toLowerCase() as OrderType;
 
   if (!order.startupId) {
-    throw new HttpsError("invalid-argument", "ID de stratup inválido!");
+    throw new HttpsError("invalid-argument", "ID de startup inválido!");
   }
 
   if (!orderType || !orderTypes.includes(orderType)) {
@@ -50,6 +51,7 @@ export const registerOrder = onCall(async (req) => {
     );
   }
 
+  logger.log(`[registerOrder] uid=${uid} tipo=${orderType} startupId=${order.startupId} tokens=${order.tokenAmount}`);
   await saveOrder({
     ...order,
     authorUId: uid,

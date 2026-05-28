@@ -6,6 +6,7 @@
 import { HttpsError, onCall } from "firebase-functions/https";
 import { normalizeString } from "../../shared/utils";
 import { GetStartupsRequestBodyDTO } from "../types/dtos";
+import { logger } from "firebase-functions/v2";
 import { findStartups } from "../repositories/startupsRepository";
 import { getAuthenticatedUser } from "../../shared/auth";
 import {
@@ -44,6 +45,7 @@ export const getStartupsList = onCall(async (req) => {
     );
   }
 
+  logger.log(`[getStartupsList] uid=${uid} stage=${stage} name="${name}" offset=${offset} limit=${limit}`);
   const startups = await findStartups(uid, offset, limit, stage, name);
 
   return { startups };

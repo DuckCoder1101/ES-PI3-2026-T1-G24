@@ -16,12 +16,14 @@ class OrderCard extends StatefulWidget {
   final OrderTypeFilter tab;
   final OrderModel order;
   final Future<void> Function() onUpdate;
+  final VoidCallback? onRemove;
 
   const OrderCard({
     super.key,
     required this.tab,
     required this.order,
     required this.onUpdate,
+    this.onRemove,
   });
 
   @override
@@ -121,6 +123,7 @@ class _OrderCardState extends State<OrderCard> {
       await widget.onUpdate();
     } catch (err, stack) {
       if (mounted) handleException(err: err, stack: stack, context: context);
+      await widget.onUpdate();
     } finally {
       if (mounted) setState(() => _isExecuting = false);
     }
@@ -168,7 +171,10 @@ class _OrderCardState extends State<OrderCard> {
         confirmLabel: 'Cancelar ordem',
         confirmColor: Colors.redAccent,
       ),
-      onDismissed: (_) => _cancelOrder(),
+      onDismissed: (_) {
+        widget.onRemove?.call();
+        _cancelOrder();
+      },
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 24),

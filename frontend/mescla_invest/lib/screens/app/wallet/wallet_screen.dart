@@ -1,3 +1,8 @@
+/*
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/user/investment_model.dart';

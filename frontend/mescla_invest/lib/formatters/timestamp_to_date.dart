@@ -1,3 +1,8 @@
+/*
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 DateTime? parseTimestamp(dynamic raw) {
   if (raw == null) return null;
   if (raw is int) return DateTime.fromMillisecondsSinceEpoch(raw);

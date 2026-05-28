@@ -6,6 +6,7 @@
 import { HttpsError, onCall } from "firebase-functions/https";
 import { getAuthenticatedUser } from "../../shared/auth";
 import { normalizeString } from "../../shared/utils";
+import { logger } from "firebase-functions/v2";
 import { executeSellToOrder } from "../repositories/orderRepository";
 
 /*
@@ -21,6 +22,7 @@ export const sellOrder = onCall(async (req) => {
     throw new HttpsError("invalid-argument", "ID de ordem inválido!");
   }
 
+  logger.log(`[sellOrder] uid=${uid} orderId=${orderId}`);
   await executeSellToOrder(orderId, uid);
 
   return {

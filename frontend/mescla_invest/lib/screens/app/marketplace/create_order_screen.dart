@@ -66,10 +66,12 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       setState(() {
         _startups = startups;
         if (widget.startupId != null) {
-          _selectedStartup = startups.firstWhere(
-            (s) => s.id == widget.startupId,
-            orElse: () => startups.first,
-          );
+          if (startups.isNotEmpty) {
+            _selectedStartup = startups.firstWhere(
+              (s) => s.id == widget.startupId,
+              orElse: () => startups.first,
+            );
+          }
         }
       });
     } catch (err, stack) {

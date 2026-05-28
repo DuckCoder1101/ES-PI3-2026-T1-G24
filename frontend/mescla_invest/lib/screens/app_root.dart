@@ -1,3 +1,8 @@
+/*
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';

@@ -1,3 +1,9 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
+import { logger } from "firebase-functions/v2";
 import { HttpsError, onCall } from "firebase-functions/https";
 import { getAuthenticatedUser } from "../../shared/auth";
 import { GetTokenPriceHistoryRequestDTO } from "../types/dtos";
@@ -30,6 +36,7 @@ export const getTokenPriceHistory = onCall(async (req) => {
     );
   }
 
+  logger.log(`[getTokenPriceHistory] startupId=${startupId} interval=${interval}`);
   const priceHistory = await getStartupTokenPriceHistory(startupId, interval);
 
   return {

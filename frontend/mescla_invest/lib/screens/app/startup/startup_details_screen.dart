@@ -250,7 +250,7 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
           child: _buildMetricChip(
             icon: Icons.trending_up_rounded,
             label: 'Captado',
-            value: formatCurrency(startup.tokenPrice),
+            value: formatCurrency(startup.totalRaised),
           ),
         ),
       ],

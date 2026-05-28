@@ -7,6 +7,7 @@ import { HttpsError, onCall } from "firebase-functions/https";
 import { getAuthenticatedUser } from "../../shared/auth";
 import { normalizeString } from "../../shared/utils";
 import { getStartupTokenPriceHistory } from "../repositories/startupsRepository";
+import { logger } from "firebase-functions/v2";
 import { getInvestments } from "../../user/repositories/usersRepository";
 import { StartupPriceSeriesDTO } from "../types/dtos";
 import { DateInterval, DateIntervals } from "../constants/dateInverval";
@@ -29,6 +30,7 @@ export const getInvestedStartupsPriceHistory = onCall(async (req) => {
     );
   }
 
+  logger.log(`[getInvestedStartupsPriceHistory] uid=${uid} interval=${rawInterval}`);
   const investments = await getInvestments(uid);
 
   if (investments.length === 0) {

@@ -77,7 +77,7 @@ export const onTransactionCreated = onDocumentCreated(
         initialTokenPriceCents * (1 + occupancyRate * APPRECIATION_FACTOR),
       );
 
-      updateCurrentPrice(startupId, newPriceCents);
+      await updateCurrentPrice(startupId, newPriceCents);
 
       logger.log(
         `[investment] Preço atualizado: ${newPriceCents}¢ ` +
@@ -98,7 +98,7 @@ export const onTransactionCreated = onDocumentCreated(
         return;
       }
 
-      updateCurrentPrice(startupId, tradeTx.tokenPriceCents);
+      await updateCurrentPrice(startupId, tradeTx.tokenPriceCents);
 
       logger.log(
         `[trade] Preço de referência atualizado: ${tradeTx.tokenPriceCents}¢ ` +

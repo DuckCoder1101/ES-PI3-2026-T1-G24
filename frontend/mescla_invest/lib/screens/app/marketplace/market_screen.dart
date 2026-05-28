@@ -141,7 +141,14 @@ class _MarketScreenState extends State<MarketScreen> {
       itemCount: orders.length,
       itemBuilder: (context, index) {
         final order = orders[index];
-        return OrderCard(tab: _activeTab, order: order, onUpdate: _fetchOrders);
+        return OrderCard(
+          tab: _activeTab,
+          order: order,
+          onUpdate: _fetchOrders,
+          onRemove: () => setState(
+            () => _myOrders.removeWhere((o) => o.id == order.id),
+          ),
+        );
       },
     );
   }

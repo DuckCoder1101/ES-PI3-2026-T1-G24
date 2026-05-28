@@ -105,7 +105,13 @@ export const getWallet = async (uid: string): Promise<WalletDocument> => {
   const snapshot = await walletsCollection.doc(uid).get();
 
   if (!snapshot.exists) {
-    throw new HttpsError("not-found", "Carteira não encontrada!");
+    await snapshot.ref.set({
+      fundsCents: 0,
+      lockedFundsCents: 0,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    return await getWallet(uid);
   }
 
   return snapshot.data() as WalletDocument;

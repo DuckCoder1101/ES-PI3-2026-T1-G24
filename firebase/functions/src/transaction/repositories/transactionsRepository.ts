@@ -21,6 +21,7 @@ export const findUserTransactions = async (
     transactionsCollection
       .where("userUIds", "array-contains", userId)
       .orderBy("createdAt", "desc")
+      .limit(50)
       .get(),
     findStartupsResumes(userId),
   ]);
@@ -31,7 +32,7 @@ export const findUserTransactions = async (
   })) as TransactionDocument[];
 
   return transactions.map((t) => {
-    if (t.type != "funds") {
+    if (t.type !== "funds") {
       return {
         ...t,
         startup: startups.find((s) => s.id == t.startupId) ?? {

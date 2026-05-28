@@ -7,6 +7,7 @@ import { HttpsError, onCall } from "firebase-functions/https";
 import { saveQuestion } from "../../repositories/qaRepository";
 import { getAuthenticatedUser } from "../../../shared/auth";
 import { isInvestor } from "../../../user/repositories/usersRepository";
+import { logger } from "firebase-functions/v2";
 import { QuestionVisibilities } from "../../constants/questionVisibility";
 
 /*
@@ -27,6 +28,7 @@ export const registerQuestion = onCall(async (req) => {
     );
   }
 
+  logger.log(`[registerQuestion] uid=${uid} startupId=${startupId} visibility=${visibility}`);
   const investorCheck = await isInvestor(uid, startupId);
 
   if (visibility == "privada" && !investorCheck) {

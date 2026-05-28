@@ -194,11 +194,11 @@ export const updateTokenHistory = async (
 /*
  * Atualiza apenas o currentTokenPriceCents da startup
  */
-export const updateCurrentPrice = (
+export const updateCurrentPrice = async (
   startupId: string,
   newPriceCents: number,
-): void => {
-  startupsCollection.doc(startupId).update({
+): Promise<void> => {
+  await startupsCollection.doc(startupId).update({
     currentTokenPriceCents: newPriceCents,
     updatedAt: FieldValue.serverTimestamp(),
   });

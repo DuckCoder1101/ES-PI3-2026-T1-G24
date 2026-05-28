@@ -5,6 +5,7 @@
 
 import { HttpsError, onCall } from "firebase-functions/https";
 import { getAuthenticatedUser } from "../../shared/auth";
+import { logger } from "firebase-functions/v2";
 import { findStartupNews } from "../repositories/newsRepository";
 
 /*
@@ -19,6 +20,7 @@ export const getStartupNews = onCall(async (req) => {
     throw new HttpsError("invalid-argument", "startupId ausente.");
   }
 
+  logger.log(`[getStartupNews] startupId=${startupId}`);
   const news = await findStartupNews(startupId);
 
   return {

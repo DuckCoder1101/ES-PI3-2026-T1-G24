@@ -4,6 +4,7 @@
  */
 
 import { HttpsError, onCall } from "firebase-functions/https";
+import { logger } from "firebase-functions/v2";
 import { addFundsToWallet } from "../repositories/usersRepository";
 import { getAuthenticatedUser } from "../../shared/auth";
 
@@ -25,6 +26,7 @@ export const addFunds = onCall(async (req) => {
   // Converte reais para centavos para armazenamento
   const fundsCents = Math.round(funds * 100);
 
+  logger.log(`[addFunds] uid=${uid} valor=R$${funds}`);
   await addFundsToWallet(uid, fundsCents);
 
   return {

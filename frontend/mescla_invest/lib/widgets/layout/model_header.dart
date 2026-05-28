@@ -1,3 +1,8 @@
+/*
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import 'package:flutter/material.dart';
 
 class ModalHeader extends StatelessWidget {
