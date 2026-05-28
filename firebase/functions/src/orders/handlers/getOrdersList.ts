@@ -8,6 +8,7 @@ import { GetOrdersRequestDTO } from "../types/dtos";
 import { normalizeString } from "../../shared/utils";
 import { OrderType } from "../types/documents";
 import { orderTypes } from "../shared/constants";
+import { logger } from "firebase-functions/v2";
 import { findOrdersByOrderType } from "../repositories/orderRepository";
 import { getAuthenticatedUser } from "../../shared/auth";
 import {
@@ -50,6 +51,7 @@ export const getOrdersList = onCall(async (req) => {
       ? (stage as StartupStageFilter)
       : "all";
 
+  logger.log(`[getOrdersList] uid=${uid} tipo=${orderType} offset=${offset} limit=${limit} stage=${stageFilter}`);
   const orders = await findOrdersByOrderType(
     orderType,
     uid,

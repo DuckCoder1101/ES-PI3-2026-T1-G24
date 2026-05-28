@@ -1,0 +1,29 @@
+/**
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
+import { HttpsError, onCall } from "firebase-functions/https";
+import { getAuthenticatedUser } from "../../shared/auth";
+import { logger } from "firebase-functions/v2";
+import { findStartupNews } from "../repositories/newsRepository";
+
+/*
+ * Retorna as notícias/atualizações de uma startup.
+ */
+export const getStartupNews = onCall(async (req) => {
+  getAuthenticatedUser(req);
+
+  const { startupId } = req.data;
+
+  if (!startupId) {
+    throw new HttpsError("invalid-argument", "startupId ausente.");
+  }
+
+  logger.log(`[getStartupNews] startupId=${startupId}`);
+  const news = await findStartupNews(startupId);
+
+  return {
+    news,
+  };
+});

@@ -72,3 +72,10 @@ export interface PriceHistoryDocument {
   triggerId: string;
   createdAt: FieldValue;
 }
+
+export interface NewsDocument {
+  startupId: string;
+  title: string;
+  content: string;
+  createdAt: Timestamp;
+}

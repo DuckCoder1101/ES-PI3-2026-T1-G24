@@ -1,3 +1,8 @@
+/*
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import 'package:flutter/services.dart';
 
 class NumberLimitFormatter extends TextInputFormatter {
@@ -12,18 +17,12 @@ class NumberLimitFormatter extends TextInputFormatter {
   ) {
     if (newValue.text.isEmpty) return newValue;
 
-    final digitsOnly = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
-    final intValue = int.tryParse(digitsOnly);
+    final normalized = newValue.text.replaceAll(',', '.');
+    final doubleValue = double.tryParse(normalized);
 
-    if (intValue == null) return oldValue;
+    if (doubleValue == null) return oldValue;
+    if (doubleValue > maxValue) return oldValue;
 
-    if (intValue > maxValue) return oldValue;
-
-    final corrected = intValue.toString();
-
-    return newValue.copyWith(
-      text: corrected,
-      selection: TextSelection.collapsed(offset: corrected.length),
-    );
+    return newValue;
   }
 }

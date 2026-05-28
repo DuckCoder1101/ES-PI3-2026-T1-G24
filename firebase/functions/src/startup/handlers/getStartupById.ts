@@ -6,6 +6,7 @@
 import { HttpsError, onCall } from "firebase-functions/https";
 import { GetStartupDetailsBodyDTO } from "../types/dtos";
 import { normalizeString } from "../../shared/utils";
+import { logger } from "firebase-functions/v2";
 import { getById } from "../repositories/startupsRepository";
 import { getAuthenticatedUser } from "../../shared/auth";
 
@@ -22,5 +23,6 @@ export const getStartupById = onCall(async (req) => {
     throw new HttpsError("invalid-argument", "ID de startup inválido ou nulo!");
   }
 
+  logger.log(`[getStartupById] uid=${uid} startupId=${normalizedStartupId}`);
   return await getById(normalizedStartupId, uid);
 });

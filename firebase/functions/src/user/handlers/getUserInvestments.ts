@@ -5,15 +5,16 @@
 
 import { onCall } from "firebase-functions/https";
 import { getAuthenticatedUser } from "../../shared/auth";
+import { logger } from "firebase-functions/v2";
 import { getInvestments } from "../repositories/usersRepository";
 
 /*
- * Retorna todos os investimentos (posições em startups) do usuário autenticado.
- * Cada item contém o ID da startup, tokens disponíveis e tokens bloqueados em ordens de venda.
+ * Retorna todos os investimentos do usuário.
  */
 export const getUserInvestments = onCall(async (req) => {
   const { uid } = getAuthenticatedUser(req);
 
+  logger.log(`[getUserInvestments] uid=${uid}`);
   const investments = await getInvestments(uid);
 
   return { investments };

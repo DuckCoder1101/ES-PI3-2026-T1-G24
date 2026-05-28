@@ -5,6 +5,7 @@
 
 import { onCall } from "firebase-functions/https";
 import { getAuthenticatedUser } from "../../shared/auth";
+import { logger } from "firebase-functions/v2";
 import { findUserTransactions } from "../repositories/transactionsRepository";
 
 /*
@@ -13,6 +14,7 @@ import { findUserTransactions } from "../repositories/transactionsRepository";
  */
 export const getUserTransactions = onCall(async (req) => {
   const { uid } = getAuthenticatedUser(req);
+  logger.log(`[getUserTransactions] uid=${uid}`);
   const transactions = await findUserTransactions(uid);
 
   return {

@@ -1,9 +1,15 @@
+/*
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 import 'dart:io';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:mescla_invest/models/startup/price_point_model.dart';
 import 'package:mescla_invest/models/startup/question_model.dart';
 import 'package:mescla_invest/models/startup/startup_model.dart';
+import 'package:mescla_invest/models/startup/startup_news_model.dart';
 
 class StartupService {
   static Future<String> loadFile(String thumbnailPath) async {
@@ -64,7 +70,7 @@ class StartupService {
             'filter': {'stage': stageFilter.name, 'name': nameFilter},
           });
 
-      final data = response.data as Map<dynamic, dynamic>;
+      final data = Map<String, dynamic>.from(response.data as Map? ?? const {});
       final List rawList = data['startups'] ?? [];
 
       final futures = rawList.map((s) async {
@@ -88,7 +94,7 @@ class StartupService {
           .httpsCallable('getStartupResumes')
           .call();
 
-      final data = response.data as Map<dynamic, dynamic>;
+      final data = Map<String, dynamic>.from(response.data as Map? ?? const {});
       final List rawList = data['startups'] ?? [];
 
       return rawList
@@ -165,11 +171,30 @@ class StartupService {
           .httpsCallable('getTokenPriceHistory')
           .call({'startupId': startupId, 'dateInterval': interval.value});
 
-      final data = response.data as Map<dynamic, dynamic>;
+      final data = Map<String, dynamic>.from(response.data as Map? ?? const {});
       final List rawList = data['priceHistory'] ?? [];
 
       return rawList
           .map((e) => PricePoint.fromMap(Map<String, dynamic>.from(e)))
+          .toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  static Future<List<StartupNewsModel>> getStartupNews({
+    required String startupId,
+  }) async {
+    try {
+      final response = await FirebaseFunctions.instance
+          .httpsCallable('getStartupNews')
+          .call({'startupId': startupId});
+
+      final data = Map<String, dynamic>.from(response.data as Map? ?? const {});
+      final List rawList = data['news'] ?? [];
+
+      return rawList
+          .map((n) => StartupNewsModel.fromMap(Map<String, dynamic>.from(n)))
           .toList();
     } catch (e) {
       rethrow;
@@ -185,7 +210,7 @@ class StartupService {
           .httpsCallable('getInvestedStartupsPriceHistory')
           .call({'dateInterval': interval.value});
 
-      final data = response.data as Map<dynamic, dynamic>;
+      final data = Map<String, dynamic>.from(response.data as Map? ?? const {});
       final List rawList = data['startups'] ?? [];
 
       return rawList

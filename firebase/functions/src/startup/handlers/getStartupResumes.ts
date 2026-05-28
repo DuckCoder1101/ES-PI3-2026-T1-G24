@@ -5,6 +5,7 @@
 
 import { onCall } from "firebase-functions/https";
 import { getAuthenticatedUser } from "../../shared/auth";
+import { logger } from "firebase-functions/v2";
 import { findStartupsResumes } from "../repositories/startupsRepository";
 
 /*
@@ -14,6 +15,7 @@ import { findStartupsResumes } from "../repositories/startupsRepository";
 export const getStartupResumes = onCall(async (req) => {
   const { uid } = getAuthenticatedUser(req);
 
+  logger.log(`[getStartupResumes] uid=${uid}`);
   const startups = await findStartupsResumes(uid);
 
   return { startups };

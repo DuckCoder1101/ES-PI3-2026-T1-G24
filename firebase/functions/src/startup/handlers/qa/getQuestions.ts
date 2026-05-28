@@ -6,6 +6,7 @@
 import { HttpsError, onCall } from "firebase-functions/https";
 import { getStartupQuestions } from "../../repositories/qaRepository";
 import { getAuthenticatedUser } from "../../../shared/auth";
+import { logger } from "firebase-functions/v2";
 import { isInvestor } from "../../../user/repositories/usersRepository";
 
 /*
@@ -22,6 +23,7 @@ export const getQuestions = onCall(async (req) => {
     );
   }
 
+  logger.log(`[getQuestions] uid=${uid} startupId=${startupId} visibility=${visibility}`);
   const investorCheck = await isInvestor(uid, startupId);
 
   if (visibility == "privada" && !investorCheck) {

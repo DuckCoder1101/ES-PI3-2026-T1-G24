@@ -6,6 +6,7 @@
 import { HttpsError, onCall } from "firebase-functions/https";
 import { getAuthenticatedUser } from "../../shared/auth";
 import { normalizeString } from "../../shared/utils";
+import { logger } from "firebase-functions/v2";
 import { deleteOrderById } from "../repositories/orderRepository";
 
 export const deleteOrder = onCall(async (req) => {
@@ -17,6 +18,7 @@ export const deleteOrder = onCall(async (req) => {
     throw new HttpsError("invalid-argument", "ID de ordem inválido!");
   }
 
+  logger.log(`[deleteOrder] uid=${uid} orderId=${orderId}`);
   await deleteOrderById(orderId, uid);
 
   return {

@@ -6,7 +6,7 @@ import 'package:mescla_invest/constants/colors.dart';
 import 'package:mescla_invest/models/order_model.dart';
 import 'package:mescla_invest/models/startup/startup_model.dart';
 import 'package:mescla_invest/screens/app/marketplace/create_order_screen.dart';
-import 'package:mescla_invest/screens/app/wallet/order_card.dart';
+import 'package:mescla_invest/screens/app/marketplace/order_card.dart';
 import 'package:mescla_invest/services/order_service.dart';
 import 'package:mescla_invest/utils/handle_exception.dart';
 
@@ -141,7 +141,14 @@ class _MarketScreenState extends State<MarketScreen> {
       itemCount: orders.length,
       itemBuilder: (context, index) {
         final order = orders[index];
-        return OrderCard(tab: _activeTab, order: order, onUpdate: _fetchOrders);
+        return OrderCard(
+          tab: _activeTab,
+          order: order,
+          onUpdate: _fetchOrders,
+          onRemove: () => setState(
+            () => _myOrders.removeWhere((o) => o.id == order.id),
+          ),
+        );
       },
     );
   }

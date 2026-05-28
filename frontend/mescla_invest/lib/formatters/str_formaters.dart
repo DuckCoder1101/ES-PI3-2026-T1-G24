@@ -1,3 +1,8 @@
+/*
+ * Autor: Cristian Eduardo Fava
+ * RA: 25000636
+ */
+
 String formatCurrency(double value) =>
     'R\$ ${value.toStringAsFixed(2).replaceAll('.', ',')}';
 

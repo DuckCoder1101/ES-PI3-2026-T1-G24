@@ -88,3 +88,11 @@ export interface StartupPriceSeriesDTO {
   startupName: string;
   priceHistory: PriceHistoryDocument[];
 }
+
+export interface NewsListDTO {
+  id: string;
+  startupId: string;
+  title: string;
+  content: string;
+  createdAt: Timestamp;
+}

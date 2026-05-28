@@ -6,6 +6,7 @@
 import { HttpsError, onCall } from "firebase-functions/https";
 import { getAuthenticatedUser } from "../../shared/auth";
 import { normalizeString } from "../../shared/utils";
+import { logger } from "firebase-functions/v2";
 import { buyStartupTokens } from "../repositories/startupsRepository";
 
 /*
@@ -28,6 +29,7 @@ export const buyTokens = onCall(async (req) => {
     );
   }
 
+  logger.log(`[buyTokens] uid=${uid} startupId=${startupId} quantidade=${tokenAmount}`);
   await buyStartupTokens(uid, startupId, tokenAmount);
 
   return {
