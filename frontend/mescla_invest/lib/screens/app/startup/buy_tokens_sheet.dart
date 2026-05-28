@@ -4,13 +4,12 @@
  */
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/formatters/number_limit_formatter.dart';
 import 'package:mescla_invest/formatters/str_formaters.dart';
 import 'package:mescla_invest/models/startup/startup_model.dart';
 import 'package:mescla_invest/services/user_service.dart';
 import 'package:mescla_invest/utils/handle_exception.dart';
+import 'package:mescla_invest/widgets/ui/tokens_field.dart';
 
 class BuyTokensSheet extends StatefulWidget {
   final StartupModel startup;
@@ -124,80 +123,9 @@ class _BuyTokensSheetState extends State<BuyTokensSheet> {
 
           const SizedBox(height: 24),
 
-          // Seletor de quantidade
-          const Text(
-            'Quantidade de tokens',
-            style: TextStyle(color: Colors.white70),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  final v = int.tryParse(_qtyController.text) ?? 1;
-                  if (v > 1) {
-                    _qtyController.text = '${v - 1}';
-                    setState(() {});
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A1A),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.remove,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A1A),
-                    border: Border.all(color: AppColors.verdeMescla),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: TextField(
-                    controller: _qtyController,
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      NumberLimitFormatter(),
-                    ],
-                    onChanged: (_) => setState(() {}),
-                  ),
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  final v = int.tryParse(_qtyController.text) ?? 0;
-                  _qtyController.text = '${v + 1}';
-                  setState(() {});
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.verdeMescla,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.add, color: Colors.black, size: 20),
-                ),
-              ),
-            ],
+          TokenAmountField(
+            controller: _qtyController,
+            onChanged: () => setState(() {}),
           ),
 
           if (_errorMsg != null) ...[

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/formatters/number_limit_formatter.dart';
 import 'package:mescla_invest/services/user_service.dart';
 import 'package:mescla_invest/utils/handle_exception.dart';
+import 'package:mescla_invest/widgets/ui/currency_field.dart';
 
 class AddFundsSheet extends StatefulWidget {
   final VoidCallback onSuccess;
@@ -114,39 +113,16 @@ class _AddFundsSheetState extends State<AddFundsSheet> {
   }
 
   Widget _buildInput() {
-    return TextField(
+    return CurrencyField(
       controller: _controller,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      label: null,
+      fontSize: 28,
       autofocus: true,
-      style: const TextStyle(
-        color: Colors.white,
-        fontSize: 28,
-        fontWeight: FontWeight.bold,
-      ),
-      decoration: InputDecoration(
-        prefixText: 'R\$ ',
-        prefixStyle: const TextStyle(
-          color: AppColors.verdeMescla,
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-        ),
-        hintText: '0,00',
-        hintStyle: const TextStyle(color: Colors.white24, fontSize: 28),
-        errorText: _error,
-        errorStyle: const TextStyle(color: Colors.redAccent),
-        border: InputBorder.none,
-        enabledBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: Colors.white12),
-        ),
-        focusedBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: AppColors.verdeMescla, width: 2),
-        ),
-      ),
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]')),
-        NumberLimitFormatter(maxValue: 1_000_000),
-      ],
-      onChanged: (_) {
+      errorText: _error,
+      maxValue: 1_000_000,
+      prefixColor: AppColors.verdeMescla,
+      bordered: false,
+      onChanged: () {
         if (_error != null) setState(() => _error = null);
       },
     );

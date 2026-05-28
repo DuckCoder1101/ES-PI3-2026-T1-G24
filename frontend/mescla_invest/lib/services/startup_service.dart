@@ -4,6 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:mescla_invest/models/startup/price_point_model.dart';
 import 'package:mescla_invest/models/startup/question_model.dart';
 import 'package:mescla_invest/models/startup/startup_model.dart';
+import 'package:mescla_invest/models/startup/startup_news_model.dart';
 
 class StartupService {
   static Future<String> loadFile(String thumbnailPath) async {
@@ -170,6 +171,25 @@ class StartupService {
 
       return rawList
           .map((e) => PricePoint.fromMap(Map<String, dynamic>.from(e)))
+          .toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  static Future<List<StartupNewsModel>> getStartupNews({
+    required String startupId,
+  }) async {
+    try {
+      final response = await FirebaseFunctions.instance
+          .httpsCallable('getStartupNews')
+          .call({'startupId': startupId});
+
+      final data = response.data as Map<dynamic, dynamic>;
+      final List rawList = data['news'] ?? [];
+
+      return rawList
+          .map((n) => StartupNewsModel.fromMap(Map<String, dynamic>.from(n)))
           .toList();
     } catch (e) {
       rethrow;

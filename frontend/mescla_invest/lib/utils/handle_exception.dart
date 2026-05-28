@@ -13,7 +13,7 @@ void handleException({
   required BuildContext context,
 }) {
   if (err is FirebaseException) {
-    debugPrint(err.code);
+    debugPrint("Erro: $err | Stack: $stack");
     final String errorMessage = switch (err.code) {
       "internal" =>
         "Não foi possível efetuar a ação. Tente novamente mais tarde!",

@@ -2,9 +2,7 @@
 // RA: 25000294
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/formatters/number_limit_formatter.dart';
 import 'package:mescla_invest/formatters/str_formaters.dart';
 import 'package:mescla_invest/models/order_model.dart';
 import 'package:mescla_invest/models/startup/startup_model.dart';
@@ -13,6 +11,8 @@ import 'package:mescla_invest/services/startup_service.dart';
 import 'package:mescla_invest/utils/handle_exception.dart';
 import 'package:mescla_invest/utils/show_snackbar.dart';
 import 'package:mescla_invest/widgets/layout/model_header.dart';
+import 'package:mescla_invest/widgets/ui/currency_field.dart';
+import 'package:mescla_invest/widgets/ui/tokens_field.dart';
 
 class CreateOrderScreen extends StatefulWidget {
   final String? startupId;
@@ -25,30 +25,22 @@ class CreateOrderScreen extends StatefulWidget {
 class _CreateOrderScreenState extends State<CreateOrderScreen> {
   OrderType _orderType = OrderType.buy;
 
-  // Startup selecionada no dropdown
   List<StartupResumeDTO> _startups = [];
-  List<StartupResumeDTO> get _filteredStartups {
-    if (_orderType == OrderType.buy) return _startups;
-    return _startups.where((s) => s.isInvestor).toList();
-  }
+  List<StartupResumeDTO> get _filteredStartups => _orderType == OrderType.buy
+      ? _startups
+      : _startups.where((s) => s.isInvestor).toList();
 
   StartupResumeDTO? _selectedStartup;
-
   bool _isLoadingStartups = true;
-
-  // Quantidade e preço por token (em centavos internamente)
-  final _ammountController = TextEditingController(text: '1');
-  final _priceController = TextEditingController();
-
   bool _isSubmitting = false;
 
-  int get _tokenAmount => int.tryParse(_ammountController.text) ?? 0;
+  final _amountController = TextEditingController(text: '1');
+  final _priceController = TextEditingController();
 
-  // Preço digitado convertido para centavos
+  int get _tokenAmount => int.tryParse(_amountController.text) ?? 0;
   int get _pricePerTokenCents {
     final raw = _priceController.text.replaceAll(',', '.');
-    final parsed = double.tryParse(raw) ?? 0.0;
-    return (parsed * 100).round();
+    return ((double.tryParse(raw) ?? 0.0) * 100).round();
   }
 
   double get _total => (_pricePerTokenCents / 100) * _tokenAmount;
@@ -61,22 +53,18 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 
   @override
   void dispose() {
-    _ammountController.dispose();
+    _amountController.dispose();
     _priceController.dispose();
     super.dispose();
   }
 
-  // Carrega a lista de startups para o dropdown
   Future<void> _fetchStartups() async {
     setState(() => _isLoadingStartups = true);
     try {
       final startups = await StartupService.getAllStartupsResumes();
-
       if (!mounted) return;
-
       setState(() {
         _startups = startups;
-
         if (widget.startupId != null) {
           _selectedStartup = startups.firstWhere(
             (s) => s.id == widget.startupId,
@@ -85,26 +73,22 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         }
       });
     } catch (err, stack) {
-      if (mounted) {
-        handleException(err: err, stack: stack, context: context);
-      }
+      if (mounted) handleException(err: err, stack: stack, context: context);
     } finally {
       if (mounted) setState(() => _isLoadingStartups = false);
     }
   }
 
-  // Registra a ordem no balcão
   Future<void> _submitOrder() async {
-    setState(() => _isSubmitting = true);
-
     if (_selectedStartup == null) {
       return showSnackbar(
-        msg: "Selecione uma startup para continuar!",
+        msg: 'Selecione uma startup para continuar!',
         context: context,
         isError: true,
       );
     }
 
+    setState(() => _isSubmitting = true);
     try {
       await OrderService.registerOrder(
         startupId: _selectedStartup!.id,
@@ -112,15 +96,12 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         pricePerTokenCents: _pricePerTokenCents,
         tokenAmount: _tokenAmount,
       );
-
       if (mounted) {
         Navigator.pop(context, true);
         showSnackbar(msg: 'Ordem publicada com sucesso!', context: context);
       }
     } catch (err, stack) {
-      if (mounted) {
-        handleException(err: err, stack: stack, context: context);
-      }
+      if (mounted) handleException(err: err, stack: stack, context: context);
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -136,287 +117,40 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Header
-              ModalHeader(title: "NOVA ORDEM"),
+              ModalHeader(title: 'NOVA ORDEM'),
               const SizedBox(height: 24),
-
-              // Toggle Comprar/Vender
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: AppColors.campoEscuro,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: OrderType.values.map((t) {
-                    final isSelected = _orderType == t;
-
-                    return Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() {
-                          _selectedStartup = null;
-                          _orderType = t;
-                        }),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? const Color(0xFF2A2A2A)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            t.label,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: isSelected
-                                  ? AppColors.verdeMescla
-                                  : Colors.white54,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
+              _OrderTypeToggle(
+                selected: _orderType,
+                onChanged: (t) => setState(() {
+                  _selectedStartup = null;
+                  _orderType = t;
+                }),
               ),
-
               const SizedBox(height: 24),
-
-              // Dropdown de startup
-              const Text('Startup', style: TextStyle(color: Colors.white70)),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.campoEscuro,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: _isLoadingStartups
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 14),
-                        child: Center(
-                          child: SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: AppColors.verdeMescla,
-                              strokeWidth: 2,
-                            ),
-                          ),
-                        ),
-                      )
-                    : DropdownButtonHideUnderline(
-                        child: DropdownButton<StartupResumeDTO>(
-                          value: _selectedStartup,
-                          hint: const Text(
-                            'Selecione uma startup',
-                            style: TextStyle(color: Colors.white38),
-                          ),
-                          dropdownColor: AppColors.campoEscuro,
-                          icon: const Icon(
-                            Icons.arrow_drop_down,
-                            color: AppColors.verdeMescla,
-                          ),
-                          isExpanded: true,
-                          items: _filteredStartups.map((s) {
-                            return DropdownMenuItem(
-                              value: s,
-                              child: Text(
-                                s.name,
-                                style: const TextStyle(color: Colors.white),
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (value) =>
-                              setState(() => _selectedStartup = value),
-                        ),
-                      ),
+              _StartupSelector(
+                startups: _filteredStartups,
+                selected: _selectedStartup,
+                isLoading: _isLoadingStartups,
+                onChanged: (s) => setState(() => _selectedStartup = s),
               ),
-
               const SizedBox(height: 24),
-
-              // Quantidade de tokens
-              const Text(
-                'Quantidade de tokens',
-                style: TextStyle(color: Colors.white70),
+              TokenAmountField(
+                controller: _amountController,
+                onChanged: () => setState(() {}),
               ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      final current =
-                          int.tryParse(_ammountController.text) ?? 1;
-                      if (current > 1) {
-                        _ammountController.text = '${current - 1}';
-                        setState(() {});
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: AppColors.campoEscuro,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.remove, color: Colors.white),
-                    ),
-                  ),
-                  Expanded(
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: AppColors.campoEscuro,
-                        border: Border.all(color: AppColors.verdeMescla),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: TextField(
-                        controller: _ammountController,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
-                          NumberLimitFormatter(),
-                        ],
-                        onChanged: (_) => setState(() {}),
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      final current =
-                          int.tryParse(_ammountController.text) ?? 0;
-                      _ammountController.text = '${current + 1}';
-                      setState(() {});
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: AppColors.verdeMescla,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.add, color: Colors.black),
-                    ),
-                  ),
-                ],
-              ),
-
               const SizedBox(height: 24),
-
-              // Preço por token
-              const Text(
-                'Preço por token (R\$)',
-                style: TextStyle(color: Colors.white70),
+              CurrencyField(
+                controller: _priceController,
+                onChanged: () => setState(() {}),
               ),
-              const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.campoEscuro,
-                  border: Border.all(color: AppColors.verdeMescla),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: TextField(
-                  controller: _priceController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                  decoration: const InputDecoration(
-                    prefixText: 'R\$ ',
-                    prefixStyle: TextStyle(
-                      color: Colors.white54,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    hintText: '0,00',
-                    hintStyle: TextStyle(color: Colors.white24),
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[\d,.]')),
-                    NumberLimitFormatter(),
-                  ],
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
-
               const SizedBox(height: 24),
-
-              // Resumo da ordem
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.fundoEscuro,
-                  border: Border.all(
-                    color: AppColors.verdeMescla.withValues(alpha: 0.4),
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  children: [
-                    _buildResumoRow(
-                      'Tokens',
-                      '${_tokenAmount > 0 ? _tokenAmount : "—"}',
-                    ),
-                    const SizedBox(height: 8),
-                    _buildResumoRow(
-                      'Preço/token',
-                      _pricePerTokenCents > 0
-                          ? formatCurrency(_pricePerTokenCents / 100)
-                          : '—',
-                    ),
-                    const SizedBox(height: 8),
-                    _buildResumoRow('Tipo', _orderType.label),
-                    const Divider(color: Colors.white12, height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Total',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          _total > 0 ? formatCurrency(_total) : '—',
-                          style: const TextStyle(
-                            color: AppColors.verdeMescla,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              _OrderSummaryCard(
+                tokenAmount: _tokenAmount,
+                pricePerTokenCents: _pricePerTokenCents,
+                orderType: _orderType,
+                total: _total,
               ),
-
               const SizedBox(height: 24),
-
-              // Botão publicar
               ElevatedButton(
                 onPressed: _isSubmitting ? null : _submitOrder,
                 style: ElevatedButton.styleFrom(
@@ -439,18 +173,15 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                           color: Colors.black,
                         ),
                       )
-                    : Text(
-                        "Registrar ordem",
-                        style: const TextStyle(
+                    : const Text(
+                        'Registrar ordem',
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
                       ),
               ),
-
               const SizedBox(height: 12),
-
-              // Botão cancelar
               OutlinedButton(
                 onPressed: () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
@@ -466,7 +197,6 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ),
-
               const SizedBox(height: 24),
             ],
           ),
@@ -474,13 +204,194 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       ),
     );
   }
+}
 
-  Widget _buildResumoRow(String label, String valor) {
+class _OrderTypeToggle extends StatelessWidget {
+  final OrderType selected;
+  final void Function(OrderType) onChanged;
+
+  const _OrderTypeToggle({required this.selected, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.campoEscuro,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: OrderType.values.map((t) {
+          final isSelected = selected == t;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onChanged(t),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? const Color(0xFF2A2A2A)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  t.label,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: isSelected ? AppColors.verdeMescla : Colors.white54,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _StartupSelector extends StatelessWidget {
+  final List<StartupResumeDTO> startups;
+  final StartupResumeDTO? selected;
+  final bool isLoading;
+  final void Function(StartupResumeDTO?) onChanged;
+
+  const _StartupSelector({
+    required this.startups,
+    required this.selected,
+    required this.isLoading,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Startup', style: TextStyle(color: Colors.white70)),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.campoEscuro,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: isLoading
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  child: Center(
+                    child: SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: AppColors.verdeMescla,
+                        strokeWidth: 2,
+                      ),
+                    ),
+                  ),
+                )
+              : DropdownButtonHideUnderline(
+                  child: DropdownButton<StartupResumeDTO>(
+                    value: selected,
+                    hint: const Text(
+                      'Selecione uma startup',
+                      style: TextStyle(color: Colors.white38),
+                    ),
+                    dropdownColor: AppColors.campoEscuro,
+                    icon: const Icon(
+                      Icons.arrow_drop_down,
+                      color: AppColors.verdeMescla,
+                    ),
+                    isExpanded: true,
+                    items: startups
+                        .map(
+                          (s) => DropdownMenuItem(
+                            value: s,
+                            child: Text(
+                              s.name,
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: onChanged,
+                  ),
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _OrderSummaryCard extends StatelessWidget {
+  final int tokenAmount;
+  final int pricePerTokenCents;
+  final OrderType orderType;
+  final double total;
+
+  const _OrderSummaryCard({
+    required this.tokenAmount,
+    required this.pricePerTokenCents,
+    required this.orderType,
+    required this.total,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.fundoEscuro,
+        border: Border.all(color: AppColors.verdeMescla.withValues(alpha: 0.4)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        children: [
+          _row('Tokens', tokenAmount > 0 ? '$tokenAmount' : '—'),
+          const SizedBox(height: 8),
+          _row(
+            'Preço/token',
+            pricePerTokenCents > 0
+                ? formatCurrency(pricePerTokenCents / 100)
+                : '—',
+          ),
+          const SizedBox(height: 8),
+          _row('Tipo', orderType.label),
+          const Divider(color: Colors.white12, height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Total',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                total > 0 ? formatCurrency(total) : '—',
+                style: const TextStyle(
+                  color: AppColors.verdeMescla,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _row(String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(color: Colors.white54)),
-        Text(valor, style: const TextStyle(color: Colors.white)),
+        Text(value, style: const TextStyle(color: Colors.white)),
       ],
     );
   }

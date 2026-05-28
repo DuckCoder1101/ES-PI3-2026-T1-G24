@@ -10,6 +10,7 @@ import 'package:mescla_invest/screens/app/startup/buy_tokens_sheet.dart';
 import 'package:mescla_invest/screens/app/startup/partners_tab.dart';
 import 'package:mescla_invest/screens/app/startup/price_history_tab.dart';
 import 'package:mescla_invest/screens/app/startup/qa_tab.dart';
+import 'package:mescla_invest/screens/app/startup/updates_tab.dart';
 import 'package:mescla_invest/services/startup_service.dart';
 import 'package:mescla_invest/utils/handle_exception.dart';
 import 'package:mescla_invest/utils/show_snackbar.dart';
@@ -179,7 +180,7 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
                                       startup.name,
                                       style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 28,
+                                        fontSize: 24,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -331,12 +332,7 @@ class _StartupDetailsScreenState extends State<StartupDetailsScreen> {
       case _StartupDetailsTab.qa:
         return TabQA(startup: startup);
       case _StartupDetailsTab.updates:
-        return const Center(
-          child: Text(
-            "Sem atualizações.",
-            style: TextStyle(color: Colors.white38),
-          ),
-        );
+        return TabUpdates(startupId: widget.startupId!);
       case _StartupDetailsTab.about:
         return TabAbout(startup: startup);
     }
