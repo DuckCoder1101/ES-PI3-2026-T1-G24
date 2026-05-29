@@ -37,6 +37,29 @@ enum StartupStageFilter {
   }
 }
 
+enum StartupSortField {
+  nameAsc,
+  priceAsc,
+  priceDesc;
+
+  String get label {
+    return switch (this) {
+      StartupSortField.nameAsc => "A-Z",
+      StartupSortField.priceAsc => "Menor preço",
+      StartupSortField.priceDesc => "Maior preço",
+    };
+  }
+
+  /// Valor enviado ao backend (snake_case conforme o TS).
+  String get value {
+    return switch (this) {
+      StartupSortField.nameAsc => "name_asc",
+      StartupSortField.priceAsc => "price_asc",
+      StartupSortField.priceDesc => "price_desc",
+    };
+  }
+}
+
 // StartupResumeDTO — resumo mínimo retornado em listas, ordens e transações
 class StartupResumeDTO {
   final String id;

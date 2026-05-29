@@ -6,14 +6,14 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:mescla_invest/screens/app/startup/startup_details_screen.dart';
-import 'package:mescla_invest/screens/app/account/activate_2fa_screen.dart';
-import 'package:mescla_invest/screens/public/auth/forgot_password.dart';
+import 'package:mescla_invest/screens/app/startup_details_screen.dart';
+import 'package:mescla_invest/screens/app/activate_2fa_screen.dart';
+import 'package:mescla_invest/screens/public/forgot_password.dart';
 import 'package:mescla_invest/screens/public/welcome.dart';
 import 'package:mescla_invest/screens/app_root.dart';
 import 'package:mescla_invest/firebase_options.dart';
-import 'package:mescla_invest/screens/public/auth/signin.dart';
-import 'package:mescla_invest/screens/public/auth/signup.dart';
+import 'package:mescla_invest/screens/public/signin.dart';
+import 'package:mescla_invest/screens/public/signup.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
