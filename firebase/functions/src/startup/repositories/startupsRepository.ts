@@ -55,6 +55,9 @@ const getLimitsFromDateInterval = (interval: DateInterval): DateLimits => {
   const start = new Date();
 
   switch (interval) {
+    case "7d":
+      start.setDate(start.getDate() - 7);
+      break;
     case "1m":
       start.setMonth(start.getMonth() - 1);
       break;

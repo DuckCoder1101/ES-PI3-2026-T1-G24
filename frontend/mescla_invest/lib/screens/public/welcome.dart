@@ -5,8 +5,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:mescla_invest/constants/colors.dart';
-import 'package:mescla_invest/widgets/ui/icon.dart';
-import 'package:mescla_invest/widgets/ui/primary_button.dart';
+import 'package:mescla_invest/widgets/shared/ui/icon.dart';
+import 'package:mescla_invest/widgets/shared/ui/primary_button.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});

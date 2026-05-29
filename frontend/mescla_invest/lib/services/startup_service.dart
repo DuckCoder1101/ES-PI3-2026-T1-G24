@@ -67,7 +67,10 @@ class StartupService {
           .call({
             'offset': offset.toInt(),
             'limit': limit.toInt(),
-            'filter': {'stage': stageFilter.name, 'name': nameFilter},
+            'filter': {
+              'stage': stageFilter.name,
+              'name': nameFilter,
+            },
           });
 
       final data = Map<String, dynamic>.from(response.data as Map? ?? const {});
