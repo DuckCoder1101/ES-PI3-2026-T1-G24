@@ -3,10 +3,10 @@
  * RA: 25000636
  */
 
-import 'package:flutter/foundation.dart';
 import 'package:mescla_invest/formatters/timestamp_to_date.dart';
 
 enum DateInterval {
+  sevenDays,
   oneMonth,
   sixMonths,
   oneYear,
@@ -14,6 +14,7 @@ enum DateInterval {
 
   String get value {
     return switch (this) {
+      sevenDays => '7d',
       oneMonth => '1m',
       sixMonths => '6m',
       oneYear => '1y',
@@ -39,7 +40,6 @@ class PricePoint {
   double get priceReais => priceCents / 100;
 
   factory PricePoint.fromMap(Map<String, dynamic> map) {
-    debugPrint(map["createdAt"].toString());
     return PricePoint(
       priceCents: (map['priceCents'] as num?)?.toInt() ?? 0,
       occupancyRate: (map['occupancyRate'] as num?)?.toDouble() ?? 0.0,
