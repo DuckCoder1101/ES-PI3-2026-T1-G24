@@ -27,6 +27,12 @@ class UserService {
     await FirebaseStorage.instance.ref("/users/$uid/avatar").putFile(file);
   }
 
+  // Remove a foto de perfil
+  static Future<void> removeAvatar() async {
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+    await FirebaseStorage.instance.ref("/users/$uid/avatar").delete();
+  }
+
   // Dados do usuário
   static Future<UserModel> getFullUserData() async {
     try {

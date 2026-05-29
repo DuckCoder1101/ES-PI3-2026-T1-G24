@@ -45,9 +45,66 @@ class _AvatarSectionState extends State<AvatarSection> {
     }
   }
 
-  Future<void> _pickAndUploadPhoto() async {
+  Future<void> _showAvatarOptions() async {
     if (_isUploadingPhoto || widget.user == null) return;
 
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(
+                Icons.photo_library_rounded,
+                color: Colors.white,
+              ),
+              title: const Text(
+                'Alterar foto de perfil',
+                style: TextStyle(color: Colors.white),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickAndUploadPhoto();
+              },
+            ),
+            if (_resolvedAvatarUrl != null)
+              ListTile(
+                leading: const Icon(
+                  Icons.delete_rounded,
+                  color: Colors.redAccent,
+                ),
+                title: const Text(
+                  'Remover foto',
+                  style: TextStyle(color: Colors.redAccent),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _removePhoto();
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAndUploadPhoto() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(
       source: ImageSource.gallery,
@@ -64,6 +121,24 @@ class _AvatarSectionState extends State<AvatarSection> {
 
       if (mounted) {
         showSnackbar(msg: 'Foto atualizada com sucesso!', context: context);
+      }
+    } catch (err, stack) {
+      if (mounted) {
+        handleException(err: err, stack: stack, context: context);
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingPhoto = false);
+    }
+  }
+
+  Future<void> _removePhoto() async {
+    setState(() => _isUploadingPhoto = true);
+
+    try {
+      await UserService.removeAvatar();
+      if (mounted) {
+        setState(() => _resolvedAvatarUrl = null);
+        showSnackbar(msg: 'Foto removida com sucesso!', context: context);
       }
     } catch (err, stack) {
       if (mounted) {
@@ -102,7 +177,7 @@ class _AvatarSectionState extends State<AvatarSection> {
               _AvatarCircle(
                 avatarUrl: _resolvedAvatarUrl,
                 isUploading: _isUploadingPhoto,
-                onTap: _pickAndUploadPhoto,
+                onTap: _showAvatarOptions,
               ),
               const SizedBox(height: 12),
               Text(
@@ -200,7 +275,6 @@ class _AvatarCircle extends StatelessWidget {
       return Image.network(
         avatarUrl!,
         fit: BoxFit.cover,
-        // Fallback caso a URL seja inválida ou o carregamento falhe
         errorBuilder: (_, _, _) => _buildDefaultIcon(),
       );
     }
