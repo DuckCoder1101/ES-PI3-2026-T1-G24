@@ -97,15 +97,33 @@ export const findOrdersByOrderType = async (
 };
 
 /*
- * Pesquisa todas as ordens criadas por um usuário
+ * Pesquisa todas as ordens criadas por um usuário, com filtro opcional de estágio de startup
  */
 export const findUserOrders = async (
   userUId: string,
+  stageFilter: StartupStageFilter = "all",
 ): Promise<OrderListDTO[]> => {
-  const snapshot = await ordersCollection
-    .where("authorUId", "==", userUId)
-    .orderBy("createdAt", "desc")
-    .get();
+  let allowedStartupIds: string[] | null = null;
+  if (stageFilter !== "all" && StartupsSearchFilters.includes(stageFilter)) {
+    const stageSnapshot = await startupsCollection
+      .where("stage", "==", stageFilter)
+      .select()
+      .get();
+    allowedStartupIds = stageSnapshot.docs.map((doc) => doc.id);
+    if (allowedStartupIds.length === 0) return [];
+  }
+
+  const snapshot =
+    allowedStartupIds !== null
+      ? await ordersCollection
+          .where("authorUId", "==", userUId)
+          .where("startupId", "in", allowedStartupIds)
+          .orderBy("createdAt", "desc")
+          .get()
+      : await ordersCollection
+          .where("authorUId", "==", userUId)
+          .orderBy("createdAt", "desc")
+          .get();
 
   const orders = snapshot.docs.map((doc) => ({
     id: doc.id,
@@ -379,12 +397,19 @@ export const executeBuyFromOrder = async (
       });
     }
 
-    // Libera os tokens bloqueados do vendedor (ordem executada)
+    // Remove o investimento se o vendedor não tiver mais tokens, senão libera os bloqueados
     if (sellerInvestmentDoc.exists) {
-      tx.update(sellerInvestmentRef, {
-        lockedTokenAmount: FieldValue.increment(-order.tokenAmount),
-        updatedAt: FieldValue.serverTimestamp(),
-      });
+      const sellerInvestment = sellerInvestmentDoc.data() as InvestmentDocument;
+      const remainingAvailable = sellerInvestment.tokenAmount;
+      const remainingLocked = sellerInvestment.lockedTokenAmount - order.tokenAmount;
+      if (remainingAvailable === 0 && remainingLocked === 0) {
+        tx.delete(sellerInvestmentRef);
+      } else {
+        tx.update(sellerInvestmentRef, {
+          lockedTokenAmount: FieldValue.increment(-order.tokenAmount),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      }
     }
 
     // Remove a ordem do balcão
@@ -470,11 +495,17 @@ export const executeSellToOrder = async (
       );
     }
 
-    // Debita os tokens do vendedor
-    tx.update(sellerInvestmentRef, {
-      tokenAmount: FieldValue.increment(-order.tokenAmount),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+    // Remove o investimento se o vendedor não tiver mais tokens, senão debita
+    const remainingAvailable = sellerInvestment.tokenAmount - order.tokenAmount;
+    const remainingLocked = sellerInvestment.lockedTokenAmount;
+    if (remainingAvailable === 0 && remainingLocked === 0) {
+      tx.delete(sellerInvestmentRef);
+    } else {
+      tx.update(sellerInvestmentRef, {
+        tokenAmount: FieldValue.increment(-order.tokenAmount),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
 
     // Credita os tokens ao comprador
     if (buyerInvestmentDoc.exists) {

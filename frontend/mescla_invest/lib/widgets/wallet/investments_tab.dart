@@ -57,7 +57,6 @@ class _InvestmentsTabState extends State<InvestmentsTab> {
                   ),
                 )
               : ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                   itemCount: filtered.length,
                   itemBuilder: (_, i) =>

@@ -158,9 +158,23 @@ class _CatalogScreenState extends State<CatalogScreen> {
       color: AppColors.verdeMescla,
       child: ListView.builder(
         controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.only(bottom: 20),
-        itemCount: _startups.length + (_hasMore ? 1 : 0),
+        itemCount: _startups.isEmpty && !_hasMore
+            ? 1
+            : _startups.length + (_hasMore ? 1 : 0),
         itemBuilder: (context, index) {
+          if (_startups.isEmpty && !_hasMore) {
+            return const Padding(
+              padding: EdgeInsets.only(top: 100),
+              child: Center(
+                child: Text(
+                  'Nenhuma startup encontrada.',
+                  style: TextStyle(color: Colors.white38),
+                ),
+              ),
+            );
+          }
           if (index < _startups.length) {
             return _buildStartupCard(_startups[index]);
           } else {

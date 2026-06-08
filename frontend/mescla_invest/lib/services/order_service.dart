@@ -33,10 +33,15 @@ class OrderService {
   }
 
   // Busca todas as ordens criadas pelo usuário autenticado
-  static Future<List<OrderModel>> getUserOrders() async {
+  static Future<List<OrderModel>> getUserOrders({
+    StartupStageFilter stageFilter = StartupStageFilter.all,
+  }) async {
+    final params = <String, dynamic>{
+      if (stageFilter != StartupStageFilter.all) 'stage': stageFilter.name,
+    };
     final response = await FirebaseFunctions.instance
         .httpsCallable('getUserOrders')
-        .call();
+        .call(params);
 
     final data = Map<String, dynamic>.from(response.data);
     final List raw = data['orders'] ?? [];
