@@ -73,7 +73,6 @@ class _HistoryTabState extends State<HistoryTab> {
                   ),
                 )
               : ListView.builder(
-                  physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                   itemCount: filtered.length,
                   itemBuilder: (_, i) => _TransactionCard(tx: filtered[i]),

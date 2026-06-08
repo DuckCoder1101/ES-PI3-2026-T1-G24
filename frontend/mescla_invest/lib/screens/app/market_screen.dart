@@ -52,7 +52,7 @@ class _MarketScreenState extends State<MarketScreen> {
           limit: 10,
           stageFilter: _selectedStage,
         ),
-        OrderService.getUserOrders(),
+        OrderService.getUserOrders(stageFilter: _selectedStage),
       ]);
 
       if (mounted) {
@@ -128,15 +128,24 @@ class _MarketScreenState extends State<MarketScreen> {
     };
 
     if (orders.isEmpty) {
-      return const Center(
-        child: Text(
-          'Nenhuma ordem encontrada.',
-          style: TextStyle(color: Colors.white38),
-        ),
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          Padding(
+            padding: EdgeInsets.only(top: 100),
+            child: Center(
+              child: Text(
+                'Nenhuma ordem encontrada.',
+                style: TextStyle(color: Colors.white38),
+              ),
+            ),
+          ),
+        ],
       );
     }
 
     return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: orders.length,
       itemBuilder: (context, index) {
@@ -195,7 +204,10 @@ class _MarketScreenState extends State<MarketScreen> {
 
                       return Expanded(
                         child: GestureDetector(
-                          onTap: () => setState(() => _activeTab = tab),
+                          onTap: () {
+                            setState(() => _activeTab = tab);
+                            _fetchOrders();
+                          },
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(

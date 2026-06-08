@@ -92,7 +92,7 @@ class _TokenChartState extends State<TokenChart> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Apreciação de Tokens',
+            'Valorização dos tokens',
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -250,31 +250,8 @@ class _TokenChartState extends State<TokenChart> {
                     ),
                   ),
                 ),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 28,
-                    interval: _bottomInterval(_maxPointCount()),
-                    getTitlesWidget: (value, _) {
-                      final refSerie = _referenceSeries();
-                      final idx = value.toInt();
-                      if (refSerie == null ||
-                          idx < 0 ||
-                          idx >= refSerie.points.length) {
-                        return const SizedBox.shrink();
-                      }
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          formatDate(refSerie.points[idx].createdAt),
-                          style: const TextStyle(
-                            color: Colors.white38,
-                            fontSize: 9,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                bottomTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
                 ),
                 rightTitles: const AxisTitles(
                   sideTitles: SideTitles(showTitles: false),
@@ -400,20 +377,5 @@ class _TokenChartState extends State<TokenChart> {
         ),
       ),
     );
-  }
-
-  int _maxPointCount() =>
-      _series.map((s) => s.points.length).reduce((a, b) => a > b ? a : b);
-
-  StartupPriceSeries? _referenceSeries() {
-    if (_series.isEmpty) return null;
-    return _series.reduce((a, b) => a.points.length >= b.points.length ? a : b);
-  }
-
-  double _bottomInterval(int count) {
-    if (count <= 6) return 1;
-    if (count <= 12) return 2;
-    if (count <= 30) return 5;
-    return (count / 5).ceilToDouble();
   }
 }
