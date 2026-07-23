@@ -111,21 +111,16 @@ frontend/
 O backend segue uma arquitetura modular baseada em **features**, onde cada funcionalidade possui sua própria estrutura interna.  
 Todas as features seguem o mesmo padrão utilizado na pasta `orders/`.
 
-### Estrutura Base das Features
+### Estrutura base das Features
 
 ```txt
 backend/
 └── src/
     └── features/
         ├── orders/
-        │   ├── controllers/     # Controladores HTTP
-        │   ├── services/        # Regras de negócio
         │   ├── repositories/    # Acesso ao banco de dados
-        │   ├── dto/             # Objetos de transferência de dados
-        │   ├── models/          # Models e interfaces
-        │   ├── routes/          # Rotas da feature
-        │   ├── validations/     # Validações
-        │   ├── middlewares/     # Middlewares específicos
+        │   ├── types/           # Tipos e interfaces
+        │   ├── handlers/        # Handlers chamados do backend
         │   └── index.ts         # Exportações da feature
         │
         ├── auth/
@@ -133,24 +128,6 @@ backend/
         ├── startups/
         ├── investments/
         └── wallets/
-```
-
-### Organização Geral do Backend
-
-```txt
-backend/
-├── src/
-│   ├── config/                  # Configurações globais
-│   ├── database/                # Configuração do banco
-│   ├── shared/                  # Recursos compartilhados
-│   ├── middlewares/             # Middlewares globais
-│   ├── utils/                   # Funções utilitárias
-│   ├── routes/                  # Rotas principais
-│   └── features/                # Features do sistema
-│
-├── package.json
-├── tsconfig.json
-└── firebase.json
 ```
 
 ---
